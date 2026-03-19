@@ -18,6 +18,6 @@ jobs:
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: green.thinline.cz
-          username: besix_cz
+          username: board_besix_cz
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: /board.besix.cz/
