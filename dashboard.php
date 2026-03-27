@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard – BeSix Board</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'DM Sans',sans-serif;background:#1e2710;color:#fff;min-height:100vh}
+  body{font-family:'Montserrat',sans-serif;background:#1e2710;color:#fff;min-height:100vh}
   /* ── NAV ── */
   nav{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.07);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100}
-  .nav-logo{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff}
-  .nav-logo span{color:rgba(170,205,80,0.9)}
+  .nav-logo{font-family:'Montserrat',sans-serif;font-size:17px;font-weight:800;color:#fff}
+  .nav-logo span{color:rgba(130,165,75,0.9)}
   .nav-right{display:flex;align-items:center;gap:8px}
   .user-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:50px;padding:4px 12px 4px 4px;font-size:13px;color:rgba(255,255,255,0.75)}
   .avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
@@ -19,47 +19,47 @@
   .btn-logout:hover{background:rgba(255,59,48,0.15);border-color:rgba(255,59,48,0.3);color:#ff6b60}
   /* ── MAIN ── */
   main{max-width:1100px;margin:0 auto;padding:40px 24px}
-  .page-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:6px;letter-spacing:-0.5px}
-  .page-sub{font-size:14px;color:rgba(190,215,130,0.5);margin-bottom:36px}
+  .page-title{font-family:'Montserrat',sans-serif;font-size:28px;font-weight:800;margin-bottom:6px;letter-spacing:-0.5px}
+  .page-sub{font-size:14px;color:rgba(162,188,130,0.5);margin-bottom:36px}
   /* ── ACTIONS BAR ── */
   .actions{display:flex;gap:10px;margin-bottom:36px;flex-wrap:wrap}
-  .btn-action{display:flex;align-items:center;gap:7px;padding:10px 18px;border-radius:9px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;border:none;transition:all 0.15s}
-  .btn-action.primary{background:linear-gradient(180deg,#8fa545 0%,#6d8030 100%);color:#fff;box-shadow:0 2px 10px rgba(80,110,20,0.3)}
+  .btn-action{display:flex;align-items:center;gap:7px;padding:10px 18px;border-radius:9px;font-size:14px;font-family:'Montserrat',sans-serif;font-weight:600;cursor:pointer;border:none;transition:all 0.15s}
+  .btn-action.primary{background:linear-gradient(180deg,#6b8040 0%,#506030 100%);color:#fff;box-shadow:0 2px 10px rgba(60,85,30,0.3)}
   .btn-action.secondary{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.1)}
   .btn-action:hover{opacity:0.88;transform:translateY(-1px)}
   /* ── APP SECTION ── */
   .app-section{margin-bottom:40px}
   .app-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-  .app-badge{background:rgba(143,165,69,0.15);border:1px solid rgba(143,165,69,0.25);color:rgba(170,205,80,0.9);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:0.06em}
-  .app-name{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:rgba(255,255,255,0.85)}
+  .app-badge{background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.25);color:rgba(130,165,75,0.9);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:0.06em}
+  .app-name{font-family:'Montserrat',sans-serif;font-size:18px;font-weight:700;color:rgba(255,255,255,0.85)}
   /* ── GRID ── */
   .projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
   .project-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:20px;cursor:pointer;transition:all 0.2s;position:relative;text-decoration:none;display:block}
   .project-card:hover{background:rgba(255,255,255,0.08);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.25)}
   .project-card-color{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
-  .project-card-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:rgba(255,255,255,0.92);margin-bottom:5px}
+  .project-card-name{font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;color:rgba(255,255,255,0.92);margin-bottom:5px}
   .project-card-desc{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.45;margin-bottom:12px;min-height:18px}
   .project-card-footer{display:flex;align-items:center;justify-content:space-between}
   .role-pill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;text-transform:capitalize}
   .role-owner{background:rgba(255,159,10,0.15);color:rgba(255,195,80,0.9);border:1px solid rgba(255,159,10,0.25)}
   .role-admin{background:rgba(10,132,255,0.12);color:rgba(80,170,255,0.9);border:1px solid rgba(10,132,255,0.25)}
-  .role-member{background:rgba(143,165,69,0.12);color:rgba(170,205,80,0.9);border:1px solid rgba(143,165,69,0.25)}
+  .role-member{background:rgba(107,128,60,0.12);color:rgba(130,165,75,0.9);border:1px solid rgba(107,128,60,0.25)}
   .role-viewer{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1)}
   .member-count{font-size:12px;color:rgba(255,255,255,0.35)}
   /* ── NEW PROJECT CARD ── */
   .card-new{border:1.5px dashed rgba(255,255,255,0.15);background:rgba(255,255,255,0.02);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:120px;cursor:pointer;transition:all 0.2s}
-  .card-new:hover{border-color:rgba(143,165,69,0.5);background:rgba(143,165,69,0.05)}
+  .card-new:hover{border-color:rgba(107,128,60,0.5);background:rgba(107,128,60,0.05)}
   .card-new-icon{font-size:28px;color:rgba(255,255,255,0.25)}
-  .card-new-label{font-size:13px;color:rgba(190,215,130,0.5);font-weight:500}
+  .card-new-label{font-size:13px;color:rgba(162,188,130,0.5);font-weight:500}
   /* ── MODAL ── */
   .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center}
   .overlay.open{display:flex}
   .modal{background:#1e2d10;border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:36px;width:100%;max-width:440px}
-  .modal h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px;color:#fff}
+  .modal h2{font-family:'Montserrat',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px;color:#fff}
   .mfield{margin-bottom:14px}
-  .mfield label{display:block;font-size:12px;font-weight:600;color:rgba(190,215,130,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
-  .mfield input,.mfield select,.mfield textarea{width:100%;padding:10px 13px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.15s}
-  .mfield input:focus,.mfield select:focus,.mfield textarea:focus{border-color:rgba(143,165,69,0.6)}
+  .mfield label{display:block;font-size:12px;font-weight:600;color:rgba(162,188,130,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
+  .mfield input,.mfield select,.mfield textarea{width:100%;padding:10px 13px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:14px;font-family:'Montserrat',sans-serif;outline:none;transition:border-color 0.15s}
+  .mfield input:focus,.mfield select:focus,.mfield textarea:focus{border-color:rgba(107,128,60,0.6)}
   .mfield select option{background:#1e2d10}
   .mfield textarea{resize:vertical;min-height:70px}
   .color-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
@@ -67,14 +67,14 @@
   .color-swatch.sel{border-color:#fff}
   .modal-btns{display:flex;gap:10px;margin-top:20px}
   .btn-cancel{flex:1;padding:11px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.7);font-size:14px;cursor:pointer}
-  .btn-create{flex:2;padding:11px;background:linear-gradient(180deg,#8fa545 0%,#6d8030 100%);border:none;border-radius:8px;color:#fff;font-size:14px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer}
+  .btn-create{flex:2;padding:11px;background:linear-gradient(180deg,#6b8040 0%,#506030 100%);border:none;border-radius:8px;color:#fff;font-size:14px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer}
   /* ── JOIN MODAL ── */
   .notice{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px}
   .notice.error{background:rgba(255,59,48,0.12);border:1px solid rgba(255,59,48,0.25);color:#ff6b60}
-  .notice.success{background:rgba(143,165,69,0.15);border:1px solid rgba(143,165,69,0.3);color:rgba(180,215,120,0.9)}
+  .notice.success{background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.3);color:rgba(145,180,105,0.9)}
   /* ── EMPTY ── */
-  .empty{text-align:center;padding:48px 20px;color:rgba(190,215,130,0.35);font-size:14px}
-  #loading{text-align:center;padding:60px;color:rgba(190,215,130,0.4);font-size:14px}
+  .empty{text-align:center;padding:48px 20px;color:rgba(162,188,130,0.35);font-size:14px}
+  #loading{text-align:center;padding:60px;color:rgba(162,188,130,0.4);font-size:14px}
 </style>
 </head>
 <body>
