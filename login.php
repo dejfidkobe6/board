@@ -45,7 +45,6 @@
 </head>
 <body>
 <div class="brand">
-  <img src="/assets/besix-logo.png" class="besix-logo">
   <div>
     <div class="brand-tagline">Organizuj<br>svou práci<br><em>efektivně.</em></div>
     <div class="brand-desc">Přehledný kanban board pro týmy i jednotlivce. Sleduj úkoly, projekty a pokrok.</div>
@@ -53,7 +52,6 @@
   </div>
 </div>
 <div class="side">
-  <img src="/assets/besix-logo.png" class="besix-logo-sm">
   <h1>Přihlásit se</h1>
   <div class="sub">Pokračuj do svého účtu</div>
 

@@ -43,7 +43,6 @@
 </head>
 <body>
 <div class="brand">
-  <img src="/assets/besix-logo.png" class="besix-logo">
   <div>
     <div class="brand-tagline">Začni<br>organizovat<br><em>ještě dnes.</em></div>
     <div class="brand-desc">Vytvoř si účet zdarma a připoj se ke svému týmu na BeSix Board.</div>
@@ -51,7 +50,6 @@
   </div>
 </div>
 <div class="side">
-  <img src="/assets/besix-logo.png" class="besix-logo-sm">
   <h1>Vytvořit účet</h1>
   <div class="sub">Registrace je zdarma</div>
 
