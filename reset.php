@@ -9,7 +9,7 @@
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Montserrat',sans-serif;background:#1e2710;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
   .card{width:100%;max-width:420px;background:#16200a;border-radius:16px;padding:44px 40px;border:1px solid rgba(255,255,255,0.07)}
-  .logo{margin-bottom:32px}.besix-logo-sm{height:34px;width:auto;mix-blend-mode:screen;display:block;margin-bottom:32px}
+  .logo{margin-bottom:32px}.besix-logo-sm{height:34px;width:auto;display:block;margin-bottom:32px}
   .logo span{color:rgba(130,165,75,0.9)}
   h1{font-family:'Montserrat',sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:6px}
   .sub{font-size:14px;color:rgba(162,188,130,0.5);margin-bottom:28px}
