@@ -37,7 +37,6 @@
 <body>
 <div class="wrap">
   <div class="logo-wrap">
-    <img src="/assets/besix-logo.png" class="besix-logo" alt="BeSix">
     <div class="app-title">BeSix <span>Board</span></div>
   </div>
   <div class="card">
