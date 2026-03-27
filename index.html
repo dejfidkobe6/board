@@ -217,7 +217,7 @@
   .member-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
 
   /* ─── PROJECT SCREEN ─── */
-  #projectScreen { display: none; min-height: 100vh; background: var(--bg); background-image: radial-gradient(ellipse 60% 40% at 80% 20%, rgba(160,180,120,0.2) 0%, transparent 60%); position: relative; }
+  #projectScreen { display: none; min-height: 100vh; background: var(--bg); position: relative; }
   .ps-logout { position: fixed; top: 18px; right: 24px; z-index: 50; display: flex; align-items: center; gap: 9px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50px; padding: 5px 14px 5px 5px; font-size: 13px; cursor: pointer; transition: all 0.15s; color: rgba(200,220,160,0.8); backdrop-filter: blur(12px); }
   .ps-logout:hover { border-color: rgba(180,215,120,0.5); color: #fff; background: rgba(255,255,255,0.12); }
   .ps-logout .av { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; }
@@ -228,19 +228,20 @@
   .ps-subtitle { font-size: 14px; color: rgba(200,220,160,0.6); margin-bottom: 32px; }
   .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; max-width: 960px; }
   .project-card {
-    background: rgba(255,255,255,0.92); border: 1px solid rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.18);
     border-radius: 16px; cursor: pointer; overflow: hidden; position: relative;
     transition: box-shadow 0.2s, transform 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   }
-  .project-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.10); transform: translateY(-2px); }
-  .project-card-cover { height: 88px; display: flex; align-items: center; justify-content: flex-start; font-size: 34px; }
-  .project-card-body { padding: 14px 18px 18px; }
-  .project-card-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 3px; letter-spacing: -0.2px; }
-  .project-card-meta { font-size: 13px; color: var(--text2); line-height: 1.45; }
-  .project-card-stats { display: flex; gap: 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
-  .project-stat { font-size: 12px; color: var(--text2); }
-  .project-stat strong { color: var(--text); font-weight: 600; }
+  .project-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.28); transform: translateY(-2px); }
+  .project-card-cover { display: none; }
+  .project-card-body { padding: 20px 20px 18px; }
+  .project-card-name { font-size: 15px; font-weight: 700; color: rgba(255,255,255,0.92); margin-bottom: 4px; letter-spacing: -0.2px; font-family: 'Syne', sans-serif; }
+  .project-card-meta { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.45; }
+  .project-card-stats { display: flex; gap: 14px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.12); }
+  .project-stat { font-size: 12px; color: rgba(255,255,255,0.5); }
+  .project-stat strong { color: rgba(255,255,255,0.85); font-weight: 600; }
   .project-card-del { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 6px; background: rgba(0,0,0,0.08); border: none; color: var(--text2); cursor: pointer; font-size: 12px; display: none; align-items: center; justify-content: flex-start; transition: all 0.15s; }
   .project-card:hover .project-card-del { display: flex; }
   .project-card-del:hover { background: var(--danger); color: #fff; }
@@ -259,23 +260,23 @@
   /* ─── APP ─── */
   #app { display: none; }
   header {
-    background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border); padding: 0 28px;
+    background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0 20px;
     display: flex; align-items: center; justify-content: space-between;
-    height: 52px; position: sticky; top: 0; z-index: 100;
+    height: 48px; position: sticky; top: 0; z-index: 100;
   }
-  .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.4px; color: var(--text); display: flex; align-items: center; gap: 8px; }
-  .logo .dot { color: var(--accent); }
-  .logo .proj-sep { color: var(--border2); margin: 0 2px; }
-  .header-right { display: flex; gap: 8px; align-items: center; }
-  .current-user { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 50px; padding: 4px 12px 4px 4px; font-size: 13px; cursor: pointer; transition: all 0.15s; color: var(--text2); }
-  .current-user:hover { border-color: var(--accent); color: var(--text); }
+  .logo { display: flex; align-items: center; }
+  .logo > *:not(img) { display: none; }
+  .logo img { height: 32px; width: auto; filter: drop-shadow(0 1px 6px rgba(0,0,0,0.3)); }
+  .header-right { display: flex; gap: 6px; align-items: center; }
+  .current-user { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 50px; padding: 4px 12px 4px 4px; font-size: 13px; cursor: pointer; transition: all 0.15s; color: rgba(255,255,255,0.75); }
+  .current-user:hover { border-color: rgba(160,195,75,0.4); color: #fff; background: rgba(255,255,255,0.13); }
   .current-user .av { width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: flex-start; font-size: 10px; font-weight: 700; color: #fff; }
   .btn { padding: 7px 14px; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; transition: all 0.15s; letter-spacing: -0.1px; }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover { background: var(--accent2); }
-  .btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
-  .btn-ghost:hover { background: var(--surface3); color: var(--text); }
+  .btn-primary { background: rgba(130,165,50,0.9); color: #fff; box-shadow: 0 2px 8px rgba(80,110,20,0.35); }
+  .btn-primary:hover { background: rgba(145,180,58,0.95); }
+  .btn-ghost { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); border: 1px solid rgba(255,255,255,0.12); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.2); }
   .btn-danger { background: rgba(255,59,48,0.08); color: var(--danger); border: 1px solid rgba(255,59,48,0.2); }
   .btn-danger:hover { background: var(--danger); color: #fff; }
   .export-badge { background: var(--danger); color: #fff; border-radius: 8px; font-size: 10px; padding: 1px 6px; margin-left: 4px; font-weight: 700; }
@@ -993,16 +994,14 @@ function renderProjectGrid() {
   grid.innerHTML = state.projects.map(p => {
     const cardCount = (p.cards||[]).filter(c=>!(p.columns||[]).find(col=>col.id===c.colId && col.title==='HOTOVO') || true).length;
     const done = (p.completed||[]).length;
+    const bg = p.bg || '#4a5240';
     return `
-    <div class="project-card" onclick="openProject('${p.id}')">
+    <div class="project-card" onclick="openProject('${p.id}')" style="background:${bg}80;border-color:${bg}60">
       <button class="project-card-del" onclick="event.stopPropagation();deleteProject('${p.id}')" title="Smazat projekt">✕</button>
-      <div class="project-card-cover" style="background:${p.color}22;border-bottom:3px solid ${p.color}">
-        <span>${p.icon||'🏗'}</span>
-      </div>
       <div class="project-card-body">
         <div class="project-card-name">${p.name}</div>
         <div class="project-card-meta">${p.desc||''}</div>
-        <div class="project-card-meta" style="margin-top:6px;color:var(--muted)">${(p.cards||[]).length} úkolů · ${done} splněno</div>
+        <div class="project-card-meta" style="margin-top:6px;color:rgba(255,255,255,0.4)">${(p.cards||[]).length} úkolů · ${done} splněno</div>
       </div>
     </div>`;
   }).join('') + `
@@ -1016,7 +1015,9 @@ function openProject(id) {
   saveState();
   const proj = activeProj();
   document.getElementById('projectScreen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
+  const appEl = document.getElementById('app');
+  appEl.style.display = 'block';
+  appEl.style.background = proj.bg || 'var(--bg)';
   document.getElementById('activeProjectName').textContent = '/ ' + proj.name;
   const av = document.getElementById('cuAv');
   av.style.background = currentUser.color;
@@ -1048,18 +1049,27 @@ function logout() {
 // PROJECT CRUD
 const PROJ_COLORS = ['#f0a500','#e05c00','#4caf50','#2196f3','#9c27b0','#00bcd4','#ff5722','#e91e63','#607d8b','#795548'];
 const PROJ_ICONS =  ['🏠','🏗','🏢','🏭','🏨','🛠','⚒','🔩','🏚','🏛','🌿','🔌'];
-let selProjColor = PROJ_COLORS[0], selProjIcon = PROJ_ICONS[0];
+const PROJ_BG_COLORS = ['#4a5240','#2e3a2a','#1e2d3a','#2a1e3a','#3a1e1e','#1e3a2e','#2a2e1e','#1a2232','#2d2010','#1e2a1e'];
+let selProjColor = PROJ_COLORS[0], selProjIcon = PROJ_ICONS[0], selProjBg = PROJ_BG_COLORS[0];
 
 function openNewProject() {
-  selProjColor = PROJ_COLORS[0]; selProjIcon = PROJ_ICONS[0];
+  selProjColor = PROJ_COLORS[0]; selProjIcon = PROJ_ICONS[0]; selProjBg = PROJ_BG_COLORS[0];
   document.getElementById('projName').value = '';
   document.getElementById('projDesc').value = '';
   document.getElementById('projColorPicker').innerHTML =
     PROJ_COLORS.map((c,i) => `<div style="width:28px;height:28px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${i===0?'#fff':'transparent'};transition:border-color 0.15s" onclick="selProjCol(this,'${c}')"></div>`).join('') +
     '<div style="width:100%;margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">' +
     PROJ_ICONS.map((ic,i) => `<div style="width:34px;height:34px;border-radius:6px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:2px solid ${i===0?'var(--accent)':'transparent'}" onclick="selProjIco(this,'${ic}')">${ic}</div>`).join('') +
-    '</div>';
+    '</div>' +
+    '<div style="width:100%;margin-top:12px"><div style="font-size:11px;color:var(--text2);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px">Pozadí projektu</div><div style="display:flex;gap:8px;flex-wrap:wrap">' +
+    PROJ_BG_COLORS.map((c,i) => `<div data-bg="${c}" style="width:32px;height:32px;border-radius:8px;background:${c};cursor:pointer;border:3px solid ${i===0?'#fff':'transparent'};transition:border-color 0.15s" onclick="selProjBgFn(this,'${c}')"></div>`).join('') +
+    '</div></div>';
   document.getElementById('projectModal').classList.add('open');
+}
+function selProjBgFn(el, c) {
+  selProjBg = c;
+  document.querySelectorAll('[data-bg]').forEach(d => d.style.borderColor = 'transparent');
+  el.style.borderColor = '#fff';
 }
 function selProjCol(el, c) {
   selProjColor = c;
@@ -1077,7 +1087,7 @@ function saveProject() {
   const proj = {
     id: 'p' + Date.now(),
     name, desc: document.getElementById('projDesc').value.trim(),
-    color: selProjColor, icon: selProjIcon,
+    color: selProjColor, icon: selProjIcon, bg: selProjBg,
     createdAt: new Date().toISOString(),
     columns: [
       { id: 'c'+Date.now()+'1', title: 'K VYŘÍZENÍ', color: '#f0a500' },
