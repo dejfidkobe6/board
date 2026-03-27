@@ -1,14 +1,10 @@
 <?php
-$host = getenv('DB_HOST') ?: 'hodnota-nebyla-nastavena';
-$name = getenv('DB_NAME') ?: 'hodnota-nebyla-nastavena';
-$user = getenv('DB_USER') ?: 'hodnota-nebyla-nastavena';
-
-echo "HOST: " . $host . "<br>";
-echo "NAME: " . $name . "<br>";
-echo "USER: " . $user . "<br>";
-
+require_once 'config.php';
+echo "HOST: " . DB_HOST . "<br>";
+echo "NAME: " . DB_NAME . "<br>";
+echo "USER: " . DB_USER . "<br>";
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$name;charset=utf8mb4", $user, getenv('DB_PASS'));
+    $pdo = getDB();
     echo "<b style='color:green'>✅ Připojení OK!</b>";
 } catch(Exception $e) {
     echo "<b style='color:red'>❌ Chyba: " . $e->getMessage() . "</b>";
