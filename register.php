@@ -4,40 +4,40 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Registrace – BeSix Board</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'DM Sans',sans-serif;background:#1e2710;min-height:100vh;display:flex;align-items:stretch}
+  body{font-family:'Montserrat',sans-serif;background:#1e2710;min-height:100vh;display:flex;align-items:stretch}
   .brand{flex:1;background:linear-gradient(155deg,#3a4d1a 0%,#2a3912 50%,#1a2508 100%);display:flex;flex-direction:column;justify-content:space-between;padding:52px 56px;position:relative;overflow:hidden}
-  .brand::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 70% at 20% 20%,rgba(143,165,69,0.12) 0%,transparent 60%),radial-gradient(ellipse 60% 80% at 80% 80%,rgba(80,105,30,0.18) 0%,transparent 55%);pointer-events:none}
-  .brand-name{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px;position:relative;z-index:1}
-  .brand-name span{color:rgba(170,205,80,0.9)}
-  .brand-tagline{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:rgba(255,255,255,0.92);line-height:1.1;letter-spacing:-1.2px;margin-bottom:16px;position:relative;z-index:1}
-  .brand-tagline em{color:rgba(170,205,80,0.85);font-style:normal}
-  .brand-desc{font-size:14px;color:rgba(190,215,130,0.5);line-height:1.65;max-width:320px;position:relative;z-index:1}
+  .brand::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 70% at 20% 20%,rgba(107,128,60,0.12) 0%,transparent 60%),radial-gradient(ellipse 60% 80% at 80% 80%,rgba(60,85,30,0.18) 0%,transparent 55%);pointer-events:none}
+  .brand-name{font-family:'Montserrat',sans-serif;font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px;position:relative;z-index:1}
+  .brand-name span{color:rgba(130,165,75,0.9)}
+  .brand-tagline{font-family:'Montserrat',sans-serif;font-size:36px;font-weight:800;color:rgba(255,255,255,0.92);line-height:1.1;letter-spacing:-1.2px;margin-bottom:16px;position:relative;z-index:1}
+  .brand-tagline em{color:rgba(130,165,75,0.85);font-style:normal}
+  .brand-desc{font-size:14px;color:rgba(162,188,130,0.5);line-height:1.65;max-width:320px;position:relative;z-index:1}
   .brand-dots{display:flex;gap:6px;margin-top:32px;position:relative;z-index:1}
-  .brand-dots span{width:6px;height:6px;border-radius:50%;background:rgba(160,195,75,0.3)}
-  .brand-dots span:first-child{background:rgba(160,195,75,0.75);width:22px;border-radius:3px}
+  .brand-dots span{width:6px;height:6px;border-radius:50%;background:rgba(120,158,70,0.3)}
+  .brand-dots span:first-child{background:rgba(120,158,70,0.75);width:22px;border-radius:3px}
   @media(max-width:768px){.brand{display:none}}
   .side{width:480px;flex-shrink:0;background:#16200a;display:flex;flex-direction:column;justify-content:center;padding:48px 48px;position:relative;overflow-y:auto}
   @media(max-width:768px){.side{width:100%;padding:32px 24px}}
-  .side-logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;margin-bottom:32px;letter-spacing:-0.5px}
-  .side-logo span{color:rgba(170,205,80,0.9)}
-  h1{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#fff;margin-bottom:6px;letter-spacing:-0.5px}
-  .sub{font-size:14px;color:rgba(190,215,130,0.5);margin-bottom:24px}
-  .invite-banner{background:rgba(143,165,69,0.12);border:1px solid rgba(143,165,69,0.3);border-radius:9px;padding:12px 14px;margin-bottom:20px;font-size:13px;color:rgba(180,215,120,0.9)}
+  .side-logo{font-family:'Montserrat',sans-serif;font-size:20px;font-weight:800;color:#fff;margin-bottom:32px;letter-spacing:-0.5px}
+  .side-logo span{color:rgba(130,165,75,0.9)}
+  h1{font-family:'Montserrat',sans-serif;font-size:26px;font-weight:800;color:#fff;margin-bottom:6px;letter-spacing:-0.5px}
+  .sub{font-size:14px;color:rgba(162,188,130,0.5);margin-bottom:24px}
+  .invite-banner{background:rgba(107,128,60,0.12);border:1px solid rgba(107,128,60,0.3);border-radius:9px;padding:12px 14px;margin-bottom:20px;font-size:13px;color:rgba(145,180,105,0.9)}
   .notice{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:18px}
-  .notice.success{background:rgba(143,165,69,0.15);border:1px solid rgba(143,165,69,0.3);color:rgba(180,215,120,0.9)}
+  .notice.success{background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.3);color:rgba(145,180,105,0.9)}
   .notice.error{background:rgba(255,59,48,0.12);border:1px solid rgba(255,59,48,0.25);color:#ff6b60}
   .field{margin-bottom:14px}
-  .field label{display:block;font-size:12px;font-weight:600;color:rgba(190,215,130,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
-  .field input{width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;transition:border-color 0.15s;outline:none}
+  .field label{display:block;font-size:12px;font-weight:600;color:rgba(162,188,130,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
+  .field input{width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:#fff;font-size:15px;font-family:'Montserrat',sans-serif;transition:border-color 0.15s;outline:none}
   .field input::placeholder{color:rgba(255,255,255,0.25)}
-  .field input:focus{border-color:rgba(143,165,69,0.6);background:rgba(255,255,255,0.09)}
-  .btn-main{width:100%;padding:13px;background:linear-gradient(180deg,#8fa545 0%,#6d8030 100%);border:none;border-radius:9px;color:#fff;font-size:15px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity 0.15s,transform 0.1s;box-shadow:0 2px 12px rgba(80,110,20,0.35)}
+  .field input:focus{border-color:rgba(107,128,60,0.6);background:rgba(255,255,255,0.09)}
+  .btn-main{width:100%;padding:13px;background:linear-gradient(180deg,#6b8040 0%,#506030 100%);border:none;border-radius:9px;color:#fff;font-size:15px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity 0.15s,transform 0.1s;box-shadow:0 2px 12px rgba(60,85,30,0.35)}
   .btn-main:hover{opacity:0.92;transform:translateY(-1px)}
-  .links{margin-top:20px;text-align:center;font-size:13px;color:rgba(190,215,130,0.45)}
-  .links a{color:rgba(143,165,69,0.9);text-decoration:none;font-weight:600}
+  .links{margin-top:20px;text-align:center;font-size:13px;color:rgba(162,188,130,0.45)}
+  .links a{color:rgba(107,128,60,0.9);text-decoration:none;font-weight:600}
   .links a:hover{color:#aac850}
 </style>
 </head>
