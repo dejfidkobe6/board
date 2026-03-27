@@ -17,13 +17,13 @@
   h1{font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:-0.4px}
   .sub{font-size:13px;color:rgba(210,175,80,0.5);margin-bottom:24px}
   .notice{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:18px}
-  .notice.success{background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.3);color:rgba(210,185,70,0.9)}
+  .notice.success{background:rgba(160,120,20,0.15);border:1px solid rgba(160,120,20,0.3);color:rgba(210,185,70,0.9)}
   .notice.error{background:rgba(255,59,48,0.12);border:1px solid rgba(255,59,48,0.25);color:#ff6b60}
   .field{margin-bottom:16px}
   .field label{display:block;font-size:12px;font-weight:600;color:rgba(210,175,80,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
   .field input{width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:#fff;font-size:15px;font-family:'Montserrat',sans-serif;transition:border-color 0.15s,background 0.15s;outline:none}
   .field input::placeholder{color:rgba(255,255,255,0.25)}
-  .field input:focus{border-color:rgba(107,128,60,0.6);background:rgba(255,255,255,0.09)}
+  .field input:focus{border-color:rgba(160,120,20,0.6);background:rgba(255,255,255,0.09)}
   .btn-main{width:100%;padding:13px;background:linear-gradient(180deg,#c9922a 0%,#a87420 100%);border:none;border-radius:9px;color:#fff;font-size:15px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity 0.15s,transform 0.1s;box-shadow:0 2px 12px rgba(160,100,10,0.35)}
   .btn-main:hover{opacity:0.92;transform:translateY(-1px)}
   .btn-main:active{transform:translateY(0)}
