@@ -10,8 +10,8 @@
   body{font-family:'Montserrat',sans-serif;background:#1e2710;color:#fff;min-height:100vh}
   /* ── NAV ── */
   nav{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.07);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100}
-  .nav-logo{font-family:'Montserrat',sans-serif;font-size:17px;font-weight:800;color:#fff}
-  .nav-logo span{color:rgba(130,165,75,0.9)}
+  .nav-logo{display:flex;align-items:center}.besix-logo-nav{height:26px;width:auto;mix-blend-mode:screen;display:block}
+  
   .nav-right{display:flex;align-items:center;gap:8px}
   .user-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:50px;padding:4px 12px 4px 4px;font-size:13px;color:rgba(255,255,255,0.75)}
   .avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
@@ -75,11 +75,20 @@
   /* ── EMPTY ── */
   .empty{text-align:center;padding:48px 20px;color:rgba(162,188,130,0.35);font-size:14px}
   #loading{text-align:center;padding:60px;color:rgba(162,188,130,0.4);font-size:14px}
+  @media(max-width:640px){
+    nav{padding:0 14px}
+    main{padding:24px 14px}
+    .page-title{font-size:22px}
+    .actions{gap:8px}
+    .btn-action{padding:8px 14px;font-size:13px}
+    .projects-grid{grid-template-columns:1fr}
+    .modal{padding:24px 20px;margin:0 12px}
+  }
 </style>
 </head>
 <body>
 <nav>
-  <div class="nav-logo">BESIX<span>BOARD</span></div>
+  <img src="/assets/besix-logo.png" class="besix-logo-nav">
   <div class="nav-right">
     <div class="user-chip">
       <div class="avatar" id="navAvatar"></div>
