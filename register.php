@@ -10,7 +10,6 @@
   body{font-family:'Montserrat',sans-serif;background:#1e2710;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
   .wrap{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:24px}
   .logo-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
-  .besix-logo{height:56px;width:auto;display:block}
   .app-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px}
   .app-title span{color:rgba(200,160,50,0.9)}
   .card{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:36px}
@@ -20,13 +19,14 @@
   .notice{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:18px}
   .notice.success{background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.3);color:rgba(210,185,70,0.9)}
   .notice.error{background:rgba(255,59,48,0.12);border:1px solid rgba(255,59,48,0.25);color:#ff6b60}
-  .field{margin-bottom:14px}
+  .field{margin-bottom:16px}
   .field label{display:block;font-size:12px;font-weight:600;color:rgba(210,175,80,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
-  .field input{width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:#fff;font-size:15px;font-family:'Montserrat',sans-serif;transition:border-color 0.15s;outline:none}
+  .field input{width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:#fff;font-size:15px;font-family:'Montserrat',sans-serif;transition:border-color 0.15s,background 0.15s;outline:none}
   .field input::placeholder{color:rgba(255,255,255,0.25)}
   .field input:focus{border-color:rgba(107,128,60,0.6);background:rgba(255,255,255,0.09)}
   .btn-main{width:100%;padding:13px;background:linear-gradient(180deg,#c9922a 0%,#a87420 100%);border:none;border-radius:9px;color:#fff;font-size:15px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity 0.15s,transform 0.1s;box-shadow:0 2px 12px rgba(160,100,10,0.35)}
   .btn-main:hover{opacity:0.92;transform:translateY(-1px)}
+  .btn-main:active{transform:translateY(0)}
   .links{margin-top:20px;text-align:center;font-size:13px;color:rgba(210,175,80,0.45)}
   .links a{color:rgba(200,155,40,0.95);text-decoration:none;font-weight:600}
   .links a:hover{color:#d4a830}
