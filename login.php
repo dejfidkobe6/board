@@ -9,8 +9,8 @@
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Montserrat',sans-serif;background:#1e2710;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
   .wrap{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:24px}
-  .logo-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
-  .besix-logo{height:56px;width:auto;display:block}
+  .logo-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .besix-logo{width:160px;height:auto;display:block}
   .app-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px}
   .app-title span{color:rgba(200,160,50,0.9)}
   .card{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:36px}
@@ -37,6 +37,7 @@
 <body>
 <div class="wrap">
   <div class="logo-wrap">
+    <img src="/assets/besix-logo.png" class="besix-logo" alt="BeSix">
     <div class="app-title">BeSix <span>Board</span></div>
   </div>
   <div class="card">
