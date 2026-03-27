@@ -72,7 +72,7 @@ if ($inv && !empty($_SESSION['user_id'])) {
   .role-badge{display:inline-block;background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.3);color:rgba(200,160,50,0.9);font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:32px;text-transform:capitalize}
   .btns{display:flex;flex-direction:column;gap:10px}
   .btn{display:block;padding:13px;border-radius:9px;font-size:15px;font-family:'Montserrat',sans-serif;font-weight:700;text-decoration:none;transition:opacity 0.15s}
-  .btn-primary{background:linear-gradient(180deg,#6b8040 0%,#506030 100%);color:#fff;box-shadow:0 2px 12px rgba(60,85,30,0.35)}
+  .btn-primary{background:linear-gradient(180deg,#c9922a 0%,#a87420 100%);color:#fff;box-shadow:0 2px 12px rgba(160,100,10,0.35)}
   .btn-secondary{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.1)}
   .btn:hover{opacity:0.88}
   .error{color:#ff6b60;font-size:15px;margin-top:16px}
