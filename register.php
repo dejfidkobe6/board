@@ -10,7 +10,7 @@
   body{font-family:'Montserrat',sans-serif;background:#1e2710;min-height:100vh;display:flex;align-items:stretch}
   .brand{flex:1;background:linear-gradient(155deg,#3a4d1a 0%,#2a3912 50%,#1a2508 100%);display:flex;flex-direction:column;justify-content:space-between;padding:52px 56px;position:relative;overflow:hidden}
   .brand::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 70% at 20% 20%,rgba(107,128,60,0.12) 0%,transparent 60%),radial-gradient(ellipse 60% 80% at 80% 80%,rgba(60,85,30,0.18) 0%,transparent 55%);pointer-events:none}
-  .brand-name{position:relative;z-index:1}.besix-logo{height:48px;width:auto;mix-blend-mode:screen;display:block}.besix-logo-sm{height:34px;width:auto;mix-blend-mode:screen;display:block;margin-bottom:32px}.besix-logo-nav{height:26px;width:auto;mix-blend-mode:screen;display:block}
+  .brand-name{position:relative;z-index:1}.besix-logo{height:48px;width:auto;display:block}.besix-logo-sm{height:34px;width:auto;display:block;margin-bottom:32px}.besix-logo-nav{height:26px;width:auto;display:block}
   .brand-name span{color:rgba(130,165,75,0.9)}
   .brand-tagline{font-family:'Montserrat',sans-serif;font-size:36px;font-weight:800;color:rgba(255,255,255,0.92);line-height:1.1;letter-spacing:-1.2px;margin-bottom:16px;position:relative;z-index:1}
   .brand-tagline em{color:rgba(130,165,75,0.85);font-style:normal}

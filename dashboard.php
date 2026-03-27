@@ -10,7 +10,7 @@
   body{font-family:'Montserrat',sans-serif;background:#1e2710;color:#fff;min-height:100vh}
   /* ── NAV ── */
   nav{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.07);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100}
-  .nav-logo{display:flex;align-items:center}.besix-logo-nav{height:26px;width:auto;mix-blend-mode:screen;display:block}
+  .nav-logo{display:flex;align-items:center}.besix-logo-nav{height:26px;width:auto;display:block}
   
   .nav-right{display:flex;align-items:center;gap:8px}
   .user-chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:50px;padding:4px 12px 4px 4px;font-size:13px;color:rgba(255,255,255,0.75)}
