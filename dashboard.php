@@ -20,7 +20,7 @@
   /* ── MAIN ── */
   main{max-width:1100px;margin:0 auto;padding:40px 24px}
   .page-title{font-family:'Montserrat',sans-serif;font-size:28px;font-weight:800;margin-bottom:6px;letter-spacing:-0.5px}
-  .page-sub{font-size:14px;color:rgba(162,188,130,0.5);margin-bottom:36px}
+  .page-sub{font-size:14px;color:rgba(210,175,80,0.5);margin-bottom:36px}
   /* ── ACTIONS BAR ── */
   .actions{display:flex;gap:10px;margin-bottom:36px;flex-wrap:wrap}
   .btn-action{display:flex;align-items:center;gap:7px;padding:10px 18px;border-radius:9px;font-size:14px;font-family:'Montserrat',sans-serif;font-weight:600;cursor:pointer;border:none;transition:all 0.15s}
@@ -30,7 +30,7 @@
   /* ── APP SECTION ── */
   .app-section{margin-bottom:40px}
   .app-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-  .app-badge{background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.25);color:rgba(130,165,75,0.9);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:0.06em}
+  .app-badge{background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.25);color:rgba(200,160,50,0.9);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:0.06em}
   .app-name{font-family:'Montserrat',sans-serif;font-size:18px;font-weight:700;color:rgba(255,255,255,0.85)}
   /* ── GRID ── */
   .projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
@@ -43,21 +43,21 @@
   .role-pill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;text-transform:capitalize}
   .role-owner{background:rgba(255,159,10,0.15);color:rgba(255,195,80,0.9);border:1px solid rgba(255,159,10,0.25)}
   .role-admin{background:rgba(10,132,255,0.12);color:rgba(80,170,255,0.9);border:1px solid rgba(10,132,255,0.25)}
-  .role-member{background:rgba(107,128,60,0.12);color:rgba(130,165,75,0.9);border:1px solid rgba(107,128,60,0.25)}
+  .role-member{background:rgba(107,128,60,0.12);color:rgba(200,160,50,0.9);border:1px solid rgba(107,128,60,0.25)}
   .role-viewer{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1)}
   .member-count{font-size:12px;color:rgba(255,255,255,0.35)}
   /* ── NEW PROJECT CARD ── */
   .card-new{border:1.5px dashed rgba(255,255,255,0.15);background:rgba(255,255,255,0.02);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:120px;cursor:pointer;transition:all 0.2s}
   .card-new:hover{border-color:rgba(107,128,60,0.5);background:rgba(107,128,60,0.05)}
   .card-new-icon{font-size:28px;color:rgba(255,255,255,0.25)}
-  .card-new-label{font-size:13px;color:rgba(162,188,130,0.5);font-weight:500}
+  .card-new-label{font-size:13px;color:rgba(210,175,80,0.5);font-weight:500}
   /* ── MODAL ── */
   .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center}
   .overlay.open{display:flex}
   .modal{background:#1e2d10;border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:36px;width:100%;max-width:440px}
   .modal h2{font-family:'Montserrat',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px;color:#fff}
   .mfield{margin-bottom:14px}
-  .mfield label{display:block;font-size:12px;font-weight:600;color:rgba(162,188,130,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
+  .mfield label{display:block;font-size:12px;font-weight:600;color:rgba(210,175,80,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
   .mfield input,.mfield select,.mfield textarea{width:100%;padding:10px 13px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:14px;font-family:'Montserrat',sans-serif;outline:none;transition:border-color 0.15s}
   .mfield input:focus,.mfield select:focus,.mfield textarea:focus{border-color:rgba(107,128,60,0.6)}
   .mfield select option{background:#1e2d10}
@@ -71,10 +71,10 @@
   /* ── JOIN MODAL ── */
   .notice{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px}
   .notice.error{background:rgba(255,59,48,0.12);border:1px solid rgba(255,59,48,0.25);color:#ff6b60}
-  .notice.success{background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.3);color:rgba(145,180,105,0.9)}
+  .notice.success{background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.3);color:rgba(210,185,70,0.9)}
   /* ── EMPTY ── */
-  .empty{text-align:center;padding:48px 20px;color:rgba(162,188,130,0.35);font-size:14px}
-  #loading{text-align:center;padding:60px;color:rgba(162,188,130,0.4);font-size:14px}
+  .empty{text-align:center;padding:48px 20px;color:rgba(210,175,80,0.35);font-size:14px}
+  #loading{text-align:center;padding:60px;color:rgba(210,175,80,0.4);font-size:14px}
   @media(max-width:640px){
     nav{padding:0 14px}
     main{padding:24px 14px}

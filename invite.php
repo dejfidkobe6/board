@@ -63,20 +63,20 @@ if ($inv && !empty($_SESSION['user_id'])) {
   body{font-family:'Montserrat',sans-serif;background:#1e2710;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
   .card{width:100%;max-width:460px;background:#16200a;border-radius:20px;padding:48px 44px;border:1px solid rgba(255,255,255,0.07);text-align:center}
   .logo{margin-bottom:32px}.besix-logo-sm{height:34px;width:auto;display:block;margin-bottom:32px}
-  .logo span{color:rgba(130,165,75,0.9)}
+  .logo span{color:rgba(200,160,50,0.9)}
   .invite-icon{width:72px;height:72px;background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.3);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:32px}
   h1{font-family:'Montserrat',sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:8px}
-  .sub{font-size:14px;color:rgba(162,188,130,0.55);line-height:1.6;margin-bottom:8px}
-  .project-name{font-size:20px;font-weight:700;color:rgba(130,165,75,0.9);font-family:'Montserrat',sans-serif;margin-bottom:6px}
-  .inviter{font-size:13px;color:rgba(162,188,130,0.45);margin-bottom:32px}
-  .role-badge{display:inline-block;background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.3);color:rgba(130,165,75,0.9);font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:32px;text-transform:capitalize}
+  .sub{font-size:14px;color:rgba(210,175,80,0.55);line-height:1.6;margin-bottom:8px}
+  .project-name{font-size:20px;font-weight:700;color:rgba(200,160,50,0.9);font-family:'Montserrat',sans-serif;margin-bottom:6px}
+  .inviter{font-size:13px;color:rgba(210,175,80,0.45);margin-bottom:32px}
+  .role-badge{display:inline-block;background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.3);color:rgba(200,160,50,0.9);font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:32px;text-transform:capitalize}
   .btns{display:flex;flex-direction:column;gap:10px}
   .btn{display:block;padding:13px;border-radius:9px;font-size:15px;font-family:'Montserrat',sans-serif;font-weight:700;text-decoration:none;transition:opacity 0.15s}
   .btn-primary{background:linear-gradient(180deg,#6b8040 0%,#506030 100%);color:#fff;box-shadow:0 2px 12px rgba(60,85,30,0.35)}
   .btn-secondary{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.1)}
   .btn:hover{opacity:0.88}
   .error{color:#ff6b60;font-size:15px;margin-top:16px}
-  .app-label{font-size:12px;color:rgba(162,188,130,0.35);margin-top:24px}
+  .app-label{font-size:12px;color:rgba(210,175,80,0.35);margin-top:24px}
 </style>
 </head>
 <body>
