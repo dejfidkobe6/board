@@ -242,18 +242,18 @@
   .project-card-stats { display: flex; gap: 14px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.12); }
   .project-stat { font-size: 12px; color: rgba(255,255,255,0.5); }
   .project-stat strong { color: rgba(255,255,255,0.85); font-weight: 600; }
-  .project-card-del { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 6px; background: rgba(0,0,0,0.08); border: none; color: var(--text2); cursor: pointer; font-size: 12px; display: none; align-items: center; justify-content: flex-start; transition: all 0.15s; }
+  .project-card-del { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 6px; background: rgba(0,0,0,0.25); border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 12px; display: none; align-items: center; justify-content: center; transition: all 0.15s; }
   .project-card:hover .project-card-del { display: flex; }
   .project-card-del:hover { background: var(--danger); color: #fff; }
   .project-card-new {
     background: rgba(255,255,255,0.04); border: 1.5px dashed rgba(255,255,255,0.2);
     border-radius: 16px; padding: 40px 20px; cursor: pointer;
     transition: all 0.2s; display: flex; flex-direction: column;
-    align-items: center; justify-content: flex-start; gap: 10px; min-height: 180px;
+    align-items: center; justify-content: center; gap: 10px; min-height: 180px;
   }
   .project-card-new:hover { border-color: rgba(180,215,120,0.5); background: rgba(255,255,255,0.08); }
-  .project-card-new-icon { width: 44px; height: 44px; border-radius: 11px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-start; color: var(--muted); transition: all 0.2s; }
-  .project-card-new:hover .project-card-new-icon { background: rgba(0,113,227,0.08); border-color: rgba(0,113,227,0.3); color: var(--accent); }
+  .project-card-new-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: rgba(200,220,160,0.65); transition: all 0.2s; }
+  .project-card-new:hover .project-card-new-icon { color: rgba(180,215,120,0.9); }
   .project-card-new-label { font-size: 13px; color: rgba(200,220,160,0.65); font-weight: 500; }
   .project-card-new:hover .project-card-new-label { color: rgba(180,215,120,0.9); }
 
@@ -1023,7 +1023,7 @@ function renderProjectGrid() {
     </div>`;
   }).join('') + `
     <div class="project-card-new" onclick="openNewProject()">
-      <div class="project-card-new-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 4v14M4 11h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+      <div class="project-card-new-icon"><svg width="32" height="32" viewBox="0 0 22 22" fill="none"><path d="M11 4v14M4 11h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
       <div class="project-card-new-label">Nový projekt</div>
     </div>`;
 }
