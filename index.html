@@ -639,6 +639,7 @@
       <div class="current-user" onclick="logout()">
         <div class="av" id="cuAv"></div>
         <span id="cuName"></span>
+        <span id="cuRole" style="display:none;font-size:10px;background:rgba(255,255,255,0.12);padding:1px 6px;border-radius:10px;margin-left:4px;color:rgba(255,255,255,0.6)"></span>
         <span style="color:var(--muted);margin-left:4px;font-size:11px">↩</span>
       </div>
     </div>
@@ -1040,29 +1041,11 @@ function openProject(id) {
   av.style.background = currentUser.color;
   av.textContent = ini(currentUser.name);
   document.getElementById('cuName').textContent = currentUser.name.split(' ')[0];
+  // Show role badge from API
+  const roleEl = document.getElementById('cuRole');
+  if (_projectRole && roleEl) { roleEl.textContent = _projectRole; roleEl.style.display = 'inline'; }
   renderTeamBar(); renderBoard(); updateBadge();
 }
-function goToProjects() {
-  document.getElementById('app').style.display = 'none';
-  showProjectScreen();
-}
-function logoutToLogin() {
-  if (!confirm('Odhlásit se?')) return;
-  currentUser = null;
-  document.getElementById('projectScreen').style.display = 'none';
-  switchToLogin();
-  document.getElementById('loginScreen').style.display = 'flex';
-  renderLogin();
-}
-function logout() {
-  if (!confirm('Odhlásit se?')) return;
-  currentUser = null;
-  document.getElementById('app').style.display = 'none';
-  switchToLogin();
-  document.getElementById('loginScreen').style.display = 'flex';
-  renderLogin();
-}
-
 // PROJECT CRUD
 const PROJ_COLORS = ['#f0a500','#e05c00','#4caf50','#2196f3','#9c27b0','#00bcd4','#ff5722','#e91e63','#607d8b','#795548'];
 const PROJ_ICONS =  ['🏠','🏗','🏢','🏭','🏨','🛠','⚒','🔩','🏚','🏛','🌿','🔌'];
@@ -2056,12 +2039,116 @@ function clItemFileInput(e, itemId) {
   e.target.value='';
 }
 
-// Remove old addClItemAttach (replaced by toggle)
-// INIT
-renderLogin();
-// Show login form (not register) by default
-if (document.getElementById('formRegister')) document.getElementById('formRegister').style.display = 'none';
-if (document.getElementById('formLogin')) document.getElementById('formLogin').style.display = 'block';
+// ══════════════════════════════════════════════════════════════════════════
+// AUTH BOOTSTRAP — check session with PHP API
+// ══════════════════════════════════════════════════════════════════════════
+let _apiUser     = null;  // user from PHP session
+let _projectRole = null;  // role of _apiUser in current project
+
+async function bootAuth() {
+  // 1. Check PHP session
+  let res;
+  try {
+    res = await fetch('/api/auth.php?action=me', { credentials: 'include' });
+  } catch {
+    // No API (local dev without PHP) — fall through to legacy login screen
+    document.getElementById('loginScreen').style.display = 'flex';
+    renderLogin();
+    return;
+  }
+
+  if (!res.ok) {
+    // Not logged in → redirect to login.php
+    window.location.href = '/login.php';
+    return;
+  }
+
+  const data = await res.json();
+  _apiUser = data.user;
+
+  // 2. Get project_id from URL or localStorage
+  const urlParams = new URLSearchParams(window.location.search);
+  const projectIdFromUrl = urlParams.get('project_id');
+  if (projectIdFromUrl) {
+    localStorage.setItem('besix_active_project_id', projectIdFromUrl);
+  }
+  const activeProjectId = projectIdFromUrl || localStorage.getItem('besix_active_project_id');
+
+  if (!activeProjectId) {
+    // No project selected → go to dashboard
+    window.location.href = '/dashboard.php';
+    return;
+  }
+
+  // 3. Load project role
+  try {
+    const pr = await fetch('/api/projects.php?action=detail&id=' + activeProjectId, { credentials: 'include' });
+    if (!pr.ok) { window.location.href = '/dashboard.php'; return; }
+    const pd = await pr.json();
+    _projectRole = pd.project.my_role;
+  } catch {
+    _projectRole = 'member'; // fallback for local dev
+  }
+
+  // 4. Hide the old login screen, show kanban app
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('projectScreen').style.display = 'none';
+
+  // Build a synthetic currentUser object for legacy code
+  currentUser = {
+    id:    _apiUser.id,
+    name:  _apiUser.name,
+    email: _apiUser.email,
+    color: _apiUser.avatar_color || '#4A5340',
+  };
+
+  // 5. Open project from state (use activeProjectId as state key)
+  if (!state.projects.find(p => p.id === activeProjectId)) {
+    // Create a minimal project stub in local state if not found
+    state.projects.push({ id: activeProjectId, name: 'Projekt', columns: [], cards: [], completed: [], members: [] });
+    saveState();
+  }
+  openProject(activeProjectId);
+
+  // 6. Apply viewer restrictions
+  applyRoleRestrictions(_projectRole);
+}
+
+function applyRoleRestrictions(role) {
+  if (role !== 'viewer') return;
+  // Hide all edit controls for viewers
+  const selectors = [
+    '.add-card-btn', '.add-col-btn', '#btnAddCard',
+    '.card-btn[onclick*="delCard"]', '.col-rename-btn',
+    'button[onclick*="openAddCard"]', 'button[onclick*="openCardModal"]',
+    'button[onclick*="deleteCurrentCard"]', 'button[onclick*="openEditFromDetail"]',
+    '.project-card-del',
+  ];
+  selectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => { el.style.display = 'none'; });
+  });
+  // Also hide the "+ Přidat kartu" in header
+  const addBtn = document.querySelector('.btn-primary[onclick*="openAddCard"]');
+  if (addBtn) addBtn.style.display = 'none';
+}
+
+// ── Override logout to call PHP API ────────────────────────────────────────
+async function logout() {
+  if (!confirm('Odhlásit se?')) return;
+  await fetch('/api/auth.php?action=logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/login.php';
+}
+async function logoutToLogin() {
+  await logout();
+}
+
+// ── Override goToProjects → dashboard.php ──────────────────────────────────
+function goToProjects() {
+  window.location.href = '/dashboard.php';
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+bootAuth();
 </script>
 </body>
 </html>
