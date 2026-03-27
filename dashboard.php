@@ -24,7 +24,7 @@
   /* ── ACTIONS BAR ── */
   .actions{display:flex;gap:10px;margin-bottom:36px;flex-wrap:wrap}
   .btn-action{display:flex;align-items:center;gap:7px;padding:10px 18px;border-radius:9px;font-size:14px;font-family:'Montserrat',sans-serif;font-weight:600;cursor:pointer;border:none;transition:all 0.15s}
-  .btn-action.primary{background:linear-gradient(180deg,#6b8040 0%,#506030 100%);color:#fff;box-shadow:0 2px 10px rgba(60,85,30,0.3)}
+  .btn-action.primary{background:linear-gradient(180deg,#c9922a 0%,#a87420 100%);color:#fff;box-shadow:0 2px 10px rgba(160,100,10,0.3)}
   .btn-action.secondary{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.1)}
   .btn-action:hover{opacity:0.88;transform:translateY(-1px)}
   /* ── APP SECTION ── */
@@ -67,7 +67,7 @@
   .color-swatch.sel{border-color:#fff}
   .modal-btns{display:flex;gap:10px;margin-top:20px}
   .btn-cancel{flex:1;padding:11px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.7);font-size:14px;cursor:pointer}
-  .btn-create{flex:2;padding:11px;background:linear-gradient(180deg,#6b8040 0%,#506030 100%);border:none;border-radius:8px;color:#fff;font-size:14px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer}
+  .btn-create{flex:2;padding:11px;background:linear-gradient(180deg,#c9922a 0%,#a87420 100%);border:none;border-radius:8px;color:#fff;font-size:14px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer}
   /* ── JOIN MODAL ── */
   .notice{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px}
   .notice.error{background:rgba(255,59,48,0.12);border:1px solid rgba(255,59,48,0.25);color:#ff6b60}

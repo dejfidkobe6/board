@@ -24,11 +24,11 @@
   .field input{width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:#fff;font-size:15px;font-family:'Montserrat',sans-serif;transition:border-color 0.15s,background 0.15s;outline:none}
   .field input::placeholder{color:rgba(255,255,255,0.25)}
   .field input:focus{border-color:rgba(107,128,60,0.6);background:rgba(255,255,255,0.09)}
-  .btn-main{width:100%;padding:13px;background:linear-gradient(180deg,#6b8040 0%,#506030 100%);border:none;border-radius:9px;color:#fff;font-size:15px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity 0.15s,transform 0.1s;box-shadow:0 2px 12px rgba(60,85,30,0.35)}
+  .btn-main{width:100%;padding:13px;background:linear-gradient(180deg,#c9922a 0%,#a87420 100%);border:none;border-radius:9px;color:#fff;font-size:15px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity 0.15s,transform 0.1s;box-shadow:0 2px 12px rgba(160,100,10,0.35)}
   .btn-main:hover{opacity:0.92;transform:translateY(-1px)}
   .btn-main:active{transform:translateY(0)}
   .links{margin-top:20px;text-align:center;font-size:13px;color:rgba(210,175,80,0.45)}
-  .links a{color:rgba(107,128,60,0.9);text-decoration:none;font-weight:600}
+  .links a{color:rgba(200,155,40,0.95);text-decoration:none;font-weight:600}
   .links a:hover{color:#d4a830}
   #spinner{display:none;width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto}
   @keyframes spin{to{transform:rotate(360deg)}}
