@@ -66,6 +66,10 @@ function sendMail(string $to, string $subject, string $htmlBody): bool {
             $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = defined('SMTP_PORT') ? (int)SMTP_PORT : 587;
             $mail->CharSet    = 'UTF-8';
+            $mail->SMTPDebug  = 2;
+            $mail->Debugoutput = function($str, $level) {
+                error_log('SMTP[' . $level . ']: ' . $str);
+            };
             $mail->setFrom($from, 'BeSix Board');
             $mail->addAddress($to);
             $mail->isHTML(true);
@@ -74,11 +78,12 @@ function sendMail(string $to, string $subject, string $htmlBody): bool {
             $mail->send();
             return true;
         } catch (\Exception $e) {
-            error_log('PHPMailer: ' . $mail->ErrorInfo);
+            error_log('PHPMailer error to ' . $to . ': ' . $mail->ErrorInfo);
             return false;
         }
     }
 
+    error_log('sendMail: vendor/autoload.php not found, falling back to mail()');
     // Fallback: php mail() (works only if server allows it)
     $headers  = "From: BeSix Board <$from>\r\n";
     $headers .= "Content-Type: text/html; charset=UTF-8\r\nMIME-Version: 1.0\r\n";
