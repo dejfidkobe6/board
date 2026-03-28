@@ -54,27 +54,11 @@ function sendMail(string $to, string $subject, string $htmlBody): bool {
     $autoload = __DIR__ . '/../vendor/autoload.php';
     $from     = defined('MAIL_FROM') ? MAIL_FROM : 'noreply@besix.cz';
 
-    // Use SMTP only when SMTP_HOST is explicitly set to a non-local server
-    $smtpHost = defined('SMTP_HOST') ? SMTP_HOST : '';
-    $useSmtp  = $smtpHost && $smtpHost !== 'localhost' && $smtpHost !== '127.0.0.1'
-                && defined('SMTP_PASS') && SMTP_PASS !== '';
-
     if (file_exists($autoload)) {
         require_once $autoload;
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
         try {
-            if ($useSmtp) {
-                $mail->isSMTP();
-                $mail->Host       = $smtpHost;
-                $mail->SMTPAuth   = true;
-                $mail->Username   = defined('SMTP_USER') ? SMTP_USER : $from;
-                $mail->Password   = SMTP_PASS;
-                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-                $mail->Port       = defined('SMTP_PORT') ? (int)SMTP_PORT : 587;
-            } else {
-                // Use server's local MTA (sendmail) — works on any shared hosting
-                $mail->isMail();
-            }
+            $mail->isMail(); // Use server's local MTA (sendmail) — external SMTP is blocked
             $mail->CharSet = 'UTF-8';
             $mail->setFrom($from, 'BeSix Board');
             $mail->addAddress($to);
