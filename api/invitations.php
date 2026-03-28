@@ -45,7 +45,17 @@ if ($action === 'send') {
             'INSERT INTO project_members (project_id, user_id, role, invited_by) VALUES (?,?,?,?)'
         )->execute([$projectId, $existingUser['id'], $role, $actor['id']]);
 
-        jsonResponse(['success' => true, 'message' => 'Uživatel přidán přímo do projektu.']);
+        // Notify existing user by email
+        $inviterEsc = htmlspecialchars($actor['name']);
+        $projectEsc = htmlspecialchars($project['name']);
+        $dashUrl    = APP_URL . '/dashboard.php';
+        $emailBody  = emailTemplate('Byl/a jsi přidán/a do projektu', "
+            <p><strong>$inviterEsc</strong> tě přidal/a do projektu <strong>$projectEsc</strong> na BeSix Board.</p>
+            <p><a class=\"btn\" href=\"$dashUrl\">Přejít na BeSix Board</a></p>
+        ");
+        $sent = sendMail($email, 'Přidán/a do projektu ' . $project['name'] . ' – BeSix Board', $emailBody);
+
+        jsonResponse(['success' => true, 'message' => 'Uživatel přidán přímo do projektu.' . ($sent ? '' : ' (Email se nepodařilo odeslat)')]);
     }
 
     // Create invitation for non-existing user
@@ -67,8 +77,11 @@ if ($action === 'send') {
         <p><a class=\"btn\" href=\"$acceptUrl\">Přijmout pozvánku</a></p>
         <p style=\"font-size:12px;color:rgba(255,255,255,0.35)\">Pozvánka je platná 7 dní.</p>
     ");
-    sendMail($email, 'Pozvánka do projektu ' . $project['name'] . ' – BeSix Board', $emailBody);
+    $sent = sendMail($email, 'Pozvánka do projektu ' . $project['name'] . ' – BeSix Board', $emailBody);
 
+    if (!$sent) {
+        jsonResponse(['success' => true, 'message' => 'Pozvánka uložena, ale email se nepodařilo odeslat. Zkontroluj SMTP nastavení.', 'mail_error' => true]);
+    }
     jsonResponse(['success' => true, 'message' => 'Pozvánka odeslána na ' . htmlspecialchars($email)]);
 })();
 } elseif ($action === 'accept') {
