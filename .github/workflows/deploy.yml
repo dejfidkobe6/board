@@ -42,6 +42,7 @@ jobs:
             echo "define('SMTP_PORT', '${{ secrets.SMTP_PORT }}');"
             echo "define('GOOGLE_CLIENT_ID', '${{ secrets.GOOGLE_CLIENT_ID }}');"
             echo "define('GOOGLE_CLIENT_SECRET', '${{ secrets.GOOGLE_CLIENT_SECRET }}');"
+            echo "define('BREVO_API_KEY', '${{ secrets.BREVO_API_KEY }}');"
             echo ""
             echo "ini_set('session.cookie_httponly', 1);"
             echo "ini_set('session.cookie_samesite', 'Lax');"
