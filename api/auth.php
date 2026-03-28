@@ -22,31 +22,7 @@ function clearRateLimit(string $key): void {
     unset($_SESSION['rl'][$key]);
 }
 
-// ─── Send email helper ─────────────────────────────────────────────────────
-function sendMail(string $to, string $subject, string $body): void {
-    $headers  = "From: BeSix Board <" . MAIL_FROM . ">\r\n";
-    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $headers .= "MIME-Version: 1.0\r\n";
-    @mail($to, $subject, $body, $headers);
-}
-
-function emailTemplate(string $title, string $content): string {
-    return <<<HTML
-<!DOCTYPE html><html><head><meta charset="UTF-8">
-<style>body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0}
-.wrap{max-width:520px;margin:40px auto;background:#fff;border-radius:8px;overflow:hidden}
-.hdr{background:#4A5340;padding:28px 32px}
-.hdr h1{color:#fff;margin:0;font-size:22px;font-weight:700}
-.body{padding:32px}p{color:#444;line-height:1.6;margin:0 0 16px}
-.btn{display:inline-block;background:#4A5340;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600}
-.foot{padding:20px 32px;background:#f9f9f9;font-size:12px;color:#999}</style>
-</head><body><div class="wrap">
-<div class="hdr"><h1>BeSix Board</h1></div>
-<div class="body"><h2 style="margin:0 0 16px;color:#1a1a1a">$title</h2>$content</div>
-<div class="foot">Pokud jsi tento email neočekával/a, ignoruj ho.</div>
-</div></body></html>
-HTML;
-}
+// sendMail() and emailTemplate() are defined in functions.php
 
 // ══════════════════════════════════════════════════════════════════════════
 if ($action === 'register') {

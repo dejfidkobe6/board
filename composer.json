@@ -1,0 +1,9 @@
+{
+  "require": {
+    "phpmailer/phpmailer": "^6.9"
+  },
+  "config": {
+    "vendor-dir": "vendor",
+    "optimize-autoloader": true
+  }
+}
