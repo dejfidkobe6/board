@@ -108,7 +108,12 @@
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ name, email, password: pass, password_confirm: passConf, invite_token: inviteToken })
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch(e) {
+        showMsg('PHP chyba: ' + text.substring(0, 200));
+        btn.textContent = 'Zaregistrovat se'; btn.disabled = false; return;
+      }
       if (data.success) {
         showMsg('Registrace proběhla! Zkontroluj svůj email a klikni na ověřovací odkaz.', 'success');
         btn.textContent = 'Hotovo';
