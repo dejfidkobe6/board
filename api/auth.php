@@ -48,10 +48,8 @@ HTML;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-match ($action) {
-
-// ─── REGISTER ─────────────────────────────────────────────────────────────
-'register' => (function () {
+if ($action === 'register') {
+(function () {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(['error' => 'Method not allowed'], 405);
 
     $body = getBody();
@@ -110,10 +108,9 @@ match ($action) {
     sendMail($email, 'Ověření účtu – BeSix Board', $body);
 
     jsonResponse(['success' => true, 'message' => 'Registrace proběhla. Zkontroluj email pro ověření.']);
-})(),
-
-// ─── VERIFY ───────────────────────────────────────────────────────────────
-'verify' => (function () {
+})();
+} elseif ($action === 'verify') {
+(function () {
     $token = trim($_GET['token'] ?? '');
     if (!$token) { header('Location: /login.php?error=invalid_token'); exit; }
 
@@ -129,10 +126,9 @@ match ($action) {
 
     header('Location: /login.php?verified=1');
     exit;
-})(),
-
-// ─── LOGIN ────────────────────────────────────────────────────────────────
-'login' => (function () {
+})();
+} elseif ($action === 'login') {
+(function () {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(['error' => 'Method not allowed'], 405);
 
     $body  = getBody();
@@ -168,22 +164,19 @@ match ($action) {
         'email'        => $user['email'],
         'avatar_color' => $user['avatar_color'],
     ]]);
-})(),
-
-// ─── LOGOUT ───────────────────────────────────────────────────────────────
-'logout' => (function () {
+})();
+} elseif ($action === 'logout') {
+(function () {
     session_destroy();
     jsonResponse(['success' => true]);
-})(),
-
-// ─── ME ───────────────────────────────────────────────────────────────────
-'me' => (function () {
+})();
+} elseif ($action === 'me') {
+(function () {
     $user = requireAuth();
     jsonResponse(['success' => true, 'user' => $user]);
-})(),
-
-// ─── FORGOT ───────────────────────────────────────────────────────────────
-'forgot' => (function () {
+})();
+} elseif ($action === 'forgot') {
+(function () {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(['error' => 'Method not allowed'], 405);
 
     $body  = getBody();
@@ -216,10 +209,9 @@ match ($action) {
     }
 
     jsonResponse(['success' => true, 'message' => 'Pokud účet existuje, pošleme odkaz.']);
-})(),
-
-// ─── RESET ────────────────────────────────────────────────────────────────
-'reset' => (function () {
+})();
+} elseif ($action === 'reset') {
+(function () {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(['error' => 'Method not allowed'], 405);
 
     $body     = getBody();
@@ -245,7 +237,7 @@ match ($action) {
        ->execute([$hash, $user['id']]);
 
     jsonResponse(['success' => true, 'message' => 'Heslo bylo změněno. Můžeš se přihlásit.']);
-})(),
-
-default => jsonResponse(['error' => 'Neznámá akce'], 400),
-};
+})();
+} else {
+    jsonResponse(['error' => 'Neznámá akce'], 400);
+}
