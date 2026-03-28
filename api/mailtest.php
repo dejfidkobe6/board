@@ -35,13 +35,8 @@ $mail->Debugoutput = function($str, $level) use (&$output) {
 };
 
 try {
-    $mail->isSMTP();
-    $mail->Host       = defined('SMTP_HOST') ? SMTP_HOST : 'smtp.cesky-hosting.cz';
-    $mail->SMTPAuth   = true;
-    $mail->Username   = defined('SMTP_USER') ? SMTP_USER : (defined('MAIL_FROM') ? MAIL_FROM : '');
-    $mail->Password   = defined('SMTP_PASS') ? SMTP_PASS : '';
-    $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-    $mail->Port       = defined('SMTP_PORT') ? (int)SMTP_PORT : 587;
+    // Use isMail() (local MTA) — same as production sendMail()
+    $mail->isMail();
     $mail->CharSet    = 'UTF-8';
     $mail->setFrom(defined('MAIL_FROM') ? MAIL_FROM : 'noreply@besix.cz', 'BeSix Board');
     $mail->addAddress($testTo);
