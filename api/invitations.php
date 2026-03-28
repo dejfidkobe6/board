@@ -32,10 +32,8 @@ HTML;
     return $headers;
 }
 
-match ($action) {
-
-// ─── SEND invitation ──────────────────────────────────────────────────────
-'send' => (function () use ($method) {
+if ($action === 'send') {
+(function () use ($method) {
     if ($method !== 'POST') jsonResponse(['error' => 'Method not allowed'], 405);
     $body      = getBody();
     $projectId = (int)($body['project_id'] ?? 0);
@@ -95,10 +93,9 @@ match ($action) {
     );
 
     jsonResponse(['success' => true, 'message' => 'Pozvánka odeslána na ' . htmlspecialchars($email)]);
-})(),
-
-// ─── ACCEPT invitation (via token link) ───────────────────────────────────
-'accept' => (function () {
+})();
+} elseif ($action === 'accept') {
+(function () {
     $token = trim($_GET['token'] ?? '');
     if (!$token) { header('Location: /login.php?error=invalid_token'); exit; }
 
@@ -138,10 +135,9 @@ match ($action) {
 
     header('Location: /dashboard.php?joined=' . $inv['project_id']);
     exit;
-})(),
-
-// ─── JOIN via invite_code ─────────────────────────────────────────────────
-'join' => (function () {
+})();
+} elseif ($action === 'join') {
+(function () {
     $user       = requireAuth();
     $inviteCode = sanitize($_GET['invite_code'] ?? '');
     if (!$inviteCode) jsonResponse(['error' => 'Chybí invite_code'], 422);
@@ -163,7 +159,7 @@ match ($action) {
     )->execute([$project['id'], $user['id']]);
 
     jsonResponse(['success' => true, 'project' => $project, 'role' => 'member']);
-})(),
-
-default => jsonResponse(['error' => 'Neznámá akce'], 400),
-};
+})();
+} else {
+    jsonResponse(['error' => 'Neznámá akce'], 400);
+}
