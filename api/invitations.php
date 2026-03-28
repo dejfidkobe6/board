@@ -5,32 +5,7 @@ require_once __DIR__ . '/functions.php';
 $action = $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
 
-function inviteEmailBody(string $inviterName, string $projectName, string $acceptUrl): string {
-    $inviterEsc = htmlspecialchars($inviterName);
-    $projectEsc = htmlspecialchars($projectName);
-    $content = "
-        <p><strong>$inviterEsc</strong> tě zve do projektu <strong>$projectEsc</strong> na BeSix Board.</p>
-        <p>Klikni pro přijetí pozvánky:</p>
-        <p><a class=\"btn\" href=\"$acceptUrl\">Přijmout pozvánku</a></p>
-        <p style=\"font-size:13px;color:#888\">Pozvánka je platná 7 dní.</p>
-    ";
-    // reuse emailTemplate from auth.php context — define inline
-    $headers = <<<HTML
-<!DOCTYPE html><html><head><meta charset="UTF-8">
-<style>body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0}
-.wrap{max-width:520px;margin:40px auto;background:#fff;border-radius:8px;overflow:hidden}
-.hdr{background:#4A5340;padding:28px 32px}.hdr h1{color:#fff;margin:0;font-size:22px}
-.body{padding:32px}p{color:#444;line-height:1.6;margin:0 0 16px}
-.btn{display:inline-block;background:#4A5340;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600}
-.foot{padding:20px 32px;background:#f9f9f9;font-size:12px;color:#999}</style>
-</head><body><div class="wrap">
-<div class="hdr"><h1>BeSix Board</h1></div>
-<div class="body"><h2 style="margin:0 0 16px;color:#1a1a1a">Pozvánka do projektu</h2>$content</div>
-<div class="foot">Pokud jsi tuto pozvánku neočekával/a, ignoruj email.</div>
-</div></body></html>
-HTML;
-    return $headers;
-}
+// emailTemplate() and sendMail() are provided by functions.php
 
 if ($action === 'send') {
 (function () use ($method) {
@@ -83,14 +58,16 @@ if ($action === 'send') {
          ON DUPLICATE KEY UPDATE token=VALUES(token), expires_at=VALUES(expires_at), status="pending"'
     )->execute([$projectId, $email, $actor['id'], $token, $role, $expires]);
 
-    $acceptUrl = APP_URL . '/invite.php?token=' . urlencode($token);
-    $emailBody = inviteEmailBody($actor['name'], $project['name'], $acceptUrl);
-    @mail(
-        $email,
-        'Pozvánka do projektu ' . $project['name'] . ' – BeSix Board',
-        $emailBody,
-        "From: BeSix Board <" . MAIL_FROM . ">\r\nContent-Type: text/html; charset=UTF-8\r\nMIME-Version: 1.0\r\n"
-    );
+    $acceptUrl  = APP_URL . '/invite.php?token=' . urlencode($token);
+    $inviterEsc = htmlspecialchars($actor['name']);
+    $projectEsc = htmlspecialchars($project['name']);
+    $emailBody  = emailTemplate('Pozvánka do projektu', "
+        <p><strong>$inviterEsc</strong> tě zve do projektu <strong>$projectEsc</strong> na BeSix Board.</p>
+        <p>Klikni na tlačítko níže pro přijetí pozvánky:</p>
+        <p><a class=\"btn\" href=\"$acceptUrl\">Přijmout pozvánku</a></p>
+        <p style=\"font-size:12px;color:rgba(255,255,255,0.35)\">Pozvánka je platná 7 dní.</p>
+    ");
+    sendMail($email, 'Pozvánka do projektu ' . $project['name'] . ' – BeSix Board', $emailBody);
 
     jsonResponse(['success' => true, 'message' => 'Pozvánka odeslána na ' . htmlspecialchars($email)]);
 })();

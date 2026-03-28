@@ -15,6 +15,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4.2.2
 
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+
+      - name: Install PHP dependencies
+        run: composer install --no-dev --optimize-autoloader
+
       - name: Generate api/config.php from Secrets
         run: |
           mkdir -p api
@@ -27,6 +36,10 @@ jobs:
             echo "define('SESSION_SECRET', '${{ secrets.SESSION_SECRET }}');"
             echo "define('MAIL_FROM', '${{ secrets.MAIL_FROM }}');"
             echo "define('APP_URL', '${{ secrets.APP_URL }}');"
+            echo "define('SMTP_HOST', '${{ secrets.SMTP_HOST }}');"
+            echo "define('SMTP_USER', '${{ secrets.SMTP_USER }}');"
+            echo "define('SMTP_PASS', '${{ secrets.SMTP_PASS }}');"
+            echo "define('SMTP_PORT', '${{ secrets.SMTP_PORT }}');"
             echo ""
             echo "ini_set('session.cookie_httponly', 1);"
             echo "ini_set('session.cookie_samesite', 'Lax');"
