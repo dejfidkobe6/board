@@ -75,6 +75,24 @@
   /* ── EMPTY ── */
   .empty{text-align:center;padding:48px 20px;color:rgba(210,175,80,0.35);font-size:14px}
   #loading{text-align:center;padding:60px;color:rgba(210,175,80,0.4);font-size:14px}
+  /* ── SETTINGS BTN ── */
+  .proj-settings-btn{position:absolute;top:10px;right:10px;width:28px;height:28px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.4);transition:all 0.15s;text-decoration:none;z-index:2}
+  .proj-settings-btn:hover{background:rgba(255,255,255,0.14);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.2)}
+  /* ── MEMBERS MODAL ── */
+  .member-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+  .member-row:last-child{border-bottom:none}
+  .member-info{flex:1;min-width:0}
+  .member-info strong{display:block;font-size:13px;color:rgba(255,255,255,0.88);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .member-info span{font-size:11px;color:rgba(255,255,255,0.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+  .btn-remove-member{background:none;border:none;color:rgba(255,100,80,0.5);font-size:16px;cursor:pointer;padding:2px 6px;border-radius:5px;line-height:1;transition:all 0.15s;flex-shrink:0}
+  .btn-remove-member:hover{background:rgba(255,59,48,0.15);color:#ff6b60}
+  .invite-row{display:flex;gap:8px;margin-top:14px}
+  .invite-row input{flex:1;padding:9px 12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:13px;font-family:'Montserrat',sans-serif;outline:none}
+  .invite-row input:focus{border-color:rgba(107,128,60,0.6)}
+  .invite-role-sel{padding:9px 10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:13px;font-family:'Montserrat',sans-serif;outline:none}
+  .invite-role-sel option{background:#1e2d10}
+  .btn-invite{padding:9px 16px;background:linear-gradient(180deg,#c9922a 0%,#a87420 100%);border:none;border-radius:8px;color:#fff;font-size:13px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;white-space:nowrap}
+  .members-list{max-height:240px;overflow-y:auto;margin-bottom:4px}
   @media(max-width:640px){
     nav{padding:0 14px}
     main{padding:24px 14px}
@@ -116,13 +134,7 @@
   <div class="modal">
     <h2>Nový projekt</h2>
     <div id="newModalMsg"></div>
-    <div class="mfield">
-      <label>Aplikace</label>
-      <select id="newAppKey">
-        <option value="stavbaboard">StavbaBoard – Kanban pro stavební tým</option>
-        <option value="plans">BeSix Plans – Správa půdorysů</option>
-      </select>
-    </div>
+    <input type="hidden" id="newAppKey" value="stavbaboard">
     <div class="mfield">
       <label>Název projektu</label>
       <input type="text" id="newName" placeholder="Např. Rekonstrukce bytového domu">
@@ -154,6 +166,31 @@
     <div class="modal-btns">
       <button class="btn-cancel" onclick="document.getElementById(\'joinModal\').classList.remove(\'open\')">Zrušit</button>
       <button class="btn-create" onclick="joinProject()">Připojit se</button>
+    </div>
+  </div>
+</div>
+
+<!-- Members modal -->
+<div class="overlay" id="membersModal">
+  <div class="modal" style="max-width:480px">
+    <h2>Členové projektu</h2>
+    <div id="membersMsg"></div>
+    <div class="members-list" id="membersList"></div>
+    <div style="margin-top:16px;border-top:1px solid rgba(255,255,255,0.08);padding-top:16px">
+      <div class="mfield" style="margin-bottom:8px"><label>Pozvat nového člena e-mailem</label></div>
+      <div class="invite-row">
+        <input type="email" id="inviteEmail" placeholder="email@example.com">
+        <select class="invite-role-sel" id="inviteRole">
+          <option value="member">Člen</option>
+          <option value="admin">Admin</option>
+          <option value="viewer">Zobrazit</option>
+        </select>
+        <button class="btn-invite" onclick="sendInvite()">Pozvat</button>
+      </div>
+      <div id="inviteMsg" style="margin-top:8px;font-size:13px"></div>
+    </div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="btn-cancel" onclick="document.getElementById('membersModal').classList.remove('open')">Zavřít</button>
     </div>
   </div>
 </div>
@@ -241,18 +278,22 @@ function projectCard(p, appKey) {
   const roleClass = 'role-' + p.role;
   const appEntry  = appKey === 'stavbaboard' ? 'index.html' : 'plans/index.html';
   const href      = `/${appEntry}?project_id=${p.id}`;
+  const canManage = (p.role === 'owner' || p.role === 'admin');
   return `
-    <a class="project-card" href="${href}" style="border-left:3px solid ${p.bg_color || '#4a5240'}">
-      <div class="project-card-name">
-        <span class="project-card-color" style="background:${p.bg_color || '#4a5240'}"></span>
-        ${escHtml(p.name)}
-      </div>
-      <div class="project-card-desc">${escHtml(p.description || '')}</div>
-      <div class="project-card-footer">
-        <span class="role-pill ${roleClass}">${p.role}</span>
-        <span class="member-count">${p.member_count} člen${p.member_count > 4 ? 'ů' : p.member_count > 1 ? 'i' : ''}</span>
-      </div>
-    </a>`;
+    <div style="position:relative">
+      <a class="project-card" href="${href}" style="border-left:3px solid ${p.bg_color || '#4a5240'}">
+        <div class="project-card-name">
+          <span class="project-card-color" style="background:${p.bg_color || '#4a5240'}"></span>
+          ${escHtml(p.name)}
+        </div>
+        <div class="project-card-desc">${escHtml(p.description || '')}</div>
+        <div class="project-card-footer">
+          <span class="role-pill ${roleClass}">${p.role}</span>
+          <span class="member-count">${p.member_count} člen${p.member_count > 4 ? 'ů' : p.member_count > 1 ? 'i' : ''}</span>
+        </div>
+      </a>
+      <button class="proj-settings-btn" onclick="openMembersModal(${p.id},'${p.role}')" title="Správa členů">👥</button>
+    </div>`;
 }
 
 // ── New project modal ─────────────────────────────────────────────────────
@@ -335,6 +376,85 @@ async function joinProject() {
     }, 1200);
   } else {
     document.getElementById('joinMsg').innerHTML = `<div class="notice error">${data.error || 'Chyba.'}</div>`;
+  }
+}
+
+// ── Members modal ─────────────────────────────────────────────────────────
+let activeMembersProjectId = null;
+let activeMembersMyRole    = null;
+
+async function openMembersModal(projectId, myRole) {
+  activeMembersProjectId = projectId;
+  activeMembersMyRole    = myRole;
+  document.getElementById('membersMsg').innerHTML   = '';
+  document.getElementById('inviteMsg').innerHTML    = '';
+  document.getElementById('inviteEmail').value      = '';
+  document.getElementById('membersList').innerHTML  = '<div style="color:rgba(255,255,255,0.35);font-size:13px;padding:12px 0">Načítám…</div>';
+  document.getElementById('membersModal').classList.add('open');
+  await loadMembers();
+}
+
+async function loadMembers() {
+  const res  = await fetch(`/api/projects.php?action=members&project_id=${activeMembersProjectId}`, { credentials: 'include' });
+  const data = await res.json();
+  const list = document.getElementById('membersList');
+  if (!data.success || !data.members.length) {
+    list.innerHTML = '<div style="color:rgba(255,255,255,0.35);font-size:13px;padding:8px 0">Žádní členové.</div>';
+    return;
+  }
+  const canManage = (activeMembersMyRole === 'owner' || activeMembersMyRole === 'admin');
+  list.innerHTML = data.members.map(m => {
+    const ini = m.name.split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
+    const isOwner = m.role === 'owner';
+    const delBtn = (canManage && !isOwner && m.id !== currentUser.id)
+      ? `<button class="btn-remove-member" onclick="removeMember(${m.id})" title="Odebrat člena">✕</button>`
+      : '';
+    return `<div class="member-row">
+      <div class="avatar" style="background:${m.avatar_color||'#4A5340'};width:34px;height:34px;font-size:12px;flex-shrink:0">${ini}</div>
+      <div class="member-info">
+        <strong>${escHtml(m.name)}</strong>
+        <span>${escHtml(m.email)}</span>
+      </div>
+      <span class="role-pill role-${m.role}" style="flex-shrink:0">${m.role}</span>
+      ${delBtn}
+    </div>`;
+  }).join('');
+}
+
+async function removeMember(userId) {
+  if (!confirm('Odebrat člena z projektu?')) return;
+  const res = await fetch(
+    `/api/projects.php?action=remove_member&project_id=${activeMembersProjectId}&user_id=${userId}`,
+    { method: 'DELETE', credentials: 'include' }
+  );
+  const data = await res.json();
+  if (data.success) {
+    await loadMembers();
+    await loadProjects();
+  } else {
+    document.getElementById('membersMsg').innerHTML = `<div class="notice error">${escHtml(data.error||'Chyba')}</div>`;
+  }
+}
+
+async function sendInvite() {
+  const email = document.getElementById('inviteEmail').value.trim();
+  const role  = document.getElementById('inviteRole').value;
+  const msgEl = document.getElementById('inviteMsg');
+  if (!email) { msgEl.innerHTML = '<span style="color:#ff6b60">Zadej e-mail.</span>'; return; }
+  msgEl.innerHTML = '';
+  const res = await fetch('/api/invitations.php?action=send', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ project_id: activeMembersProjectId, email, role })
+  });
+  const data = await res.json();
+  if (data.success) {
+    msgEl.innerHTML = `<span style="color:rgba(210,185,70,0.9)">✓ ${escHtml(data.message)}</span>`;
+    document.getElementById('inviteEmail').value = '';
+    await loadMembers();
+    await loadProjects();
+  } else {
+    msgEl.innerHTML = `<span style="color:#ff6b60">${escHtml(data.error||'Chyba')}</span>`;
   }
 }
 
