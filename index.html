@@ -1188,21 +1188,32 @@ async function renderTeamBar() {
     drop.appendChild(ch);
   });
 
-  // Pending invitations (admin/owner only)
+  // Invitation history (pending + accepted, admin/owner only)
   if (canManage && apiInvitations.length) {
     const invSep = document.createElement('div');
     invSep.style = 'width:100%;height:1px;background:rgba(255,255,255,0.08);margin:8px 0 4px';
     drop.appendChild(invSep);
     const invLabel = document.createElement('div');
     invLabel.style = 'font-size:10px;font-weight:700;color:rgba(200,165,60,0.45);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;width:100%';
-    invLabel.textContent = 'Čekající pozvánky';
+    invLabel.textContent = 'Historie pozvánek';
     drop.appendChild(invLabel);
     apiInvitations.forEach(inv => {
       const ch = document.createElement('div');
       ch.className = 'member-chip';
-      ch.style = 'opacity:0.7;width:100%';
+      const isPending = inv.status === 'pending';
+      ch.style = `opacity:${isPending ? '0.7' : '0.9'};width:100%`;
       const sentDate = new Date(inv.created_at).toLocaleDateString('cs-CZ');
-      ch.innerHTML = `<div style="width:22px;height:22px;border-radius:5px;border:1.5px dashed rgba(200,165,60,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">✉</div><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(inv.invited_email)}</span><span style="font-size:10px;color:rgba(200,165,60,0.45);white-space:nowrap;margin-left:4px">· ${inv.role}</span><span style="font-size:10px;color:rgba(255,255,255,0.25);white-space:nowrap;margin-left:4px">${sentDate}</span><button onclick="cancelTeamInvite(${inv.id})" style="background:none;border:none;color:rgba(255,100,80,0.45);font-size:14px;cursor:pointer;padding:0 3px;margin-left:4px;line-height:1" onmouseover="this.style.color='#ff6b60'" onmouseout="this.style.color='rgba(255,100,80,0.45)'" title="Zrušit pozvánku">✕</button>`;
+      const iconStyle = isPending
+        ? 'border:1.5px dashed rgba(200,165,60,0.4)'
+        : 'border:1.5px solid rgba(90,180,100,0.5);color:rgba(90,180,100,0.9)';
+      const icon = isPending ? '✉' : '✓';
+      const statusHtml = isPending
+        ? `<span style="font-size:10px;color:rgba(255,200,80,0.45);white-space:nowrap;margin-left:4px">⏳</span>`
+        : `<span style="font-size:10px;color:rgba(90,180,100,0.7);white-space:nowrap;margin-left:4px">✓</span>`;
+      const cancelBtn = isPending
+        ? `<button onclick="cancelTeamInvite(${inv.id})" style="background:none;border:none;color:rgba(255,100,80,0.45);font-size:14px;cursor:pointer;padding:0 3px;margin-left:4px;line-height:1" onmouseover="this.style.color='#ff6b60'" onmouseout="this.style.color='rgba(255,100,80,0.45)'" title="Zrušit pozvánku">✕</button>`
+        : '';
+      ch.innerHTML = `<div style="width:22px;height:22px;border-radius:5px;${iconStyle};display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">${icon}</div><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(inv.invited_email)}</span><span style="font-size:10px;color:rgba(200,165,60,0.45);white-space:nowrap;margin-left:4px">· ${inv.role}</span>${statusHtml}<span style="font-size:10px;color:rgba(255,255,255,0.25);white-space:nowrap;margin-left:4px">${sentDate}</span>${cancelBtn}`;
       drop.appendChild(ch);
     });
   }

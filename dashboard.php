@@ -260,8 +260,10 @@ function renderProjects(projects) {
   container.innerHTML = Object.entries(byApp).map(([key, app]) => `
     <div class="app-section">
       <div class="app-header">
-        <div class="app-badge">${key}</div>
-        <div class="app-name">${escHtml(app.name)}</div>
+        <div class="app-badge" style="${key==='stavbaboard'?'text-transform:none':''}">
+          ${key === 'stavbaboard' ? 'BeSix Board' : escHtml(key)}
+        </div>
+        <div class="app-name">${key === 'stavbaboard' ? 'BeSix Board' : escHtml(app.name)}</div>
       </div>
       <div class="projects-grid">
         ${app.items.map(p => projectCard(p, key)).join('')}
@@ -421,19 +423,25 @@ async function loadMembers() {
     html += '<div style="color:rgba(255,255,255,0.35);font-size:13px;padding:8px 0">Žádní členové.</div>';
   }
 
-  // Pending invitations
+  // Invitation history (pending + accepted)
   if (canManage && data.invitations && data.invitations.length) {
-    html += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);font-size:11px;font-weight:700;color:rgba(200,165,60,0.5);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Čekající pozvánky</div>`;
+    html += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);font-size:11px;font-weight:700;color:rgba(200,165,60,0.5);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Historie pozvánek</div>`;
     html += data.invitations.map(inv => {
       const sentDate = new Date(inv.created_at).toLocaleDateString('cs-CZ');
-      return `<div class="member-row" style="opacity:0.75">
-        <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.06);border:1.5px dashed rgba(200,165,60,0.35);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">✉</div>
+      const isPending = inv.status === 'pending';
+      const statusLabel = isPending ? '⏳ čeká na přijetí' : '✓ přijato';
+      const statusColor = isPending ? 'rgba(255,255,255,0.45)' : 'rgba(90,180,100,0.9)';
+      const cancelBtn = isPending
+        ? `<button class="btn-remove-member" onclick="cancelInvite(${inv.id})" title="Zrušit pozvánku">✕</button>`
+        : '';
+      return `<div class="member-row" style="opacity:${isPending ? '0.75' : '0.9'}">
+        <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.06);border:1.5px ${isPending ? 'dashed rgba(200,165,60,0.35)' : 'solid rgba(90,180,100,0.3)'};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${isPending ? '✉' : '✓'}</div>
         <div class="member-info">
-          <strong style="color:rgba(255,255,255,0.6)">${escHtml(inv.invited_email)}</strong>
-          <span>Pozváno ${sentDate} · čeká na přijetí</span>
+          <strong style="color:rgba(255,255,255,0.7)">${escHtml(inv.invited_email)}</strong>
+          <span style="color:${statusColor}">${statusLabel} · ${sentDate}</span>
         </div>
-        <span class="role-pill role-${inv.role}" style="flex-shrink:0;opacity:0.6">${inv.role}</span>
-        <button class="btn-remove-member" onclick="cancelInvite(${inv.id})" title="Zrušit pozvánku">✕</button>
+        <span class="role-pill role-${inv.role}" style="flex-shrink:0;opacity:0.7">${inv.role}</span>
+        ${cancelBtn}
       </div>`;
     }).join('');
   }
