@@ -40,6 +40,8 @@ jobs:
             echo "define('SMTP_USER', '${{ secrets.SMTP_USER }}');"
             echo "define('SMTP_PASS', '${{ secrets.SMTP_PASS }}');"
             echo "define('SMTP_PORT', '${{ secrets.SMTP_PORT }}');"
+            echo "define('GOOGLE_CLIENT_ID', '${{ secrets.GOOGLE_CLIENT_ID }}');"
+            echo "define('GOOGLE_CLIENT_SECRET', '${{ secrets.GOOGLE_CLIENT_SECRET }}');"
             echo ""
             echo "ini_set('session.cookie_httponly', 1);"
             echo "ini_set('session.cookie_samesite', 'Lax');"

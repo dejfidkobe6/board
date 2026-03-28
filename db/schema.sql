@@ -19,9 +19,11 @@ CREATE TABLE IF NOT EXISTS `users` (
   `verification_token`  VARCHAR(64)          NULL DEFAULT NULL,
   `reset_token`         VARCHAR(64)          NULL DEFAULT NULL,
   `reset_token_expires` TIMESTAMP            NULL DEFAULT NULL,
+  `google_id`           VARCHAR(64)          NULL DEFAULT NULL,
   `created_at`          TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_email` (`email`),
+  UNIQUE KEY `uq_google_id` (`google_id`),
   KEY `idx_verification_token` (`verification_token`),
   KEY `idx_reset_token` (`reset_token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
