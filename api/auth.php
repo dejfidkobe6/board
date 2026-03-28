@@ -216,6 +216,147 @@ if ($action === 'register') {
 
     jsonResponse(['success' => true, 'message' => 'Heslo bylo změněno. Můžeš se přihlásit.']);
 })();
+} elseif ($action === 'google_redirect') {
+(function () {
+    if (!defined('GOOGLE_CLIENT_ID') || !GOOGLE_CLIENT_ID) {
+        header('Location: /login.php?error=google_not_configured'); exit;
+    }
+    $state = bin2hex(random_bytes(16));
+    $_SESSION['oauth_state'] = $state;
+    $params = http_build_query([
+        'client_id'     => GOOGLE_CLIENT_ID,
+        'redirect_uri'  => APP_URL . '/api/auth.php?action=google_callback',
+        'response_type' => 'code',
+        'scope'         => 'openid email profile',
+        'state'         => $state,
+        'access_type'   => 'online',
+        'prompt'        => 'select_account',
+    ]);
+    header('Location: https://accounts.google.com/o/oauth2/v2/auth?' . $params);
+    exit;
+})();
+} elseif ($action === 'google_callback') {
+(function () {
+    $code  = trim($_GET['code']  ?? '');
+    $state = trim($_GET['state'] ?? '');
+
+    if (!empty($_GET['error']) || !$code) {
+        header('Location: /login.php?error=google_denied'); exit;
+    }
+    if (!$state || $state !== ($_SESSION['oauth_state'] ?? '')) {
+        header('Location: /login.php?error=google_state'); exit;
+    }
+    unset($_SESSION['oauth_state']);
+
+    $redirectUri = APP_URL . '/api/auth.php?action=google_callback';
+
+    // ── Exchange code → access token ────────────────────────────────────────
+    $postData = http_build_query([
+        'code'          => $code,
+        'client_id'     => GOOGLE_CLIENT_ID,
+        'client_secret' => GOOGLE_CLIENT_SECRET,
+        'redirect_uri'  => $redirectUri,
+        'grant_type'    => 'authorization_code',
+    ]);
+    $tokenData = googleOAuthPost('https://oauth2.googleapis.com/token', $postData);
+    $accessToken = $tokenData['access_token'] ?? '';
+    if (!$accessToken) { header('Location: /login.php?error=google_token'); exit; }
+
+    // ── Fetch user profile ──────────────────────────────────────────────────
+    $gUser = googleOAuthGet('https://www.googleapis.com/oauth2/v3/userinfo', $accessToken);
+    $googleId = $gUser['sub']   ?? '';
+    $email    = strtolower(trim($gUser['email'] ?? ''));
+    $name     = trim($gUser['name'] ?? '');
+    if (!$googleId || !$email) { header('Location: /login.php?error=google_userinfo'); exit; }
+
+    // ── Find or create user ─────────────────────────────────────────────────
+    $db = getDB();
+
+    $stmt = $db->prepare('SELECT id, name, avatar_color FROM users WHERE google_id = ?');
+    $stmt->execute([$googleId]);
+    $user = $stmt->fetch();
+
+    if (!$user) {
+        $stmt = $db->prepare('SELECT id, name, avatar_color FROM users WHERE email = ?');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        if ($user) {
+            // Link Google ID to existing account
+            $db->prepare('UPDATE users SET google_id=?, is_verified=1 WHERE id=?')
+               ->execute([$googleId, $user['id']]);
+        }
+    }
+
+    if (!$user) {
+        // Create new Google account
+        $colors = ['#4A5340','#3a4d1a','#1e3a2e','#1e2d3a','#2a1e3a','#3a1e2a','#2d2010'];
+        $color  = $colors[array_rand($colors)];
+        $db->prepare(
+            'INSERT INTO users (name, email, password_hash, avatar_color, google_id, is_verified)
+             VALUES (?,?,?,?,?,1)'
+        )->execute([$name ?: $email, $email, '!google', $color, $googleId]);
+        $user = [
+            'id'           => (int)$db->lastInsertId(),
+            'name'         => $name ?: $email,
+            'avatar_color' => $color,
+        ];
+    }
+
+    session_regenerate_id(true);
+    $_SESSION['user_id']      = $user['id'];
+    $_SESSION['user_name']    = $user['name'];
+    $_SESSION['avatar_color'] = $user['avatar_color'];
+
+    header('Location: /dashboard.php');
+    exit;
+})();
 } else {
     jsonResponse(['error' => 'Neznámá akce'], 400);
+}
+
+// ── Google OAuth HTTP helpers ──────────────────────────────────────────────
+function googleOAuthPost(string $url, string $postData): array {
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $postData,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/x-www-form-urlencoded'],
+            CURLOPT_TIMEOUT        => 10,
+        ]);
+        $res = curl_exec($ch); curl_close($ch);
+    } else {
+        $ctx = stream_context_create(['http' => [
+            'method'        => 'POST',
+            'header'        => "Content-Type: application/x-www-form-urlencoded\r\n",
+            'content'       => $postData,
+            'ignore_errors' => true,
+            'timeout'       => 10,
+        ]]);
+        $res = @file_get_contents($url, false, $ctx);
+    }
+    return $res ? (json_decode($res, true) ?? []) : [];
+}
+
+function googleOAuthGet(string $url, string $token): array {
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $token],
+            CURLOPT_TIMEOUT        => 10,
+        ]);
+        $res = curl_exec($ch); curl_close($ch);
+    } else {
+        $ctx = stream_context_create(['http' => [
+            'header'        => "Authorization: Bearer $token\r\n",
+            'ignore_errors' => true,
+            'timeout'       => 10,
+        ]]);
+        $res = @file_get_contents($url, false, $ctx);
+    }
+    return $res ? (json_decode($res, true) ?? []) : [];
 }

@@ -398,27 +398,47 @@ async function loadMembers() {
   const res  = await fetch(`/api/projects.php?action=members&project_id=${activeMembersProjectId}`, { credentials: 'include' });
   const data = await res.json();
   const list = document.getElementById('membersList');
-  if (!data.success || !data.members.length) {
-    list.innerHTML = '<div style="color:rgba(255,255,255,0.35);font-size:13px;padding:8px 0">Žádní členové.</div>';
-    return;
-  }
+  if (!data.success) { list.innerHTML = '<div style="color:#ff6b60;font-size:13px">Chyba načítání.</div>'; return; }
+
   const canManage = (activeMembersMyRole === 'owner' || activeMembersMyRole === 'admin');
-  list.innerHTML = data.members.map(m => {
-    const ini = m.name.split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
-    const isOwner = m.role === 'owner';
-    const delBtn = (canManage && !isOwner && m.id !== currentUser.id)
-      ? `<button class="btn-remove-member" onclick="removeMember(${m.id})" title="Odebrat člena">✕</button>`
-      : '';
-    return `<div class="member-row">
-      <div class="avatar" style="background:${m.avatar_color||'#4A5340'};width:34px;height:34px;font-size:12px;flex-shrink:0">${ini}</div>
-      <div class="member-info">
-        <strong>${escHtml(m.name)}</strong>
-        <span>${escHtml(m.email)}</span>
-      </div>
-      <span class="role-pill role-${m.role}" style="flex-shrink:0">${m.role}</span>
-      ${delBtn}
-    </div>`;
-  }).join('');
+  let html = '';
+
+  if (data.members.length) {
+    html += data.members.map(m => {
+      const ini = m.name.split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
+      const isOwner = m.role === 'owner';
+      const delBtn = (canManage && !isOwner && m.id !== currentUser.id)
+        ? `<button class="btn-remove-member" onclick="removeMember(${m.id})" title="Odebrat člena">✕</button>`
+        : '';
+      return `<div class="member-row">
+        <div class="avatar" style="background:${m.avatar_color||'#4A5340'};width:34px;height:34px;font-size:12px;flex-shrink:0">${ini}</div>
+        <div class="member-info"><strong>${escHtml(m.name)}</strong><span>${escHtml(m.email)}</span></div>
+        <span class="role-pill role-${m.role}" style="flex-shrink:0">${m.role}</span>
+        ${delBtn}
+      </div>`;
+    }).join('');
+  } else {
+    html += '<div style="color:rgba(255,255,255,0.35);font-size:13px;padding:8px 0">Žádní členové.</div>';
+  }
+
+  // Pending invitations
+  if (canManage && data.invitations && data.invitations.length) {
+    html += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);font-size:11px;font-weight:700;color:rgba(200,165,60,0.5);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Čekající pozvánky</div>`;
+    html += data.invitations.map(inv => {
+      const sentDate = new Date(inv.created_at).toLocaleDateString('cs-CZ');
+      return `<div class="member-row" style="opacity:0.75">
+        <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.06);border:1.5px dashed rgba(200,165,60,0.35);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">✉</div>
+        <div class="member-info">
+          <strong style="color:rgba(255,255,255,0.6)">${escHtml(inv.invited_email)}</strong>
+          <span>Pozváno ${sentDate} · čeká na přijetí</span>
+        </div>
+        <span class="role-pill role-${inv.role}" style="flex-shrink:0;opacity:0.6">${inv.role}</span>
+        <button class="btn-remove-member" onclick="cancelInvite(${inv.id})" title="Zrušit pozvánku">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  list.innerHTML = html;
 }
 
 async function removeMember(userId) {
@@ -431,6 +451,20 @@ async function removeMember(userId) {
   if (data.success) {
     await loadMembers();
     await loadProjects();
+  } else {
+    document.getElementById('membersMsg').innerHTML = `<div class="notice error">${escHtml(data.error||'Chyba')}</div>`;
+  }
+}
+
+async function cancelInvite(inviteId) {
+  if (!confirm('Zrušit pozvánku?')) return;
+  const res = await fetch(
+    `/api/invitations.php?action=cancel&invite_id=${inviteId}&project_id=${activeMembersProjectId}`,
+    { method: 'DELETE', credentials: 'include' }
+  );
+  const data = await res.json();
+  if (data.success) {
+    await loadMembers();
   } else {
     document.getElementById('membersMsg').innerHTML = `<div class="notice error">${escHtml(data.error||'Chyba')}</div>`;
   }

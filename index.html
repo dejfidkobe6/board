@@ -1141,13 +1141,13 @@ async function renderTeamBar() {
   const isOpen = bar.classList.contains('open');
   const activeProjectId = localStorage.getItem('besix_active_project_id');
 
-  // Load members from API if we have a project
-  let apiMembers = null;
+  // Load members + pending invitations from API
+  let apiMembers = null, apiInvitations = [];
   if (activeProjectId) {
     try {
       const res = await fetch(`/api/projects.php?action=members&project_id=${activeProjectId}`, { credentials: 'include' });
       const data = await res.json();
-      if (data.success) apiMembers = data.members;
+      if (data.success) { apiMembers = data.members; apiInvitations = data.invitations || []; }
     } catch {}
   }
 
@@ -1187,6 +1187,25 @@ async function renderTeamBar() {
     ch.innerHTML = `<div class="avatar" style="background:${c}">${ini(m.name)}</div>${escHtml(m.name)}<span style="font-size:11px;color:rgba(200,165,60,0.5);margin-left:4px">${m.role ? '· '+m.role : ''}</span>${delBtn}`;
     drop.appendChild(ch);
   });
+
+  // Pending invitations (admin/owner only)
+  if (canManage && apiInvitations.length) {
+    const invSep = document.createElement('div');
+    invSep.style = 'width:100%;height:1px;background:rgba(255,255,255,0.08);margin:8px 0 4px';
+    drop.appendChild(invSep);
+    const invLabel = document.createElement('div');
+    invLabel.style = 'font-size:10px;font-weight:700;color:rgba(200,165,60,0.45);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;width:100%';
+    invLabel.textContent = 'Čekající pozvánky';
+    drop.appendChild(invLabel);
+    apiInvitations.forEach(inv => {
+      const ch = document.createElement('div');
+      ch.className = 'member-chip';
+      ch.style = 'opacity:0.7;width:100%';
+      const sentDate = new Date(inv.created_at).toLocaleDateString('cs-CZ');
+      ch.innerHTML = `<div style="width:22px;height:22px;border-radius:5px;border:1.5px dashed rgba(200,165,60,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">✉</div><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(inv.invited_email)}</span><span style="font-size:10px;color:rgba(200,165,60,0.45);white-space:nowrap;margin-left:4px">· ${inv.role}</span><span style="font-size:10px;color:rgba(255,255,255,0.25);white-space:nowrap;margin-left:4px">${sentDate}</span><button onclick="cancelTeamInvite(${inv.id})" style="background:none;border:none;color:rgba(255,100,80,0.45);font-size:14px;cursor:pointer;padding:0 3px;margin-left:4px;line-height:1" onmouseover="this.style.color='#ff6b60'" onmouseout="this.style.color='rgba(255,100,80,0.45)'" title="Zrušit pozvánku">✕</button>`;
+      drop.appendChild(ch);
+    });
+  }
 
   // Invite form (admin/owner only)
   if (canManage && activeProjectId) {
@@ -1248,6 +1267,18 @@ async function sendTeamInvite() {
   } else {
     if (msgEl) msgEl.innerHTML = `<span style="color:#ff6b60">${escHtml(data.error || 'Chyba')}</span>`;
   }
+}
+
+async function cancelTeamInvite(inviteId) {
+  if (!confirm('Zrušit pozvánku?')) return;
+  const projectId = localStorage.getItem('besix_active_project_id');
+  const res = await fetch(
+    `/api/invitations.php?action=cancel&invite_id=${inviteId}&project_id=${projectId}`,
+    { method: 'DELETE', credentials: 'include' }
+  );
+  const data = await res.json();
+  if (data.success) renderTeamBar();
+  else alert(data.error || 'Chyba');
 }
 
 function toggleTeamBar() {

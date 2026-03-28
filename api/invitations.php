@@ -137,6 +137,22 @@ if ($action === 'send') {
 
     jsonResponse(['success' => true, 'project' => $project, 'role' => 'member']);
 })();
+} elseif ($action === 'cancel') {
+(function () use ($method) {
+    if ($method !== 'DELETE') jsonResponse(['error' => 'Method not allowed'], 405);
+    $inviteId  = (int)($_GET['invite_id']  ?? 0);
+    $projectId = (int)($_GET['project_id'] ?? 0);
+    if (!$inviteId || !$projectId) jsonResponse(['error' => 'Chybí parametry'], 422);
+
+    requireProjectRole($projectId, 'admin');
+
+    $db = getDB();
+    $db->prepare(
+        'DELETE FROM invitations WHERE id = ? AND project_id = ? AND status = "pending"'
+    )->execute([$inviteId, $projectId]);
+
+    jsonResponse(['success' => true]);
+})();
 } else {
     jsonResponse(['error' => 'Neznámá akce'], 400);
 }

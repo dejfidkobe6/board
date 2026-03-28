@@ -96,7 +96,7 @@ if ($action === 'list') {
 (function () {
     $projectId = (int)($_GET['project_id'] ?? 0);
     if (!$projectId) jsonResponse(['error' => 'Chybí project_id'], 422);
-    requireProjectRole($projectId, 'viewer');
+    $actor = requireProjectRole($projectId, 'viewer');
 
     $db   = getDB();
     $stmt = $db->prepare(
@@ -105,7 +105,23 @@ if ($action === 'list') {
          WHERE pm.project_id = ? ORDER BY pm.joined_at ASC'
     );
     $stmt->execute([$projectId]);
-    jsonResponse(['success' => true, 'members' => $stmt->fetchAll()]);
+    $members = $stmt->fetchAll();
+
+    // Pending invitations (visible to admin/owner only)
+    $invitations = [];
+    $roles = ['viewer' => 0, 'member' => 1, 'admin' => 2, 'owner' => 3];
+    if (($roles[$actor['role']] ?? 0) >= $roles['admin']) {
+        $si = $db->prepare(
+            'SELECT i.id, i.invited_email, i.role, i.created_at, i.expires_at, u.name AS invited_by_name
+             FROM invitations i JOIN users u ON u.id = i.invited_by
+             WHERE i.project_id = ? AND i.status = "pending" AND i.expires_at > NOW()
+             ORDER BY i.created_at DESC'
+        );
+        $si->execute([$projectId]);
+        $invitations = $si->fetchAll();
+    }
+
+    jsonResponse(['success' => true, 'members' => $members, 'invitations' => $invitations]);
 })();
 } elseif ($action === 'update_role') {
 (function () use ($method) {
