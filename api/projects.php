@@ -107,14 +107,14 @@ if ($action === 'list') {
     $stmt->execute([$projectId]);
     $members = $stmt->fetchAll();
 
-    // Pending invitations (visible to admin/owner only)
+    // Invitations history (pending + accepted, visible to admin/owner only)
     $invitations = [];
     $roles = ['viewer' => 0, 'member' => 1, 'admin' => 2, 'owner' => 3];
     if (($roles[$actor['role']] ?? 0) >= $roles['admin']) {
         $si = $db->prepare(
-            'SELECT i.id, i.invited_email, i.role, i.created_at, i.expires_at, u.name AS invited_by_name
+            'SELECT i.id, i.invited_email, i.role, i.status, i.created_at, i.expires_at, u.name AS invited_by_name
              FROM invitations i JOIN users u ON u.id = i.invited_by
-             WHERE i.project_id = ? AND i.status = "pending" AND i.expires_at > NOW()
+             WHERE i.project_id = ? AND i.status IN ("pending","accepted")
              ORDER BY i.created_at DESC'
         );
         $si->execute([$projectId]);
