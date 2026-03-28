@@ -148,9 +148,10 @@ if ($action === 'register') {
     if (!$user || !password_verify($pass, $user['password_hash'])) {
         jsonResponse(['error' => 'Nesprávný email nebo heslo'], 401);
     }
-    if (!$user['is_verified']) {
-        jsonResponse(['error' => 'Účet není ověřen. Zkontroluj email.', 'unverified' => true], 403);
-    }
+    // Email verification temporarily disabled
+    // if (!$user['is_verified']) {
+    //     jsonResponse(['error' => 'Účet není ověřen. Zkontroluj email.', 'unverified' => true], 403);
+    // }
 
     clearRateLimit('login_' . $email);
     session_regenerate_id(true);
