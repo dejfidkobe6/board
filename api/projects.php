@@ -5,10 +5,8 @@ require_once __DIR__ . '/functions.php';
 $action = $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
 
-match ($action) {
-
-// ─── LIST projects for current user ───────────────────────────────────────
-'list' => (function () {
+if ($action === 'list') {
+(function () {
     $user   = requireAuth();
     $appKey = sanitize($_GET['app_key'] ?? '');
 
@@ -35,10 +33,9 @@ match ($action) {
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
     jsonResponse(['success' => true, 'projects' => $stmt->fetchAll()]);
-})(),
-
-// ─── CREATE project ────────────────────────────────────────────────────────
-'create' => (function () use ($method) {
+})();
+} elseif ($action === 'create') {
+(function () use ($method) {
     if ($method !== 'POST') jsonResponse(['error' => 'Method not allowed'], 405);
     $user = requireAuth();
     $body = getBody();
@@ -76,10 +73,9 @@ match ($action) {
     $project['role'] = 'owner';
 
     jsonResponse(['success' => true, 'project' => $project]);
-})(),
-
-// ─── DETAIL ───────────────────────────────────────────────────────────────
-'detail' => (function () {
+})();
+} elseif ($action === 'detail') {
+(function () {
     $projectId = (int)($_GET['id'] ?? 0);
     if (!$projectId) jsonResponse(['error' => 'Chybí id'], 422);
     $member = requireProjectRole($projectId, 'viewer');
@@ -95,10 +91,9 @@ match ($action) {
     $project['my_role'] = $member['role'];
 
     jsonResponse(['success' => true, 'project' => $project]);
-})(),
-
-// ─── MEMBERS ──────────────────────────────────────────────────────────────
-'members' => (function () {
+})();
+} elseif ($action === 'members') {
+(function () {
     $projectId = (int)($_GET['project_id'] ?? 0);
     if (!$projectId) jsonResponse(['error' => 'Chybí project_id'], 422);
     requireProjectRole($projectId, 'viewer');
@@ -111,10 +106,9 @@ match ($action) {
     );
     $stmt->execute([$projectId]);
     jsonResponse(['success' => true, 'members' => $stmt->fetchAll()]);
-})(),
-
-// ─── UPDATE ROLE ──────────────────────────────────────────────────────────
-'update_role' => (function () use ($method) {
+})();
+} elseif ($action === 'update_role') {
+(function () use ($method) {
     if ($method !== 'PUT') jsonResponse(['error' => 'Method not allowed'], 405);
     $body      = getBody();
     $projectId = (int)($body['project_id'] ?? 0);
@@ -136,10 +130,9 @@ match ($action) {
     $db->prepare('UPDATE project_members SET role=? WHERE project_id=? AND user_id=?')
        ->execute([$newRole, $projectId, $targetId]);
     jsonResponse(['success' => true]);
-})(),
-
-// ─── REMOVE MEMBER ────────────────────────────────────────────────────────
-'remove_member' => (function () use ($method) {
+})();
+} elseif ($action === 'remove_member') {
+(function () use ($method) {
     if ($method !== 'DELETE') jsonResponse(['error' => 'Method not allowed'], 405);
     $projectId = (int)($_GET['project_id'] ?? 0);
     $targetId  = (int)($_GET['user_id']    ?? 0);
@@ -156,7 +149,7 @@ match ($action) {
     $db->prepare('DELETE FROM project_members WHERE project_id=? AND user_id=?')
        ->execute([$projectId, $targetId]);
     jsonResponse(['success' => true]);
-})(),
-
-default => jsonResponse(['error' => 'Neznámá akce'], 400),
-};
+})();
+} else {
+    jsonResponse(['error' => 'Neznámá akce'], 400);
+}
