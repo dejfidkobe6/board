@@ -76,12 +76,13 @@ if ($action === 'register') {
     }
 
     $verifyUrl = APP_URL . '/api/auth.php?action=verify&token=' . urlencode($token);
-    $body = emailTemplate('Ověření emailu', "
-        <p>Ahoj <strong>" . htmlspecialchars($name) . "</strong>,</p>
-        <p>Klikni na tlačítko níže pro ověření tvého účtu:</p>
-        <p><a class=\"btn\" href=\"$verifyUrl\">Ověřit email</a></p>
-        <p style=\"font-size:13px;color:#888\">Odkaz je platný 7 dní.</p>
-    ");
+    $nameEsc = htmlspecialchars($name);
+    $body = emailTemplate('Ověření emailu',
+        emailP("Ahoj <strong style='color:#e8e8e8'>$nameEsc</strong>,") .
+        emailP('Klikni na tlačítko níže pro ověření tvého účtu:') .
+        emailBtn($verifyUrl, 'Ověřit email') .
+        emailP("<span style='font-size:12px;color:#666'>Odkaz je platný 7 dní.</span>")
+    );
     sendMail($email, 'Ověření účtu – BeSix Board', $body);
 
     jsonResponse(['success' => true, 'message' => 'Registrace proběhla. Zkontroluj email pro ověření.']);
@@ -177,12 +178,13 @@ if ($action === 'register') {
            ->execute([$token, $expires, $user['id']]);
 
         $resetUrl = APP_URL . '/reset.php?token=' . urlencode($token);
-        $body = emailTemplate('Reset hesla', "
-            <p>Ahoj <strong>" . htmlspecialchars($user['name']) . "</strong>,</p>
-            <p>Pro reset hesla klikni na odkaz níže:</p>
-            <p><a class=\"btn\" href=\"$resetUrl\">Resetovat heslo</a></p>
-            <p style=\"font-size:13px;color:#888\">Odkaz je platný 1 hodinu.</p>
-        ");
+        $userNameEsc = htmlspecialchars($user['name']);
+        $body = emailTemplate('Reset hesla',
+            emailP("Ahoj <strong style='color:#e8e8e8'>$userNameEsc</strong>,") .
+            emailP('Pro reset hesla klikni na odkaz níže:') .
+            emailBtn($resetUrl, 'Resetovat heslo') .
+            emailP("<span style='font-size:12px;color:#666'>Odkaz je platný 1 hodinu.</span>")
+        );
         sendMail($email, 'Reset hesla – BeSix Board', $body);
     }
 
