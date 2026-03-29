@@ -409,13 +409,21 @@ async function loadMembers() {
     html += data.members.map(m => {
       const ini = m.name.split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
       const isOwner = m.role === 'owner';
-      const delBtn = (canManage && !isOwner && m.id !== currentUser.id)
+      const canEdit = canManage && !isOwner && m.id !== currentUser.id;
+      const roleEl = canEdit
+        ? `<select class="invite-role-sel" style="padding:4px 8px;font-size:12px" onchange="changeMemberRole(${m.id}, this.value)">
+            <option value="admin"  ${m.role==='admin'  ?'selected':''}>admin</option>
+            <option value="member" ${m.role==='member' ?'selected':''}>member</option>
+            <option value="viewer" ${m.role==='viewer' ?'selected':''}>viewer</option>
+          </select>`
+        : `<span class="role-pill role-${m.role}" style="flex-shrink:0">${m.role}</span>`;
+      const delBtn = canEdit
         ? `<button class="btn-remove-member" onclick="removeMember(${m.id})" title="Odebrat člena">✕</button>`
         : '';
       return `<div class="member-row">
         <div class="avatar" style="background:${m.avatar_color||'#4A5340'};width:34px;height:34px;font-size:12px;flex-shrink:0">${ini}</div>
         <div class="member-info"><strong>${escHtml(m.name)}</strong><span>${escHtml(m.email)}</span></div>
-        <span class="role-pill role-${m.role}" style="flex-shrink:0">${m.role}</span>
+        ${roleEl}
         ${delBtn}
       </div>`;
     }).join('');
@@ -447,6 +455,20 @@ async function loadMembers() {
   }
 
   list.innerHTML = html;
+}
+
+async function changeMemberRole(userId, newRole) {
+  const res = await fetch('/api/projects.php?action=update_role', {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ project_id: activeMembersProjectId, user_id: userId, role: newRole }),
+  });
+  const data = await res.json();
+  if (!data.success) {
+    document.getElementById('membersMsg').innerHTML = `<div class="notice error">${escHtml(data.error||'Chyba')}</div>`;
+    await loadMembers(); // revert select to actual role
+  }
 }
 
 async function removeMember(userId) {

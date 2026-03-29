@@ -1181,10 +1181,14 @@ async function renderTeamBar() {
     const c = m.avatar_color || m.color || '#4A5340';
     const isOwner = m.role === 'owner';
     const isSelf  = _apiUser && String(m.id) === String(_apiUser.id);
-    const delBtn  = (canManage && !isOwner && !isSelf && activeProjectId)
+    const canEdit = canManage && !isOwner && !isSelf && activeProjectId;
+    const delBtn  = canEdit
       ? `<button onclick="removeTeamMember(${m.id})" style="background:none;border:none;color:rgba(255,100,80,0.5);font-size:14px;cursor:pointer;padding:0 3px;margin-left:4px;line-height:1;transition:color 0.15s" onmouseover="this.style.color='#ff6b60'" onmouseout="this.style.color='rgba(255,100,80,0.5)'">✕</button>`
       : '';
-    ch.innerHTML = `<div class="avatar" style="background:${c}">${ini(m.name)}</div>${escHtml(m.name)}<span style="font-size:11px;color:rgba(200,165,60,0.5);margin-left:4px">${m.role ? '· '+m.role : ''}</span>${delBtn}`;
+    const roleEl = canEdit
+      ? `<select onchange="changeTeamMemberRole(${m.id},this.value)" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:rgba(200,165,60,0.8);font-size:11px;padding:2px 5px;margin-left:4px;cursor:pointer;outline:none"><option value="admin" ${m.role==='admin'?'selected':''}>admin</option><option value="member" ${m.role==='member'?'selected':''}>member</option><option value="viewer" ${m.role==='viewer'?'selected':''}>viewer</option></select>`
+      : `<span style="font-size:11px;color:rgba(200,165,60,0.5);margin-left:4px">${m.role ? '· '+m.role : ''}</span>`;
+    ch.innerHTML = `<div class="avatar" style="background:${c}">${ini(m.name)}</div>${escHtml(m.name)}${roleEl}${delBtn}`;
     drop.appendChild(ch);
   });
 
@@ -1241,6 +1245,21 @@ async function renderTeamBar() {
   }
 
   if (isOpen) bar.classList.add('open');
+}
+
+async function changeTeamMemberRole(userId, newRole) {
+  const projectId = localStorage.getItem('besix_active_project_id');
+  const res = await fetch('/api/projects.php?action=update_role', {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ project_id: parseInt(projectId), user_id: userId, role: newRole }),
+  });
+  const data = await res.json();
+  if (!data.success) {
+    alert(data.error || 'Chyba při změně role');
+    renderTeamBar(); // revert
+  }
 }
 
 async function removeTeamMember(userId) {
