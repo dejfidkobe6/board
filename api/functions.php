@@ -106,20 +106,58 @@ function sendMail(string $to, string $subject, string $htmlBody): bool {
 }
 
 function emailTemplate(string $title, string $content): string {
+    // Replace .btn links with Outlook-compatible table buttons
+    $content = preg_replace_callback(
+        '/<a class="btn" href="([^"]+)">([^<]+)<\/a>/',
+        function($m) {
+            $href  = htmlspecialchars($m[1], ENT_QUOTES);
+            $label = htmlspecialchars_decode($m[2]);
+            return '<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="' . $href . '" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="18%" strokecolor="#a87420" fillcolor="#c9922a"><w:anchorlock/><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;">' . $label . '</center></v:roundrect><![endif]-->'
+                 . '<!--[if !mso]><!--><a href="' . $href . '" style="background-color:#c9922a;border-radius:8px;color:#ffffff;display:inline-block;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;padding:13px 30px;text-decoration:none;-webkit-text-size-adjust:none;">'. $label .'</a><!--<![endif]-->';
+        },
+        $content
+    );
+
     return <<<HTML
-<!DOCTYPE html><html><head><meta charset="UTF-8">
-<style>body{font-family:Arial,sans-serif;background:#1e2710;margin:0;padding:0}
-.wrap{max-width:520px;margin:40px auto;background:#1a2a0e;border-radius:10px;overflow:hidden;border:1px solid rgba(200,165,60,0.2)}
-.hdr{background:linear-gradient(135deg,#2a3d10 0%,#1a2a0e 100%);padding:28px 32px;border-bottom:1px solid rgba(200,165,60,0.15)}
-.hdr h1{color:#d4a830;margin:0;font-size:20px;font-weight:700;letter-spacing:-0.3px}
-.body{padding:32px}h2{color:rgba(255,255,255,0.88);margin:0 0 16px;font-size:16px}
-p{color:rgba(255,255,255,0.6);line-height:1.65;margin:0 0 16px;font-size:14px}
-.btn{display:inline-block;background:linear-gradient(180deg,#c9922a 0%,#a87420 100%);color:#fff;padding:13px 30px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px}
-.foot{padding:20px 32px;background:rgba(0,0,0,0.2);font-size:12px;color:rgba(255,255,255,0.3);border-top:1px solid rgba(255,255,255,0.06)}</style>
-</head><body><div class="wrap">
-<div class="hdr"><h1>BeSix Board</h1></div>
-<div class="body"><h2>$title</h2>$content</div>
-<div class="foot">Pokud jsi tento email neočekával/a, ignoruj ho.</div>
-</div></body></html>
+<!DOCTYPE html>
+<html lang="cs" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
+<style>body,table,td{font-family:Arial,sans-serif}a{color:#c9922a}</style>
+</head>
+<body style="margin:0;padding:0;background-color:#1e2710;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#1e2710;">
+  <tr><td align="center" style="padding:32px 16px;">
+    <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;width:100%;background-color:#1a2a0e;border-radius:10px;border:1px solid #3a4a20;">
+      <!-- Header -->
+      <tr><td style="background-color:#2a3d10;padding:24px 32px;border-radius:10px 10px 0 0;border-bottom:1px solid #3a4a20;">
+        <span style="color:#d4a830;font-size:20px;font-weight:700;font-family:Arial,sans-serif;">BeSix Board</span>
+      </td></tr>
+      <!-- Body -->
+      <tr><td style="padding:32px;">
+        <h2 style="color:#e8e8e8;margin:0 0 20px;font-size:17px;font-family:Arial,sans-serif;">$title</h2>
+        $content
+      </td></tr>
+      <!-- Footer -->
+      <tr><td style="padding:16px 32px;background-color:#111a08;border-radius:0 0 10px 10px;border-top:1px solid #2a3a10;">
+        <span style="color:#555f44;font-size:12px;font-family:Arial,sans-serif;">Pokud jsi tento email neočekával/a, ignoruj ho.</span>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>
 HTML;
+}
+
+function emailP(string $text): string {
+    return '<p style="color:#b8c8a0;font-size:14px;line-height:1.65;margin:0 0 16px;font-family:Arial,sans-serif;">' . $text . '</p>';
+}
+
+function emailBtn(string $href, string $label): string {
+    $href = htmlspecialchars($href, ENT_QUOTES);
+    return '<p style="margin:20px 0;"><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="' . $href . '" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="18%" strokecolor="#a87420" fillcolor="#c9922a"><w:anchorlock/><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;">' . $label . '</center></v:roundrect><![endif]--><!--[if !mso]><!--><a href="' . $href . '" style="background-color:#c9922a;border-radius:8px;color:#ffffff;display:inline-block;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;padding:13px 30px;text-decoration:none;">'. $label .'</a><!--<![endif]--></p>';
 }

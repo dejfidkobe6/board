@@ -49,10 +49,10 @@ if ($action === 'send') {
         $inviterEsc = htmlspecialchars($actor['name']);
         $projectEsc = htmlspecialchars($project['name']);
         $dashUrl    = APP_URL . '/dashboard.php';
-        $emailBody  = emailTemplate('Byl/a jsi přidán/a do projektu', "
-            <p><strong>$inviterEsc</strong> tě přidal/a do projektu <strong>$projectEsc</strong> na BeSix Board.</p>
-            <p><a class=\"btn\" href=\"$dashUrl\">Přejít na BeSix Board</a></p>
-        ");
+        $emailBody  = emailTemplate('Byl/a jsi přidán/a do projektu',
+            emailP("<strong style='color:#e8e8e8'>$inviterEsc</strong> tě přidal/a do projektu <strong style='color:#d4a830'>$projectEsc</strong> na BeSix Board.") .
+            emailBtn($dashUrl, 'Přejít na BeSix Board')
+        );
         $sent = sendMail($email, 'Přidán/a do projektu ' . $project['name'] . ' – BeSix Board', $emailBody);
 
         jsonResponse(['success' => true, 'message' => 'Uživatel přidán přímo do projektu.' . ($sent ? '' : ' (Email se nepodařilo odeslat)')]);
@@ -71,12 +71,12 @@ if ($action === 'send') {
     $acceptUrl  = APP_URL . '/invite.php?token=' . urlencode($token);
     $inviterEsc = htmlspecialchars($actor['name']);
     $projectEsc = htmlspecialchars($project['name']);
-    $emailBody  = emailTemplate('Pozvánka do projektu', "
-        <p><strong>$inviterEsc</strong> tě zve do projektu <strong>$projectEsc</strong> na BeSix Board.</p>
-        <p>Klikni na tlačítko níže pro přijetí pozvánky:</p>
-        <p><a class=\"btn\" href=\"$acceptUrl\">Přijmout pozvánku</a></p>
-        <p style=\"font-size:12px;color:rgba(255,255,255,0.35)\">Pozvánka je platná 7 dní.</p>
-    ");
+    $emailBody  = emailTemplate('Pozvánka do projektu',
+        emailP("<strong style='color:#e8e8e8'>$inviterEsc</strong> tě zve do projektu <strong style='color:#d4a830'>$projectEsc</strong> na BeSix Board.") .
+        emailP('Klikni na tlačítko níže pro přijetí pozvánky:') .
+        emailBtn($acceptUrl, 'Přijmout pozvánku') .
+        emailP("<span style='font-size:12px;color:#666'>Pozvánka je platná 7 dní.</span>")
+    );
     $sent = sendMail($email, 'Pozvánka do projektu ' . $project['name'] . ' – BeSix Board', $emailBody);
 
     if (!$sent) {
