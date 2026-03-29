@@ -814,7 +814,51 @@
 const COLORS = ['#f0a500','#e05c00','#4caf50','#2196f3','#9c27b0','#00bcd4','#ff5722','#8bc34a','#ff9800','#607d8b'];
 
 function loadState() { try { const s = localStorage.getItem('besix_v1'); return s ? JSON.parse(s) : null; } catch(e) { return null; } }
-function saveState() { try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {} }
+function saveState() { try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {} scheduleSyncKanbanToServer(); }
+
+// ── Kanban server sync ────────────────────────────────────────────────────
+let _kanbanSyncTimer = null;
+
+async function syncKanbanFromServer(projectId) {
+  try {
+    const res = await fetch(`/api/kanban.php?action=load&project_id=${projectId}`, { credentials: 'include' });
+    const data = await res.json();
+    if (!data.success) return;
+    const proj = state.projects.find(p => String(p.id) === String(projectId));
+    if (!proj) return;
+    if (data.state && (data.state.columns || data.state.cards)) {
+      // Server has data → use it (server is authoritative for cross-device sync)
+      if (data.state.columns)              proj.columns   = data.state.columns;
+      if (data.state.cards)                proj.cards     = data.state.cards;
+      if (Array.isArray(data.state.completed)) proj.completed = data.state.completed;
+      try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
+      renderBoard();
+      updateBadge();
+    } else if (proj.columns && proj.columns.length > 0) {
+      // No server state yet but we have local data → push to server
+      _doSyncKanbanToServer(projectId);
+    }
+  } catch(e) {}
+}
+
+function scheduleSyncKanbanToServer() {
+  const projectId = localStorage.getItem('besix_active_project_id');
+  if (!projectId) return;
+  clearTimeout(_kanbanSyncTimer);
+  _kanbanSyncTimer = setTimeout(() => _doSyncKanbanToServer(projectId), 1500);
+}
+
+async function _doSyncKanbanToServer(projectId) {
+  const proj = state.projects.find(p => String(p.id) === String(projectId));
+  if (!proj) return;
+  try {
+    await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: { columns: proj.columns || [], cards: proj.cards || [], completed: proj.completed || [] } })
+    });
+  } catch(e) {}
+}
 
 function nd(d) { const x = new Date(); x.setDate(x.getDate()+d); return x.toISOString().split('T')[0]; }
 
@@ -2272,7 +2316,10 @@ async function bootAuth() {
   }
   openProject(activeProjectId);
 
-  // 6. Apply viewer restrictions
+  // 6. Load latest kanban state from server (cross-device sync)
+  await syncKanbanFromServer(activeProjectId);
+
+  // 7. Apply viewer restrictions
   applyRoleRestrictions(_projectRole);
 }
 
