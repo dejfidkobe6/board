@@ -152,6 +152,9 @@ if ($action === 'register') {
 })();
 } elseif ($action === 'logout') {
 (function () {
+    $_SESSION = [];
+    $p = session_get_cookie_params();
+    setcookie(session_name(), '', time() - 86400, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
     session_destroy();
     jsonResponse(['success' => true]);
 })();
