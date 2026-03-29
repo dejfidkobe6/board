@@ -236,7 +236,7 @@ function handleParams() {
 
 // ── Load projects ─────────────────────────────────────────────────────────
 async function loadProjects() {
-  const res = await fetch('/api/projects.php?action=list', { credentials: 'include' });
+  const res = await fetch('/api/projects.php?action=list&app_key=stavbaboard', { credentials: 'include' });
   const data = await res.json();
   document.getElementById('loading').style.display = 'none';
   renderProjects(data.projects || []);
