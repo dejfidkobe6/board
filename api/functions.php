@@ -112,8 +112,8 @@ function emailTemplate(string $title, string $content): string {
         function($m) {
             $href  = htmlspecialchars($m[1], ENT_QUOTES);
             $label = htmlspecialchars_decode($m[2]);
-            return '<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="' . $href . '" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="18%" strokecolor="#a87420" fillcolor="#c9922a"><w:anchorlock/><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;">' . $label . '</center></v:roundrect><![endif]-->'
-                 . '<!--[if !mso]><!--><a href="' . $href . '" style="background-color:#c9922a;border-radius:8px;color:#ffffff;display:inline-block;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;padding:13px 30px;text-decoration:none;-webkit-text-size-adjust:none;">'. $label .'</a><!--<![endif]-->';
+            return '<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="' . $href . '" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="18%" stroke="f" fillcolor="#c9922a"><w:anchorlock/><center><font color="#ffffff" face="Arial" size="3"><b>' . $label . '</b></font></center></v:roundrect><![endif]-->'
+                 . '<!--[if !mso]><!--><a href="' . $href . '" style="background-color:#c9922a;border-radius:8px;color:#ffffff;display:inline-block;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;padding:13px 30px;text-decoration:none;">'. $label .'</a><!--<![endif]-->';
         },
         $content
     );
@@ -159,5 +159,5 @@ function emailP(string $text): string {
 
 function emailBtn(string $href, string $label): string {
     $href = htmlspecialchars($href, ENT_QUOTES);
-    return '<p style="margin:20px 0;"><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="' . $href . '" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="18%" strokecolor="#a87420" fillcolor="#c9922a"><w:anchorlock/><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;">' . $label . '</center></v:roundrect><![endif]--><!--[if !mso]><!--><a href="' . $href . '" style="background-color:#c9922a;border-radius:8px;color:#ffffff;display:inline-block;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;padding:13px 30px;text-decoration:none;">'. $label .'</a><!--<![endif]--></p>';
+    return '<p style="margin:20px 0;"><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="' . $href . '" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="18%" stroke="f" fillcolor="#c9922a"><w:anchorlock/><center><font color="#ffffff" face="Arial" size="3"><b>' . $label . '</b></font></center></v:roundrect><![endif]--><!--[if !mso]><!--><a href="' . $href . '" style="background-color:#c9922a;border-radius:8px;color:#ffffff;display:inline-block;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;padding:13px 30px;text-decoration:none;">'. $label .'</a><!--<![endif]--></p>';
 }
