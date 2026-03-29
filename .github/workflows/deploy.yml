@@ -47,7 +47,6 @@ jobs:
             echo "ini_set('session.cookie_httponly', 1);"
             echo "ini_set('session.cookie_samesite', 'Lax');"
             echo "ini_set('session.cookie_secure', 1);"
-            echo "ini_set('session.cookie_domain', '.besix.cz');"
             echo "session_name('BESIX_SESS');"
             echo "if (session_status() === PHP_SESSION_NONE) session_start();"
             echo ""
