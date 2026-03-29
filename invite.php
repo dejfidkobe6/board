@@ -7,6 +7,7 @@ session_name('BESIX_SESS');
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 require_once __DIR__ . '/api/config.php';
+header('Content-Type: text/html; charset=UTF-8'); // override JSON header from config.php
 
 $token   = trim($_GET['token'] ?? '');
 $jsonMode = isset($_GET['json']);
@@ -101,7 +102,7 @@ if ($inv && !empty($_SESSION['user_id'])) {
       <a href="/login.php?redirect=<?= urlencode('/api/invitations.php?action=accept&token=' . $token) ?>" class="btn btn-primary">Přihlásit se a přijmout</a>
       <a href="/register.php?invite=<?= urlencode($token) ?>" class="btn btn-secondary">Zaregistrovat se</a>
     </div>
-    <div class="app-label"><?= htmlspecialchars($inv['app_name']) ?></div>
+    <div class="app-label">BeSix Board</div>
   <?php endif; ?>
 </div>
 </body>
