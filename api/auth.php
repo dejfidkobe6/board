@@ -122,7 +122,13 @@ if ($action === 'register') {
     $stmt->execute([$email]);
     $user = $stmt->fetch();
 
-    if (!$user || !password_verify($pass, $user['password_hash'])) {
+    if (!$user) {
+        jsonResponse(['error' => 'Nesprávný email nebo heslo'], 401);
+    }
+    if ($user['password_hash'] === '!google') {
+        jsonResponse(['error' => 'Tento účet používá přihlášení přes Google. Použij tlačítko "Přihlásit se přes Google".'], 401);
+    }
+    if (!password_verify($pass, $user['password_hash'])) {
         jsonResponse(['error' => 'Nesprávný email nebo heslo'], 401);
     }
     // Email verification temporarily disabled

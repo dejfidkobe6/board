@@ -84,6 +84,12 @@
   if (params.get('error') === 'invite_expired') {
     showMsg('Pozvánka vypršela.', 'error');
   }
+  if (params.get('error') === 'google_not_configured') {
+    showMsg('Google přihlášení není nakonfigurováno. Kontaktuj správce aplikace.', 'error');
+  }
+  if (params.get('error') === 'google_oauth_failed') {
+    showMsg('Google přihlášení selhalo. Zkus to znovu.', 'error');
+  }
 
   function showMsg(text, type = 'error') {
     const el = document.getElementById('msg');
