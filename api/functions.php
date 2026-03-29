@@ -51,14 +51,41 @@ function getBody(): array {
 }
 
 function sendMail(string $to, string $subject, string $htmlBody): bool {
-    $autoload = __DIR__ . '/../vendor/autoload.php';
-    $from     = defined('MAIL_FROM') ? MAIL_FROM : 'noreply@besix.cz';
+    $from = defined('MAIL_FROM') ? MAIL_FROM : 'noreply@besix.cz';
 
+    // Use Brevo API if key is configured (reliable delivery, no SMTP needed)
+    if (defined('BREVO_API_KEY') && BREVO_API_KEY !== '') {
+        $payload = json_encode([
+            'sender'     => ['name' => 'BeSix Board', 'email' => $from],
+            'to'         => [['email' => $to]],
+            'subject'    => $subject,
+            'htmlContent'=> $htmlBody,
+        ]);
+        $ctx = stream_context_create(['http' => [
+            'method'  => 'POST',
+            'header'  => implode("\r\n", [
+                'Content-Type: application/json',
+                'api-key: ' . BREVO_API_KEY,
+            ]),
+            'content' => $payload,
+            'ignore_errors' => true,
+        ]]);
+        $result = @file_get_contents('https://api.brevo.com/v3/smtp/email', false, $ctx);
+        if ($result !== false) {
+            $json = json_decode($result, true);
+            if (isset($json['messageId'])) return true;
+        }
+        error_log('Brevo API error: ' . ($result ?: 'no response'));
+        return false;
+    }
+
+    // Fallback: PHPMailer with local MTA
+    $autoload = __DIR__ . '/../vendor/autoload.php';
     if (file_exists($autoload)) {
         require_once $autoload;
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
         try {
-            $mail->isMail(); // Use server's local MTA (sendmail) — external SMTP is blocked
+            $mail->isMail();
             $mail->CharSet = 'UTF-8';
             $mail->setFrom($from, 'BeSix Board');
             $mail->addAddress($to);
@@ -73,7 +100,6 @@ function sendMail(string $to, string $subject, string $htmlBody): bool {
         }
     }
 
-    error_log('sendMail: vendor/autoload.php not found, falling back to mail()');
     $headers  = "From: BeSix Board <$from>\r\n";
     $headers .= "Content-Type: text/html; charset=UTF-8\r\nMIME-Version: 1.0\r\n";
     return (bool)@mail($to, $subject, $htmlBody, $headers);
