@@ -2,6 +2,18 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/functions.php';
 
+// Auto-create table on first use
+(function () {
+    $db = getDB();
+    $db->exec("CREATE TABLE IF NOT EXISTS `project_kanban_state` (
+        `project_id` INT UNSIGNED NOT NULL,
+        `state_json` MEDIUMTEXT NOT NULL DEFAULT '{}',
+        `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (`project_id`),
+        CONSTRAINT `fk_kanban_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+})();
+
 $action = $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
 
