@@ -766,25 +766,6 @@
     <div class="detail-title" id="dTitle"></div>
     <div class="detail-meta-row" id="dMeta"></div>
     <div id="dDesc"></div>
-    <!-- COVER / BACKGROUND PICKER -->
-    <div class="cover-picker">
-      <div class="section-title" style="margin-bottom:10px">🖼 POZADÍ KARTY</div>
-      <div class="cover-preview" id="coverPreview">
-        <div class="cover-upload-area" id="coverUploadArea"
-          onclick="document.getElementById('coverImgInput').click()"
-          ondragover="dzOver(event,'coverUploadArea')" ondragleave="dzLeave('coverUploadArea')"
-          ondrop="dzDropCover(event)">
-          <div style="font-size:32px;margin-bottom:8px">🖼</div>
-          <div style="font-size:13px;color:var(--muted)">Přetáhni obrázek nebo <strong style="color:var(--accent)">klikni pro výběr</strong></div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px">JPG, PNG, WebP</div>
-        </div>
-        <div class="cover-img-wrap" id="coverImgWrap" style="display:none">
-          <img id="coverImgPreview" src="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;display:block">
-          <button class="cover-remove-btn" onclick="removeCover()">✕ Odebrat</button>
-        </div>
-      </div>
-      <input type="file" id="coverImgInput" accept="image/*" style="display:none" onchange="setCoverFromFile(event)">
-    </div>
 
     <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <span>✅ CHECKLISTRY</span>
@@ -1590,23 +1571,8 @@ function openDetail(id) {
   document.getElementById('detailModal').classList.add('open');
 }
 
-// ---- COVER / BACKGROUND ----
-function renderCoverPicker(card) {
-  const cover = card.cover || null;
-  const uploadArea = document.getElementById('coverUploadArea');
-  const imgWrap = document.getElementById('coverImgWrap');
-  const imgEl = document.getElementById('coverImgPreview');
-
-  if (cover && (cover.startsWith('data:') || cover.startsWith('http'))) {
-    uploadArea.style.display = 'none';
-    imgWrap.style.display = 'block';
-    imgEl.src = cover;
-  } else {
-    uploadArea.style.display = 'flex';
-    imgWrap.style.display = 'none';
-    imgEl.src = '';
-  }
-}
+// ---- COVER / BACKGROUND (removed from UI, stub kept for data compat) ----
+function renderCoverPicker(card) {}
 
 function setCoverFromFile(e) {
   const file = e.target.files[0]; if (!file) return;
@@ -1644,9 +1610,6 @@ function renderDetail() {
 
   document.getElementById('dDesc').innerHTML = card.desc ? `<div class="detail-desc">${card.desc}</div>` : '';
 
-  renderCoverPicker(card);
-  renderDetailPhotos(card);
-  renderDetailAttachments(card);
   renderAllChecklists(card);
 }
 
