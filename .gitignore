@@ -16,3 +16,6 @@ vendor/
 # Local env
 .env
 .env.local
+
+# PHP session files
+tmp/sessions/sess_*
