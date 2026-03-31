@@ -546,13 +546,27 @@
 
   /* ─── BG PICKER ─── */
   .bg-picker-wrap { position: relative; }
-  .bg-picker-dropdown { display: none; position: absolute; top: calc(100% + 8px); right: 0; background: #1a2a0e; border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; padding: 12px; z-index: 200; box-shadow: 0 8px 28px rgba(0,0,0,0.5); min-width: 200px; }
+  .bg-picker-dropdown { display: none; position: absolute; top: calc(100% + 8px); right: 0; background: #1a2a0e; border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; padding: 12px; z-index: 200; box-shadow: 0 8px 28px rgba(0,0,0,0.5); min-width: 210px; }
   .bg-picker-dropdown.open { display: block; }
   .bg-picker-title { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 8px; }
   .bg-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
   .bg-swatch { width: 26px; height: 26px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: border-color 0.12s, transform 0.1s; }
   .bg-swatch:hover { transform: scale(1.1); }
   .bg-swatch.active { border-color: #fff; }
+  .bg-picker-sep { height: 1px; background: rgba(255,255,255,0.1); margin: 10px 0; }
+  .bg-upload-label { display: flex; align-items: center; gap: 7px; padding: 7px 10px; border-radius: 7px; cursor: pointer; font-size: 12px; color: rgba(255,255,255,0.65); background: rgba(255,255,255,0.06); border: 1.5px dashed rgba(255,255,255,0.18); transition: all 0.15s; }
+  .bg-upload-label:hover { background: rgba(255,255,255,0.11); color: #fff; border-color: rgba(200,165,60,0.4); }
+  .bg-img-preview { margin-top: 8px; border-radius: 7px; overflow: hidden; position: relative; }
+  .bg-img-preview img { width: 100%; height: 54px; object-fit: cover; display: block; }
+  .bg-img-remove { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.65); border: none; color: #fff; border-radius: 5px; font-size: 11px; padding: 2px 7px; cursor: pointer; }
+  .bg-img-remove:hover { background: rgba(200,50,50,0.8); }
+  /* When a custom bg image is active — make columns/cards semi-transparent */
+  body.has-bg-image { background-size: cover !important; background-position: center !important; background-attachment: fixed !important; }
+  body.has-bg-image #app { background: transparent !important; }
+  body.has-bg-image .column { background: rgba(10,20,5,0.68) !important; }
+  body.has-bg-image .card { background: rgba(0,0,0,0.42) !important; }
+  body.has-bg-image header { background: rgba(10,20,5,0.78) !important; backdrop-filter: blur(18px); }
+  body.has-bg-image .team-bar { background: rgba(10,20,5,0.55) !important; }
 
   /* ─── APP BODY (board + task panel) ─── */
   .app-body { position: relative; height: calc(100vh - 105px); overflow: hidden; }
@@ -758,8 +772,18 @@
       <div class="bg-picker-wrap" id="bgPickerWrap" style="display:none">
         <button class="btn btn-ghost" onclick="toggleBgPicker(event)" title="Barva pozadí boardu">🎨 Pozadí</button>
         <div class="bg-picker-dropdown" id="bgPickerDropdown">
-          <div class="bg-picker-title">Pozadí boardu</div>
+          <div class="bg-picker-title">Barva pozadí</div>
           <div class="bg-swatches" id="bgSwatches"></div>
+          <div class="bg-picker-sep"></div>
+          <div class="bg-picker-title">Vlastní obrázek</div>
+          <label class="bg-upload-label" id="bgUploadLabel">
+            🖼 Nahrát obrázek
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none" onchange="uploadBgImage(event)">
+          </label>
+          <div class="bg-img-preview" id="bgImgPreview" style="display:none">
+            <img id="bgImgThumb" src="" alt="bg">
+            <button class="bg-img-remove" onclick="clearBgImage()">✕ Odebrat</button>
+          </div>
         </div>
       </div>
       <button class="btn btn-ghost" onclick="openExportModal()">📊 Export Excel <span class="export-badge" id="exportBadge" style="display:none">0</span></button>
@@ -1144,7 +1168,13 @@ function openProject(id) {
   const proj = activeProj();
   const appEl = document.getElementById('app');
   appEl.style.display = 'block';
-  appEl.style.background = proj.bg || 'var(--bg)';
+  if (proj.bg_image) {
+    applyBgImage(proj.bg_image);
+    appEl.style.background = '';
+  } else {
+    applyBgImage(null);
+    appEl.style.background = proj.bg || 'var(--bg)';
+  }
   document.getElementById('activeProjectName').textContent = '/ ' + proj.name;
   const av = document.getElementById('cuAv');
   av.style.background = currentUser.color;
@@ -2890,9 +2920,11 @@ async function bootAuth() {
     if (!pr.ok) { window.location.href = '/dashboard.php'; return; }
     const pd = await pr.json();
     _projectRole = pd.project.my_role;
-    // Sync bg_color from DB into local state so openProject() uses it
+    // Sync bg_color + bg_image from DB into local state so openProject() uses them
     const projStub = state.projects.find(p => p.id === activeProjectId);
     if (projStub && pd.project.bg_color) projStub.bg = pd.project.bg_color;
+    if (projStub && pd.project.bg_image) projStub.bg_image = pd.project.bg_image;
+    else if (projStub) delete projStub.bg_image;
   } catch {
     _projectRole = 'member'; // fallback for local dev
   }
@@ -2930,12 +2962,33 @@ async function bootAuth() {
 // ── Board background picker ────────────────────────────────────────────────
 const BOARD_BG_COLORS = ['#4a5240','#2e3a2a','#1e2d3a','#2a1e3a','#3a1e1e','#1e3a2e','#2a2e1e','#1a2232','#2d2010','#3a2e1a','#1e2820','#2a2010'];
 
+function applyBgImage(url) {
+  if (url) {
+    document.body.style.backgroundImage = `url('${url}')`;
+    document.body.classList.add('has-bg-image');
+  } else {
+    document.body.style.backgroundImage = '';
+    document.body.classList.remove('has-bg-image');
+  }
+}
+
 function buildBgSwatches() {
   const proj = activeProj();
+  const hasImg = !!(proj && proj.bg_image);
   const cur = (proj && proj.bg) || 'var(--bg)';
   document.getElementById('bgSwatches').innerHTML = BOARD_BG_COLORS.map(c =>
-    `<div class="bg-swatch${c===cur?' active':''}" style="background:${c}" onclick="pickBoardBg('${c}')"></div>`
+    `<div class="bg-swatch${(!hasImg && c===cur)?' active':''}" style="background:${c}" onclick="pickBoardBg('${c}')"></div>`
   ).join('');
+  // Show/hide image preview
+  const preview = document.getElementById('bgImgPreview');
+  if (preview) {
+    if (hasImg) {
+      document.getElementById('bgImgThumb').src = proj.bg_image;
+      preview.style.display = '';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
 }
 
 function toggleBgPicker(e) {
@@ -2947,16 +3000,16 @@ function toggleBgPicker(e) {
 }
 
 async function pickBoardBg(color) {
+  const proj = activeProj();
+  // Clear any existing bg image
+  const hadImage = proj && proj.bg_image;
+  if (proj) { proj.bg = color; delete proj.bg_image; }
   // Update UI immediately
+  applyBgImage(null);
   const appEl = document.getElementById('app');
   if (appEl) appEl.style.background = color;
-  // Update local state
-  const proj = activeProj();
-  if (proj) proj.bg = color;
   saveState();
-  // Update active swatch
   document.querySelectorAll('.bg-swatch').forEach(s => s.classList.toggle('active', s.style.background === color));
-  // Close dropdown
   document.getElementById('bgPickerDropdown').classList.remove('open');
   // Persist to DB
   const pid = state.activeProjectId;
@@ -2965,7 +3018,61 @@ async function pickBoardBg(color) {
       await fetch('/api/projects.php?action=update_bg', {
         method: 'POST', credentials: 'include',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ project_id: parseInt(pid) || pid, bg_color: color })
+        body: JSON.stringify({ project_id: parseInt(pid) || pid, bg_color: color, clear_image: !!hadImage })
+      });
+    } catch {}
+  }
+}
+
+async function uploadBgImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  const pid = state.activeProjectId;
+  if (!pid) return;
+  const label = document.getElementById('bgUploadLabel');
+  const origHTML = label.innerHTML;
+  label.textContent = 'Nahrávám…';
+  const fd = new FormData();
+  fd.append('project_id', pid);
+  fd.append('bg_image', file);
+  try {
+    const res = await fetch('/api/upload_bg.php', { method: 'POST', credentials: 'include', body: fd });
+    const data = await res.json();
+    if (!data.success) { alert(data.error || 'Chyba nahrávání'); return; }
+    // Apply to body background
+    applyBgImage(data.url);
+    const proj = activeProj();
+    if (proj) { proj.bg_image = data.url; delete proj.bg; }
+    const appEl = document.getElementById('app');
+    if (appEl) appEl.style.background = '';
+    saveState();
+    document.getElementById('bgPickerDropdown').classList.remove('open');
+  } catch {
+    alert('Chyba při nahrávání obrázku');
+  } finally {
+    label.innerHTML = origHTML;
+  }
+}
+
+async function clearBgImage() {
+  const proj = activeProj();
+  const pid = state.activeProjectId;
+  applyBgImage(null);
+  const appEl = document.getElementById('app');
+  if (proj) {
+    delete proj.bg_image;
+    if (!proj.bg) proj.bg = BOARD_BG_COLORS[0];
+    if (appEl) appEl.style.background = proj.bg;
+  }
+  saveState();
+  document.getElementById('bgPickerDropdown').classList.remove('open');
+  if (pid) {
+    try {
+      await fetch('/api/projects.php?action=update_bg', {
+        method: 'POST', credentials: 'include',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ project_id: parseInt(pid) || pid, bg_color: (proj && proj.bg) || BOARD_BG_COLORS[0], clear_image: true })
       });
     } catch {}
   }

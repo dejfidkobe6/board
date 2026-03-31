@@ -13,7 +13,7 @@ if ($action === 'list') {
     $db = getDB();
 
     $sql = '
-        SELECT p.id, p.name, p.description, p.invite_code, p.bg_color, p.created_at,
+        SELECT p.id, p.name, p.description, p.invite_code, p.bg_color, p.bg_image, p.created_at,
                pm.role,
                a.app_key, a.app_name,
                (SELECT COUNT(*) FROM project_members pm2 WHERE pm2.project_id = p.id) AS member_count
@@ -169,16 +169,31 @@ if ($action === 'list') {
 } elseif ($action === 'update_bg') {
 (function () use ($method) {
     if ($method !== 'POST') jsonResponse(['error' => 'Method not allowed'], 405);
-    $body      = getBody();
-    $projectId = (int)($body['project_id'] ?? 0);
-    $bgColor   = sanitize($body['bg_color'] ?? '');
+    $body       = getBody();
+    $projectId  = (int)($body['project_id'] ?? 0);
+    $bgColor    = sanitize($body['bg_color'] ?? '');
+    $clearImage = !empty($body['clear_image']);
     if (!$projectId || !$bgColor) jsonResponse(['error' => 'Chybí parametry'], 422);
 
     requireProjectRole($projectId, 'admin');
 
     $db = getDB();
-    $db->prepare('UPDATE projects SET bg_color = ? WHERE id = ?')
-       ->execute([$bgColor, $projectId]);
+
+    if ($clearImage) {
+        // Delete old image file if present
+        $stmt = $db->prepare('SELECT bg_image FROM projects WHERE id = ?');
+        $stmt->execute([$projectId]);
+        $row = $stmt->fetch();
+        if ($row && $row['bg_image']) {
+            $oldPath = __DIR__ . '/..' . $row['bg_image'];
+            if (file_exists($oldPath)) unlink($oldPath);
+        }
+        $db->prepare('UPDATE projects SET bg_color = ?, bg_image = NULL WHERE id = ?')
+           ->execute([$bgColor, $projectId]);
+    } else {
+        $db->prepare('UPDATE projects SET bg_color = ? WHERE id = ?')
+           ->execute([$bgColor, $projectId]);
+    }
     jsonResponse(['success' => true]);
 })();
 } else {
