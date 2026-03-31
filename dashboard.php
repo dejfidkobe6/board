@@ -214,8 +214,8 @@ let currentUser = null;
     renderNav();
     await loadProjects();
     handleParams();
-  } catch(err) {
-    document.body.innerHTML = '<div style="padding:40px;color:#ff6b60;font-family:monospace">Boot error: ' + err + '</div>';
+  } catch {
+    location.href = '/login.php';
   }
 })();
 
@@ -241,16 +241,7 @@ function handleParams() {
 // ── Load projects ─────────────────────────────────────────────────────────
 async function loadProjects() {
   const res = await fetch('/api/projects.php?action=list&app_key=stavbaboard', { credentials: 'include' });
-  const text = await res.text();
-  let data;
-  try { data = JSON.parse(text); } catch(e) {
-    document.getElementById('loading').innerHTML = '<div class="empty" style="color:#ff6b60">Chyba načítání projektů: ' + res.status + '<br><pre style="font-size:11px;white-space:pre-wrap;text-align:left">' + text.slice(0,500) + '</pre></div>';
-    return;
-  }
-  if (!res.ok) {
-    document.getElementById('loading').innerHTML = '<div class="empty" style="color:#ff6b60">Chyba: ' + (data.error||res.status) + '</div>';
-    return;
-  }
+  const data = await res.json();
   document.getElementById('loading').style.display = 'none';
   renderProjects(data.projects || []);
 }
