@@ -280,7 +280,9 @@
     .header-right .btn-primary { padding: 5px 10px; font-size: 12px; }
     #activeProjectName { display: none; }
     .current-user { padding: 3px 8px 3px 3px; font-size: 12px; }
-    .board { padding: 12px 8px; gap: 8px; min-height: calc(100vh - 88px); }
+    .board { padding: 12px 8px; gap: 8px; }
+    .task-panel { width: 260px; }
+    .task-panel.collapsed { width: 34px; }
     .column { width: 82vw; max-width: 310px; }
     .col-body { max-height: 65vh; }
     .ps-body { padding: 16px 12px; }
@@ -327,7 +329,7 @@
   .chip-add:hover { border-color: rgba(255,255,255,0.8); color: rgba(255,255,255,0.9); }
 
   /* ─── BOARD ─── */
-  .board { display: flex; gap: 12px; padding: 20px 24px; min-height: calc(100vh - 105px); align-items: flex-start; overflow-x: auto; background: var(--bg); }
+  .board { display: flex; gap: 12px; padding: 20px 24px; align-items: flex-start; overflow-x: auto; background: var(--bg); }
   .board::-webkit-scrollbar { height: 6px; }
   .board::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
   .column { width: 272px; flex-shrink: 0; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; display: flex; flex-direction: column; max-height: calc(100vh - 140px); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
@@ -530,6 +532,77 @@
   .cl-attach-link-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 0 2px; flex-shrink: 0; }
   .cl-attach-link-del:hover { color: var(--danger); }
 
+  /* ─── APP BODY (board + task panel) ─── */
+  .app-body { display: flex; height: calc(100vh - 105px); overflow: hidden; }
+  #board { flex: 1; overflow-x: auto; height: 100%; min-height: unset; }
+
+  /* ─── TASK PANEL ─── */
+  .task-panel { width: 280px; flex-shrink: 0; height: 100%; background: rgba(255,255,255,0.03); border-left: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; overflow: hidden; transition: width 0.22s; }
+  .task-panel.collapsed { width: 36px; }
+  .task-panel-toggle { display: flex; align-items: center; justify-content: center; height: 42px; cursor: pointer; color: rgba(255,255,255,0.35); font-size: 13px; flex-shrink: 0; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.07); gap: 6px; transition: color 0.15s; user-select: none; }
+  .task-panel-toggle:hover { color: rgba(255,255,255,0.8); }
+  .task-panel-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+  .task-panel.collapsed .task-panel-label { display: none; }
+  .task-panel-body { flex: 1; overflow-y: auto; padding: 8px 6px; display: flex; flex-direction: column; gap: 3px; }
+  .task-panel.collapsed .task-panel-body { display: none; }
+  .task-panel-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(200,165,60,0.5); padding: 6px 5px 3px; }
+  .task-item { padding: 7px 9px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; cursor: pointer; transition: background 0.13s; }
+  .task-item:hover { background: rgba(255,255,255,0.09); }
+  .task-item.overdue { border-color: rgba(255,80,60,0.3); background: rgba(255,50,30,0.07); }
+  .task-item.today { border-color: rgba(200,165,60,0.3); background: rgba(200,165,60,0.06); }
+  .task-item-row { display: flex; align-items: flex-start; gap: 6px; }
+  .task-item-row input[type=checkbox] { margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); cursor: pointer; }
+  .task-item-text { font-size: 12px; color: rgba(255,255,255,0.82); line-height: 1.4; word-break: break-word; }
+  .task-item-card { font-size: 10px; color: rgba(255,255,255,0.28); margin-top: 3px; padding-left: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .task-item-dl { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; margin-top: 4px; margin-left: 18px; display: inline-block; }
+  .task-item-dl.overdue { background: rgba(255,60,40,0.18); color: #ff7060; }
+  .task-item-dl.today { background: rgba(200,165,60,0.18); color: rgba(200,165,60,0.9); }
+  .task-item-dl.future { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.38); }
+  .task-panel-empty { font-size: 12px; color: rgba(255,255,255,0.22); text-align: center; padding: 28px 10px; line-height: 1.7; }
+
+  /* ─── CL ITEM META (assignee + deadline) ─── */
+  .cl-item-meta { display: flex; align-items: center; gap: 5px; margin-top: 5px; padding-left: 26px; flex-wrap: wrap; }
+  .cl-meta-btn { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; font-size: 11px; color: rgba(255,255,255,0.45); cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit; }
+  .cl-meta-btn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9); border-color: rgba(255,255,255,0.25); }
+  .cl-meta-btn.assigned { background: rgba(200,165,60,0.12); border-color: rgba(200,165,60,0.3); color: rgba(200,165,60,0.9); }
+  .cl-meta-btn.has-date { background: rgba(80,180,100,0.1); border-color: rgba(80,180,100,0.25); color: rgba(120,210,130,0.85); }
+  .cl-meta-btn.date-overdue { background: rgba(255,60,40,0.12); border-color: rgba(255,60,40,0.3); color: #ff7060; }
+  .cl-meta-btn.date-today { background: rgba(200,165,60,0.12); border-color: rgba(200,165,60,0.3); color: rgba(200,165,60,0.9); }
+
+  /* ─── @MENTION DROPDOWN ─── */
+  .at-suggest { position: fixed; z-index: 9999; background: #1e2d10; border: 1px solid rgba(200,165,60,0.35); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); min-width: 170px; overflow: hidden; }
+  .at-suggest-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; font-size: 13px; color: rgba(255,255,255,0.82); transition: background 0.1s; }
+  .at-suggest-item:hover, .at-suggest-item.at-active { background: rgba(200,165,60,0.15); }
+  .at-suggest-item .avatar { width: 22px; height: 22px; font-size: 9px; border-radius: 5px; display:flex;align-items:center;justify-content:center; flex-shrink: 0; }
+
+  /* ─── MINI CALENDAR ─── */
+  .mini-cal-wrap { position: fixed; z-index: 9999; background: #1e2a10; border: 1px solid rgba(200,165,60,0.35); border-radius: 13px; box-shadow: 0 12px 36px rgba(0,0,0,0.55); padding: 14px; width: 228px; }
+  .mini-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .mini-cal-month { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.88); }
+  .mini-cal-nav { background: none; border: none; color: rgba(255,255,255,0.45); cursor: pointer; font-size: 17px; padding: 1px 7px; border-radius: 6px; transition: all 0.13s; font-family: inherit; }
+  .mini-cal-nav:hover { color: #fff; background: rgba(255,255,255,0.1); }
+  .mini-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .mini-cal-dow { text-align: center; font-size: 10px; font-weight: 700; color: rgba(200,165,60,0.5); padding: 2px 0 4px; }
+  .mini-cal-day { text-align: center; font-size: 12px; padding: 5px 0; border-radius: 5px; cursor: pointer; color: rgba(255,255,255,0.65); transition: all 0.1s; }
+  .mini-cal-day:not(.other-month):hover { background: rgba(200,165,60,0.22); color: #fff; }
+  .mini-cal-day.cal-today { background: rgba(200,165,60,0.15); color: rgba(200,165,60,0.95); font-weight: 700; }
+  .mini-cal-day.cal-selected { background: rgba(200,165,60,0.75); color: #fff; font-weight: 700; }
+  .mini-cal-day.other-month { color: rgba(255,255,255,0.18); cursor: default; }
+  .mini-cal-clear { width: 100%; margin-top: 8px; background: none; border: 1px solid rgba(255,80,60,0.28); color: rgba(255,100,80,0.65); border-radius: 6px; padding: 5px; cursor: pointer; font-size: 11px; transition: all 0.13s; font-family: inherit; }
+  .mini-cal-clear:hover { background: rgba(255,60,40,0.1); color: #ff7060; }
+
+  /* ─── TASK NOTIFICATION POPUP ─── */
+  .task-notif-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10100; display: flex; align-items: center; justify-content: center; }
+  .task-notif { background: #1a2610; border: 1px solid rgba(200,165,60,0.3); border-radius: 16px; box-shadow: 0 20px 56px rgba(0,0,0,0.65); padding: 28px; max-width: 420px; width: 92%; max-height: 72vh; overflow-y: auto; }
+  .task-notif-title { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 18px; letter-spacing: -0.3px; }
+  .task-notif-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 7px; margin-top: 4px; }
+  .task-notif-label.overdue { color: #ff7060; }
+  .task-notif-label.today { color: rgba(200,165,60,0.9); }
+  .task-notif-row { display: flex; gap: 8px; padding: 7px 10px; background: rgba(255,255,255,0.04); border-radius: 8px; margin-bottom: 4px; font-size: 12px; color: rgba(255,255,255,0.8); line-height: 1.4; }
+  .task-notif-row-card { font-size: 10px; color: rgba(255,255,255,0.32); margin-top: 2px; }
+  .task-notif-close { width: 100%; margin-top: 16px; padding: 10px; background: rgba(200,165,60,0.14); border: 1px solid rgba(200,165,60,0.3); border-radius: 9px; color: rgba(200,165,60,0.9); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.14s; }
+  .task-notif-close:hover { background: rgba(200,165,60,0.24); }
+
   /* ─── LIGHTBOX ─── */
   #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(10px); z-index: 500; align-items: center; justify-content: flex-start; cursor: zoom-out; flex-direction: column; gap: 12px; }
   #lightbox.open { display: flex; }
@@ -668,7 +741,18 @@
     </div>
   </header>
   <div class="team-bar" id="teamBar"></div>
-  <div class="board" id="board"></div>
+  <div class="app-body">
+    <div class="board" id="board"></div>
+    <div class="task-panel" id="taskPanel">
+      <div class="task-panel-toggle" onclick="toggleTaskPanel()" title="Moje úkoly">
+        <span id="taskPanelArrow">◁</span>
+        <span class="task-panel-label">Moje úkoly</span>
+      </div>
+      <div class="task-panel-body" id="taskPanelBody">
+        <div class="task-panel-empty">Načítám…</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- DETAIL MODAL -->
@@ -814,7 +898,7 @@
 const COLORS = ['#f0a500','#e05c00','#4caf50','#2196f3','#9c27b0','#00bcd4','#ff5722','#8bc34a','#ff9800','#607d8b'];
 
 function loadState() { try { const s = localStorage.getItem('besix_v1'); return s ? JSON.parse(s) : null; } catch(e) { return null; } }
-function saveState() { try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {} scheduleSyncKanbanToServer(); }
+function saveState() { try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {} scheduleSyncKanbanToServer(); renderTaskPanel(); }
 
 // ── Kanban server sync ────────────────────────────────────────────────────
 let _kanbanSyncTimer = null;
@@ -1112,7 +1196,7 @@ function openProject(id) {
   // Show role badge from API
   const roleEl = document.getElementById('cuRole');
   if (_projectRole && roleEl) { roleEl.textContent = _projectRole; roleEl.style.display = 'inline'; }
-  renderTeamBar(); renderBoard(); updateBadge(); // renderTeamBar is async but fire-and-forget is fine here
+  renderTeamBar(); renderBoard(); updateBadge(); renderTaskPanel(); // renderTeamBar is async but fire-and-forget is fine here
 }
 // PROJECT CRUD
 const PROJ_COLORS = ['#f0a500','#e05c00','#4caf50','#2196f3','#9c27b0','#00bcd4','#ff5722','#e91e63','#607d8b','#795548'];
@@ -1191,7 +1275,7 @@ async function renderTeamBar() {
     try {
       const res = await fetch(`/api/projects.php?action=members&project_id=${activeProjectId}`, { credentials: 'include' });
       const data = await res.json();
-      if (data.success) { apiMembers = data.members; apiInvitations = data.invitations || []; }
+      if (data.success) { apiMembers = data.members; apiInvitations = data.invitations || []; _projectMembers = data.members; }
     } catch {}
   }
 
@@ -1856,6 +1940,7 @@ function startRenameChecklist(nameEl, clId) {
 function mkClItemEl(item) {
   const author = gm(item.author);
   const atts = item.attachments||[];
+  const cardId = detailCardId; // capture for closures
   const div = document.createElement('div');
   div.className = 'cl-item-wrap';
   const row = document.createElement('div');
@@ -1866,10 +1951,42 @@ function mkClItemEl(item) {
     <span class="cl-author">${author?author.name.split(' ')[0]:''}</span>
     <button class="cl-attach-toggle" onclick="toggleClAttach('${item.id}')" title="Přidat přílohu">📎</button>
     <button class="cl-del" onclick="delClItem('${item.id}')">✕</button>`;
+
+  // Meta row: assignee + deadline
+  const today = new Date().toISOString().split('T')[0];
+  const metaRow = document.createElement('div');
+  metaRow.className = 'cl-item-meta';
+
+  // Assignee button
+  const assigneeBtn = document.createElement('button');
+  assigneeBtn.className = 'cl-meta-btn';
+  const assigneeMember = item.assignee ? ((_projectMembers||state.members).find(m=>String(m.id)===String(item.assignee)) || null) : null;
+  if (assigneeMember) {
+    assigneeBtn.classList.add('assigned');
+    assigneeBtn.innerHTML = `👤 ${escHtml(assigneeMember.name.split(' ')[0])}`;
+  } else {
+    assigneeBtn.innerHTML = `👤 Přiřadit`;
+  }
+  assigneeBtn.onclick = (e) => { e.stopPropagation(); openAssigneePicker(assigneeBtn, item.id, cardId); };
+  metaRow.appendChild(assigneeBtn);
+
+  // Deadline button
+  const dlBtn = document.createElement('button');
+  dlBtn.className = 'cl-meta-btn';
+  if (item.deadline) {
+    const dlCls = item.deadline < today ? 'date-overdue' : item.deadline === today ? 'date-today' : 'has-date';
+    dlBtn.classList.add(dlCls);
+    dlBtn.innerHTML = `📅 ${fmtDate(item.deadline)}`;
+  } else {
+    dlBtn.innerHTML = `📅 Termín`;
+  }
+  dlBtn.onclick = (e) => { e.stopPropagation(); openMiniCal(dlBtn, item.id, cardId, item.deadline||null); };
+  metaRow.appendChild(dlBtn);
   row.querySelector('.cl-text').addEventListener('dblclick', function() {
     startRenameClItem(row, item.id, item.text);
   });
   div.appendChild(row);
+  div.appendChild(metaRow);
   if (atts.length) {
     const linkRow = document.createElement('div');
     linkRow.className = 'cl-attach-links';
@@ -1996,11 +2113,19 @@ function renderAllChecklists(card) {
     // Add item row
     const addRow = document.createElement('div');
     addRow.className = 'cl-add-row';
+    addRow.style = 'flex-wrap:wrap;gap:5px';
     const inputId = 'clinput-' + cl.id;
-    addRow.innerHTML = `<input type="text" id="${inputId}" placeholder="Přidat položku..."><button onclick="addClItem('${cl.id}')">+ Přidat</button>`;
-    addRow.querySelector('input').addEventListener('keydown', e => {
+    addRow.innerHTML = `
+      <input type="text" id="${inputId}" placeholder="Přidat položku… nebo @jméno">
+      <button id="cl-at-btn-${cl.id}" class="cl-meta-btn" onclick="openAddRowAssignee('${cl.id}')" title="Přiřadit člena">👤</button>
+      <button id="cl-dl-btn-${cl.id}" class="cl-meta-btn" onclick="openAddRowDeadline('${cl.id}')" title="Nastavit termín">📅</button>
+      <button onclick="addClItem('${cl.id}')">+ Přidat</button>`;
+    const inp = addRow.querySelector('input');
+    inp.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); addClItem(cl.id); }
+      if (e.key === 'Escape') { closeSuggest(); }
     });
+    inp.addEventListener('input', e => { handleAtInput(e.target, cl.id); });
     block.appendChild(addRow);
 
     wrap.appendChild(block);
@@ -2018,10 +2143,26 @@ function addClItem(clId) {
   ensureChecklists(card);
   const cl = card.checklists.find(c => c.id === clId); if (!cl) return;
   const input = document.getElementById('clinput-' + clId); if (!input) return;
-  const text = input.value.trim(); if (!text) return;
+  let text = input.value.trim(); if (!text) return;
+
+  // Parse @mention to auto-assign
+  let assignee = (window._pendingClAssignee||{})[clId] || null;
+  const atMatch = text.match(/@(\S+)/);
+  if (atMatch) {
+    const q = atMatch[1].toLowerCase();
+    const members = _projectMembers || state.members;
+    const found = members.find(m => m.name.toLowerCase().split(' ').some(p => p.startsWith(q)));
+    if (found) { assignee = String(found.id); text = text.replace(atMatch[0], '').trim(); }
+  }
+
+  const deadline = (window._pendingClDeadline||{})[clId] || null;
   if (!cl.items) cl.items = [];
-  cl.items.push({ id: 'i'+Date.now(), text, done: false, author: currentUser.id, created: new Date().toISOString(), attachments: [] });
+  cl.items.push({ id: 'i'+Date.now(), text, done: false, author: currentUser.id, created: new Date().toISOString(), attachments: [], assignee: assignee||null, deadline: deadline||null });
   input.value = '';
+  if (window._pendingClAssignee) delete window._pendingClAssignee[clId];
+  if (window._pendingClDeadline) delete window._pendingClDeadline[clId];
+  closeSuggest();
+  updateAddRowMeta(clId);
   saveState(); renderAllChecklists(card); renderBoard();
 }
 
@@ -2227,6 +2368,394 @@ function toggleArchivedCols() {
   if (chevron) chevron.textContent = open ? '▶' : '▼';
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// TASK PANEL
+// ══════════════════════════════════════════════════════════════════════════
+let _projectMembers = null; // cached from renderTeamBar API call
+
+function findCardAnywhere(cardId) {
+  for (const proj of state.projects) {
+    const card = (proj.cards||[]).find(c => c.id === cardId);
+    if (card) return card;
+  }
+  return null;
+}
+
+function toggleTaskPanel() {
+  const panel = document.getElementById('taskPanel');
+  const arrow = document.getElementById('taskPanelArrow');
+  if (!panel) return;
+  panel.classList.toggle('collapsed');
+  const collapsed = panel.classList.contains('collapsed');
+  if (arrow) arrow.textContent = collapsed ? '▷' : '◁';
+  if (!collapsed) renderTaskPanel();
+}
+
+function renderTaskPanel() {
+  const body = document.getElementById('taskPanelBody');
+  const panel = document.getElementById('taskPanel');
+  if (!body || !panel || panel.classList.contains('collapsed')) return;
+
+  const userId = currentUser ? String(currentUser.id) : null;
+  if (!userId) { body.innerHTML = '<div class="task-panel-empty">Přihlaš se pro zobrazení úkolů.</div>'; return; }
+
+  const today = new Date().toISOString().split('T')[0];
+  const tasks = [];
+  for (const proj of state.projects) {
+    for (const card of (proj.cards||[])) {
+      for (const cl of (card.checklists||[])) {
+        for (const item of (cl.items||[])) {
+          if (!item.done && String(item.assignee) === userId) {
+            tasks.push({ item, card });
+          }
+        }
+      }
+    }
+  }
+
+  body.innerHTML = '';
+  if (!tasks.length) {
+    body.innerHTML = '<div class="task-panel-empty">Žádné přiřazené úkoly 🎉</div>';
+    return;
+  }
+
+  const overdue  = tasks.filter(t => t.item.deadline && t.item.deadline < today);
+  const todayT   = tasks.filter(t => t.item.deadline === today);
+  const future   = tasks.filter(t => !t.item.deadline || t.item.deadline > today);
+
+  overdue.sort((a,b) => (a.item.deadline||'').localeCompare(b.item.deadline||''));
+  future.sort((a,b) => {
+    if (!a.item.deadline && !b.item.deadline) return 0;
+    if (!a.item.deadline) return 1;
+    if (!b.item.deadline) return -1;
+    return a.item.deadline.localeCompare(b.item.deadline);
+  });
+
+  function mkSection(label, items, cls) {
+    if (!items.length) return;
+    const lbl = document.createElement('div');
+    lbl.className = 'task-panel-section';
+    lbl.textContent = label;
+    body.appendChild(lbl);
+    items.forEach(({ item, card }) => {
+      const el = document.createElement('div');
+      el.className = 'task-item' + (cls ? ' ' + cls : '');
+      const dl = item.deadline;
+      const dlCls = dl ? (dl < today ? 'overdue' : dl === today ? 'today' : 'future') : '';
+      const dlHtml = dl ? `<div class="task-item-dl ${dlCls}">${fmtDate(dl)}</div>` : '';
+      el.innerHTML = `
+        <div class="task-item-row">
+          <input type="checkbox" onclick="checkClItemFromPanel('${item.id}','${card.id}',this)">
+          <span class="task-item-text">${escHtml(item.text)}</span>
+        </div>
+        <div class="task-item-card">📋 ${escHtml(card.title)}</div>
+        ${dlHtml}`;
+      body.appendChild(el);
+    });
+  }
+
+  mkSection('⚠ Po termínu', overdue, 'overdue');
+  mkSection('📅 Dnes', todayT, 'today');
+  mkSection('🗓 Nadcházející', future, '');
+}
+
+function checkClItemFromPanel(itemId, cardId, cbEl) {
+  const card = findCardAnywhere(cardId); if (!card) return;
+  const found = findClItem(card, itemId); if (!found) return;
+  const { item } = found;
+  setTimeout(() => {
+    item.done = true;
+    item.completedBy = currentUser.id;
+    item.completedAt = new Date().toISOString();
+    saveState(); renderTaskPanel(); renderBoard();
+    const detailCard = gc(detailCardId);
+    if (detailCard && detailCard.id === cardId) renderAllChecklists(detailCard);
+  }, 300);
+}
+
+function showTaskNotification() {
+  const userId = currentUser ? String(currentUser.id) : null;
+  if (!userId) return;
+  const today = new Date().toISOString().split('T')[0];
+  const overdue = [], todayTasks = [];
+  for (const proj of state.projects) {
+    for (const card of (proj.cards||[])) {
+      for (const cl of (card.checklists||[])) {
+        for (const item of (cl.items||[])) {
+          if (!item.done && String(item.assignee) === userId && item.deadline) {
+            if (item.deadline < today) overdue.push({ item, card });
+            else if (item.deadline === today) todayTasks.push({ item, card });
+          }
+        }
+      }
+    }
+  }
+  if (!overdue.length && !todayTasks.length) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'task-notif-overlay';
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  let html = `<div class="task-notif"><div class="task-notif-title">📋 Tvoje úkoly</div>`;
+  if (overdue.length) {
+    html += `<div class="task-notif-label overdue">⚠ Po termínu (${overdue.length})</div>`;
+    overdue.forEach(({ item, card }) => {
+      html += `<div class="task-notif-row"><div><div>${escHtml(item.text)}</div><div class="task-notif-row-card">📋 ${escHtml(card.title)} · ${fmtDate(item.deadline)}</div></div></div>`;
+    });
+  }
+  if (todayTasks.length) {
+    html += `<div class="task-notif-label today" style="margin-top:${overdue.length?'14px':'0'}">📅 K splnění dnes (${todayTasks.length})</div>`;
+    todayTasks.forEach(({ item, card }) => {
+      html += `<div class="task-notif-row"><div><div>${escHtml(item.text)}</div><div class="task-notif-row-card">📋 ${escHtml(card.title)}</div></div></div>`;
+    });
+  }
+  html += `<button class="task-notif-close" onclick="this.closest('.task-notif-overlay').remove()">Rozumím</button></div>`;
+  overlay.innerHTML = html;
+  document.body.appendChild(overlay);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ASSIGNEE PICKER
+// ══════════════════════════════════════════════════════════════════════════
+function openAssigneePicker(anchorEl, itemId, cardId) {
+  document.getElementById('_assigneePicker')?.remove();
+  const members = _projectMembers || state.members;
+  if (!members || !members.length) return;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'at-suggest'; wrap.id = '_assigneePicker';
+  const rect = anchorEl.getBoundingClientRect();
+  wrap.style.cssText = `top:${Math.min(rect.bottom+4, window.innerHeight-200)}px;left:${Math.min(rect.left, window.innerWidth-185)}px`;
+
+  const card = findCardAnywhere(cardId);
+  const found = card ? findClItem(card, itemId) : null;
+  const cur = found ? String(found.item.assignee||'') : '';
+
+  wrap.innerHTML = members.map(m =>
+    `<div class="at-suggest-item${String(m.id)===cur?' at-active':''}" onclick="setClItemAssignee('${itemId}','${m.id}','${cardId}')">
+       <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
+       ${escHtml(m.name)}
+     </div>`
+  ).join('') + `<div class="at-suggest-item" style="color:rgba(255,100,80,0.7)" onclick="setClItemAssignee('${itemId}',null,'${cardId}')">✕ Odebrat přiřazení</div>`;
+
+  document.body.appendChild(wrap);
+  setTimeout(() => {
+    document.addEventListener('click', function handler(e) {
+      if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', handler, true); }
+    }, { capture: true });
+  }, 0);
+}
+
+function setClItemAssignee(itemId, memberId, cardId) {
+  document.getElementById('_assigneePicker')?.remove();
+  const card = findCardAnywhere(cardId); if (!card) return;
+  const found = findClItem(card, itemId); if (!found) return;
+  found.item.assignee = memberId || null;
+  saveState();
+  const dc = gc(detailCardId);
+  if (dc) renderAllChecklists(dc);
+  renderTaskPanel();
+}
+
+// For add-row pending assignee/deadline
+function openAddRowAssignee(clId) {
+  const btn = document.getElementById('cl-at-btn-' + clId);
+  const members = _projectMembers || state.members;
+  if (!members || !members.length || !btn) return;
+  document.getElementById('_addRowSuggest')?.remove();
+
+  const wrap = document.createElement('div');
+  wrap.className = 'at-suggest'; wrap.id = '_addRowSuggest';
+  const rect = btn.getBoundingClientRect();
+  wrap.style.cssText = `top:${Math.min(rect.bottom+4, window.innerHeight-200)}px;left:${Math.min(rect.left, window.innerWidth-185)}px`;
+
+  const cur = String((window._pendingClAssignee||{})[clId]||'');
+  wrap.innerHTML = members.map(m =>
+    `<div class="at-suggest-item${String(m.id)===cur?' at-active':''}" onclick="setPendingAssignee('${clId}','${m.id}')">
+       <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
+       ${escHtml(m.name)}
+     </div>`
+  ).join('') + `<div class="at-suggest-item" style="color:rgba(255,100,80,0.7)" onclick="setPendingAssignee('${clId}',null)">✕ Žádný</div>`;
+
+  document.body.appendChild(wrap);
+  setTimeout(() => {
+    document.addEventListener('click', function handler(e) {
+      if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', handler, true); }
+    }, { capture: true });
+  }, 0);
+}
+
+function setPendingAssignee(clId, memberId) {
+  document.getElementById('_addRowSuggest')?.remove();
+  if (!window._pendingClAssignee) window._pendingClAssignee = {};
+  window._pendingClAssignee[clId] = memberId || null;
+  updateAddRowMeta(clId);
+}
+
+function openAddRowDeadline(clId) {
+  const btn = document.getElementById('cl-dl-btn-' + clId);
+  if (!btn) return;
+  const cur = (window._pendingClDeadline||{})[clId] || null;
+  openMiniCal(btn, '__add__' + clId, null, cur);
+}
+
+function updateAddRowMeta(clId) {
+  const atBtn = document.getElementById('cl-at-btn-' + clId);
+  const dlBtn = document.getElementById('cl-dl-btn-' + clId);
+  if (atBtn) {
+    const memberId = (window._pendingClAssignee||{})[clId];
+    const m = memberId ? (_projectMembers||state.members).find(x=>String(x.id)===String(memberId)) : null;
+    atBtn.textContent = m ? `👤 ${m.name.split(' ')[0]}` : '👤';
+    atBtn.classList.toggle('assigned', !!m);
+  }
+  if (dlBtn) {
+    const dl = (window._pendingClDeadline||{})[clId];
+    dlBtn.textContent = dl ? `📅 ${fmtDate(dl)}` : '📅';
+    dlBtn.classList.toggle('has-date', !!dl);
+  }
+}
+
+// @mention live suggestions in the add-item input
+function handleAtInput(inputEl, clId) {
+  const val = inputEl.value;
+  const atPos = val.lastIndexOf('@');
+  closeSuggest();
+  if (atPos === -1) return;
+  const query = val.slice(atPos + 1).toLowerCase();
+  const members = _projectMembers || state.members;
+  if (!members) return;
+  const matches = members.filter(m => m.name.toLowerCase().split(' ').some(p => p.startsWith(query)));
+  if (!matches.length) return;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'at-suggest'; wrap.id = '_atSuggest';
+  const rect = inputEl.getBoundingClientRect();
+  wrap.style.cssText = `top:${rect.bottom+4}px;left:${rect.left}px;min-width:${rect.width}px`;
+
+  wrap.innerHTML = matches.map(m =>
+    `<div class="at-suggest-item" onclick="selectAtMember('${clId}','${m.id}','${m.name.replace(/'/g,"\\'")}')">
+       <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
+       ${escHtml(m.name)}
+     </div>`
+  ).join('');
+
+  document.body.appendChild(wrap);
+}
+
+function selectAtMember(clId, memberId, name) {
+  closeSuggest();
+  const input = document.getElementById('clinput-' + clId);
+  if (input) {
+    input.value = input.value.replace(/@\S*$/, '').trim();
+  }
+  if (!window._pendingClAssignee) window._pendingClAssignee = {};
+  window._pendingClAssignee[clId] = memberId;
+  updateAddRowMeta(clId);
+}
+
+function closeSuggest() {
+  document.getElementById('_atSuggest')?.remove();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// MINI CALENDAR
+// ══════════════════════════════════════════════════════════════════════════
+let _calCtx = null; // { itemId, cardId, clId(for add-row) }
+let _calYear = 0, _calMonth = 0, _calSelected = null;
+
+function openMiniCal(anchorEl, itemId, cardId, currentDate) {
+  document.getElementById('_miniCal')?.remove();
+  document.removeEventListener('click', _calOutsideHandler, true);
+
+  const d = currentDate ? new Date(currentDate + 'T00:00:00') : new Date();
+  _calYear = d.getFullYear(); _calMonth = d.getMonth(); _calSelected = currentDate || null;
+  _calCtx = { itemId, cardId };
+
+  const wrap = document.createElement('div');
+  wrap.className = 'mini-cal-wrap'; wrap.id = '_miniCal';
+  const rect = anchorEl.getBoundingClientRect();
+  const top = rect.bottom + 4;
+  const left = Math.min(rect.left, window.innerWidth - 240);
+  wrap.style.cssText = `top:${Math.min(top, window.innerHeight - 280)}px;left:${left}px`;
+  document.body.appendChild(wrap);
+  _renderMiniCal();
+
+  setTimeout(() => {
+    document.addEventListener('click', _calOutsideHandler, true);
+  }, 0);
+}
+
+function _calOutsideHandler(e) {
+  const wrap = document.getElementById('_miniCal');
+  if (wrap && !wrap.contains(e.target)) {
+    wrap.remove();
+    document.removeEventListener('click', _calOutsideHandler, true);
+  }
+}
+
+function _renderMiniCal() {
+  const wrap = document.getElementById('_miniCal'); if (!wrap) return;
+  const MONTHS = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+  const DOWS = ['Po','Út','St','Čt','Pá','So','Ne'];
+  const today = new Date().toISOString().split('T')[0];
+  const firstDow = ((new Date(_calYear, _calMonth, 1).getDay() + 6) % 7); // Mon=0
+  const daysInMonth = new Date(_calYear, _calMonth + 1, 0).getDate();
+  const daysInPrev  = new Date(_calYear, _calMonth, 0).getDate();
+  const totalCells  = Math.ceil((firstDow + daysInMonth) / 7) * 7;
+
+  let grid = DOWS.map(d => `<div class="mini-cal-dow">${d}</div>`).join('');
+  for (let i = firstDow - 1; i >= 0; i--)
+    grid += `<div class="mini-cal-day other-month">${daysInPrev - i}</div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${_calYear}-${String(_calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cls = [ds===today?'cal-today':'', ds===_calSelected?'cal-selected':''].filter(Boolean).join(' ');
+    grid += `<div class="mini-cal-day ${cls}" onclick="_calPick('${ds}')">${d}</div>`;
+  }
+  for (let d = 1; d <= totalCells - firstDow - daysInMonth; d++)
+    grid += `<div class="mini-cal-day other-month">${d}</div>`;
+
+  wrap.innerHTML = `
+    <div class="mini-cal-header">
+      <button class="mini-cal-nav" onclick="_calNav(-1)">‹</button>
+      <span class="mini-cal-month">${MONTHS[_calMonth]} ${_calYear}</span>
+      <button class="mini-cal-nav" onclick="_calNav(1)">›</button>
+    </div>
+    <div class="mini-cal-grid">${grid}</div>
+    <button class="mini-cal-clear" onclick="_calPick(null)">✕ Zrušit termín</button>`;
+}
+
+function _calNav(dir) {
+  _calMonth += dir;
+  if (_calMonth < 0) { _calMonth = 11; _calYear--; }
+  if (_calMonth > 11) { _calMonth = 0; _calYear++; }
+  _renderMiniCal();
+}
+
+function _calPick(dateStr) {
+  document.getElementById('_miniCal')?.remove();
+  document.removeEventListener('click', _calOutsideHandler, true);
+  if (!_calCtx) return;
+  const { itemId, cardId } = _calCtx;
+  _calSelected = dateStr;
+
+  // Add-row mode (itemId starts with '__add__')
+  if (itemId && itemId.startsWith('__add__')) {
+    const clId = itemId.slice(7);
+    if (!window._pendingClDeadline) window._pendingClDeadline = {};
+    window._pendingClDeadline[clId] = dateStr || null;
+    updateAddRowMeta(clId);
+    return;
+  }
+
+  const card = findCardAnywhere(cardId); if (!card) return;
+  const found = findClItem(card, itemId); if (!found) return;
+  found.item.deadline = dateStr || null;
+  saveState();
+  const dc = gc(detailCardId);
+  if (dc) renderAllChecklists(dc);
+  renderTaskPanel();
+}
+
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
 document.addEventListener('keydown', e => {
@@ -2370,7 +2899,10 @@ async function bootAuth() {
   // 6. Load latest kanban state from server (cross-device sync)
   await syncKanbanFromServer(activeProjectId);
 
-  // 7. Apply viewer restrictions
+  // 7. Show notification popup for overdue/today tasks
+  showTaskNotification();
+
+  // 8. Apply viewer restrictions
   applyRoleRestrictions(_projectRole);
 }
 
