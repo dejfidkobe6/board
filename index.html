@@ -535,6 +535,16 @@
   .cl-attach-link-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 0 2px; flex-shrink: 0; }
   .cl-attach-link-del:hover { color: var(--danger); }
 
+  /* ─── BG PICKER ─── */
+  .bg-picker-wrap { position: relative; }
+  .bg-picker-dropdown { display: none; position: absolute; top: calc(100% + 8px); right: 0; background: #1a2a0e; border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; padding: 12px; z-index: 200; box-shadow: 0 8px 28px rgba(0,0,0,0.5); min-width: 200px; }
+  .bg-picker-dropdown.open { display: block; }
+  .bg-picker-title { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 8px; }
+  .bg-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+  .bg-swatch { width: 26px; height: 26px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: border-color 0.12s, transform 0.1s; }
+  .bg-swatch:hover { transform: scale(1.1); }
+  .bg-swatch.active { border-color: #fff; }
+
   /* ─── APP BODY (board + task panel) ─── */
   .app-body { position: relative; height: calc(100vh - 105px); overflow: hidden; }
   #board { width: 100%; height: 100%; overflow-x: auto; min-height: unset; }
@@ -736,6 +746,13 @@
     <div class="logo" style="display:flex;align-items:center;gap:9px"><img src="/assets/besix-logo.png" class="besix-logo-header" width="28" height="28" style="object-fit:cover;border-radius:3px;flex-shrink:0;display:block;" alt="BeSix"><span style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:15px;letter-spacing:-0.3px;color:inherit">BeSix<span style="font-weight:400;opacity:0.55;margin-left:3px">Board</span></span> <span id="activeProjectName" style="font-size:12px;color:rgba(255,255,255,0.4);font-weight:500;margin-left:4px"></span></div>
     <div class="header-right">
       <button class="btn btn-ghost" onclick="goToProjects()" title="Všechny projekty">◈ Projekty</button>
+      <div class="bg-picker-wrap" id="bgPickerWrap" style="display:none">
+        <button class="btn btn-ghost" onclick="toggleBgPicker(event)" title="Barva pozadí boardu">🎨 Pozadí</button>
+        <div class="bg-picker-dropdown" id="bgPickerDropdown">
+          <div class="bg-picker-title">Pozadí boardu</div>
+          <div class="bg-swatches" id="bgSwatches"></div>
+        </div>
+      </div>
       <button class="btn btn-ghost" onclick="openExportModal()">📊 Export Excel <span class="export-badge" id="exportBadge" style="display:none">0</span></button>
       <button class="btn btn-primary" onclick="openAddCard()">+ Přidat kartu</button>
       <div class="current-user" onclick="logout()">
@@ -2772,12 +2789,15 @@ async function bootAuth() {
     return;
   }
 
-  // 3. Load project role
+  // 3. Load project role + bg_color
   try {
     const pr = await fetch('/api/projects.php?action=detail&id=' + activeProjectId, { credentials: 'include' });
     if (!pr.ok) { window.location.href = '/dashboard.php'; return; }
     const pd = await pr.json();
     _projectRole = pd.project.my_role;
+    // Sync bg_color from DB into local state so openProject() uses it
+    const projStub = state.projects.find(p => p.id === activeProjectId);
+    if (projStub && pd.project.bg_color) projStub.bg = pd.project.bg_color;
   } catch {
     _projectRole = 'member'; // fallback for local dev
   }
@@ -2812,7 +2832,62 @@ async function bootAuth() {
   applyRoleRestrictions(_projectRole);
 }
 
+// ── Board background picker ────────────────────────────────────────────────
+const BOARD_BG_COLORS = ['#4a5240','#2e3a2a','#1e2d3a','#2a1e3a','#3a1e1e','#1e3a2e','#2a2e1e','#1a2232','#2d2010','#3a2e1a','#1e2820','#2a2010'];
+
+function buildBgSwatches() {
+  const proj = activeProj();
+  const cur = (proj && proj.bg) || 'var(--bg)';
+  document.getElementById('bgSwatches').innerHTML = BOARD_BG_COLORS.map(c =>
+    `<div class="bg-swatch${c===cur?' active':''}" style="background:${c}" onclick="pickBoardBg('${c}')"></div>`
+  ).join('');
+}
+
+function toggleBgPicker(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('bgPickerDropdown');
+  const isOpen = dd.classList.contains('open');
+  if (!isOpen) buildBgSwatches();
+  dd.classList.toggle('open');
+}
+
+async function pickBoardBg(color) {
+  // Update UI immediately
+  const appEl = document.getElementById('app');
+  if (appEl) appEl.style.background = color;
+  // Update local state
+  const proj = activeProj();
+  if (proj) proj.bg = color;
+  saveState();
+  // Update active swatch
+  document.querySelectorAll('.bg-swatch').forEach(s => s.classList.toggle('active', s.style.background === color));
+  // Close dropdown
+  document.getElementById('bgPickerDropdown').classList.remove('open');
+  // Persist to DB
+  const pid = state.activeProjectId;
+  if (pid) {
+    try {
+      await fetch('/api/projects.php?action=update_bg', {
+        method: 'POST', credentials: 'include',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ project_id: parseInt(pid) || pid, bg_color: color })
+      });
+    } catch {}
+  }
+}
+
+// Close bg picker when clicking outside
+document.addEventListener('click', () => {
+  document.getElementById('bgPickerDropdown')?.classList.remove('open');
+});
+
 function applyRoleRestrictions(role) {
+  // Show bg picker for admin/owner only
+  if (role === 'admin' || role === 'owner') {
+    const w = document.getElementById('bgPickerWrap');
+    if (w) w.style.display = '';
+    buildBgSwatches();
+  }
   if (role !== 'viewer') return;
   // Hide all edit controls for viewers
   const selectors = [
