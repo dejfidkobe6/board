@@ -1363,15 +1363,21 @@ function toggleTeamBar() {
 function renderBoard() {
   const board = document.getElementById('board');
   board.innerHTML = '';
-  state.columns.forEach(col => {
+  const canManageCol = (_projectRole === 'owner' || _projectRole === 'admin');
+
+  state.columns.filter(col => !col.archived).forEach(col => {
     const cards = state.cards.filter(c=>c.colId===col.id);
     const el = document.createElement('div');
     el.className = 'column';
+    const archiveBtn = canManageCol
+      ? `<button class="col-rename-btn" onclick="archiveColumn('${col.id}')" title="Archivovat sloupec" style="font-size:13px">📦</button>`
+      : '';
     el.innerHTML = `
       <div class="col-header">
         <div class="col-title"><div class="col-dot" style="background:${col.color}"></div>${col.title}</div>
         <div style="display:flex;align-items:center;gap:4px;">
           <button class="col-rename-btn" onclick="openRenameColumn('${col.id}')" title="Přejmenovat sloupec">✏</button>
+          ${archiveBtn}
           <span class="col-count">${cards.length}</span>
         </div>
       </div>
@@ -1382,10 +1388,34 @@ function renderBoard() {
     setupDrop(body, col.id);
     cards.forEach(card => body.appendChild(mkCard(card)));
   });
+
   const ac = document.createElement('div');
   ac.className = 'add-column';
   ac.innerHTML = `<button class="add-col-btn" onclick="openAddColumn()">+ Přidat sloupec</button>`;
   board.appendChild(ac);
+
+  // Archived columns section (admin/owner only)
+  const archivedCols = state.columns.filter(col => col.archived);
+  if (canManageCol && archivedCols.length > 0) {
+    const archSection = document.createElement('div');
+    archSection.style = 'flex-shrink:0;width:272px;align-self:flex-start';
+    archSection.innerHTML = `
+      <button onclick="toggleArchivedCols()" style="width:100%;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.15);border-radius:10px;color:rgba(255,255,255,0.35);font-size:12px;font-weight:600;padding:10px 14px;cursor:pointer;text-align:left;letter-spacing:0.04em;display:flex;justify-content:space-between;align-items:center" id="archColToggleBtn">
+        <span>📦 Archivované sloupce (${archivedCols.length})</span><span id="archColChevron">▶</span>
+      </button>
+      <div id="archColList" style="display:none;margin-top:6px;display:flex;flex-direction:column;gap:5px;display:none">
+        ${archivedCols.map(col => {
+          const cnt = state.cards.filter(c => c.colId === col.id).length;
+          return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px">
+            <div style="width:7px;height:7px;border-radius:50%;background:${col.color};flex-shrink:0"></div>
+            <span style="flex:1;font-size:12px;color:rgba(255,255,255,0.45);font-weight:600">${col.title}</span>
+            <span style="font-size:11px;color:rgba(255,255,255,0.25)">${cnt} karet</span>
+            <button onclick="restoreColumn('${col.id}')" style="background:rgba(200,165,60,0.15);border:1px solid rgba(200,165,60,0.3);border-radius:6px;color:rgba(200,165,60,0.8);font-size:11px;font-weight:600;padding:3px 9px;cursor:pointer;white-space:nowrap">Obnovit</button>
+          </div>`;
+        }).join('')}
+      </div>`;
+    board.appendChild(archSection);
+  }
 }
 
 function mkCard(card) {
@@ -2174,6 +2204,27 @@ function saveColumn() {
     state.columns.push({ id:'c'+Date.now(), title:name.toUpperCase(), color:cols[state.columns.length%cols.length] });
   }
   saveState(); closeModal('colModal'); renderBoard();
+}
+function archiveColumn(id) {
+  const col = state.columns.find(c => c.id === id);
+  if (!col) return;
+  if (!confirm(`Archivovat sloupec „${col.title}"? Karty zůstanou zachovány.`)) return;
+  col.archived = true;
+  saveState(); renderBoard();
+}
+function restoreColumn(id) {
+  const col = state.columns.find(c => c.id === id);
+  if (!col) return;
+  col.archived = false;
+  saveState(); renderBoard();
+}
+function toggleArchivedCols() {
+  const list = document.getElementById('archColList');
+  const chevron = document.getElementById('archColChevron');
+  if (!list) return;
+  const open = list.style.display !== 'none';
+  list.style.display = open ? 'none' : 'flex';
+  if (chevron) chevron.textContent = open ? '▶' : '▼';
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
