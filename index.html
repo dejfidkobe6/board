@@ -533,12 +533,15 @@
   .cl-attach-link-del:hover { color: var(--danger); }
 
   /* ─── APP BODY (board + task panel) ─── */
-  .app-body { display: flex; height: calc(100vh - 105px); overflow: hidden; }
-  #board { flex: 1; overflow-x: auto; height: 100%; min-height: unset; }
+  .app-body { position: relative; height: calc(100vh - 105px); overflow: hidden; }
+  #board { width: 100%; height: 100%; overflow-x: auto; min-height: unset; }
 
-  /* ─── TASK PANEL ─── */
-  .task-panel { width: 280px; flex-shrink: 0; height: 100%; background: rgba(255,255,255,0.03); border-left: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; overflow: hidden; transition: width 0.22s; }
-  .task-panel.collapsed { width: 36px; }
+  /* ─── TASK PANEL (floats over board, always on top) ─── */
+  .task-panel { position: absolute; right: 0; top: 0; height: 100%; z-index: 50; background: rgba(18,28,8,0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-left: 1px solid rgba(255,255,255,0.1); box-shadow: -6px 0 28px rgba(0,0,0,0.45); display: flex; flex-direction: column; overflow: hidden; }
+  .task-panel.collapsed { width: 36px !important; }
+  .task-panel-resize { position: absolute; left: 0; top: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 51; background: transparent; transition: background 0.15s; }
+  .task-panel-resize:hover, .task-panel-resize.dragging { background: rgba(200,165,60,0.35); }
+  .task-panel.collapsed .task-panel-resize { display: none; }
   .task-panel-toggle { display: flex; align-items: center; justify-content: center; height: 42px; cursor: pointer; color: rgba(255,255,255,0.35); font-size: 13px; flex-shrink: 0; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.07); gap: 6px; transition: color 0.15s; user-select: none; }
   .task-panel-toggle:hover { color: rgba(255,255,255,0.8); }
   .task-panel-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
@@ -744,6 +747,7 @@
   <div class="app-body">
     <div class="board" id="board"></div>
     <div class="task-panel" id="taskPanel" style="width:280px">
+      <div class="task-panel-resize" id="taskPanelResize"></div>
       <div class="task-panel-toggle" onclick="toggleTaskPanel()" title="Skrýt/zobrazit panel úkolů">
         <span id="taskPanelArrow">◁</span>
         <span class="task-panel-label">Moje úkoly</span>
@@ -762,25 +766,6 @@
     <div class="detail-title" id="dTitle"></div>
     <div class="detail-meta-row" id="dMeta"></div>
     <div id="dDesc"></div>
-    <!-- COVER / BACKGROUND PICKER -->
-    <div class="cover-picker">
-      <div class="section-title" style="margin-bottom:10px">🖼 POZADÍ KARTY</div>
-      <div class="cover-preview" id="coverPreview">
-        <div class="cover-upload-area" id="coverUploadArea"
-          onclick="document.getElementById('coverImgInput').click()"
-          ondragover="dzOver(event,'coverUploadArea')" ondragleave="dzLeave('coverUploadArea')"
-          ondrop="dzDropCover(event)">
-          <div style="font-size:32px;margin-bottom:8px">🖼</div>
-          <div style="font-size:13px;color:var(--muted)">Přetáhni obrázek nebo <strong style="color:var(--accent)">klikni pro výběr</strong></div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px">JPG, PNG, WebP</div>
-        </div>
-        <div class="cover-img-wrap" id="coverImgWrap" style="display:none">
-          <img id="coverImgPreview" src="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;display:block">
-          <button class="cover-remove-btn" onclick="removeCover()">✕ Odebrat</button>
-        </div>
-      </div>
-      <input type="file" id="coverImgInput" accept="image/*" style="display:none" onchange="setCoverFromFile(event)">
-    </div>
 
     <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <span>✅ CHECKLISTRY</span>
@@ -1586,23 +1571,8 @@ function openDetail(id) {
   document.getElementById('detailModal').classList.add('open');
 }
 
-// ---- COVER / BACKGROUND ----
-function renderCoverPicker(card) {
-  const cover = card.cover || null;
-  const uploadArea = document.getElementById('coverUploadArea');
-  const imgWrap = document.getElementById('coverImgWrap');
-  const imgEl = document.getElementById('coverImgPreview');
-
-  if (cover && (cover.startsWith('data:') || cover.startsWith('http'))) {
-    uploadArea.style.display = 'none';
-    imgWrap.style.display = 'block';
-    imgEl.src = cover;
-  } else {
-    uploadArea.style.display = 'flex';
-    imgWrap.style.display = 'none';
-    imgEl.src = '';
-  }
-}
+// ---- COVER / BACKGROUND (removed from UI, stub kept for data compat) ----
+function renderCoverPicker(card) {}
 
 function setCoverFromFile(e) {
   const file = e.target.files[0]; if (!file) return;
@@ -1640,9 +1610,6 @@ function renderDetail() {
 
   document.getElementById('dDesc').innerHTML = card.desc ? `<div class="detail-desc">${card.desc}</div>` : '';
 
-  renderCoverPicker(card);
-  renderDetailPhotos(card);
-  renderDetailAttachments(card);
   renderAllChecklists(card);
 }
 
@@ -2368,8 +2335,63 @@ function toggleTaskPanel() {
   panel.classList.toggle('collapsed');
   const collapsed = panel.classList.contains('collapsed');
   if (arrow) arrow.textContent = collapsed ? '▷' : '◁';
-  if (!collapsed) renderTaskPanel();
+  if (!collapsed) {
+    const saved = localStorage.getItem('taskPanelWidth');
+    if (saved) panel.style.width = saved + 'px';
+    renderTaskPanel();
+  }
 }
+
+// ── Task panel resize ────────────────────────────────────────────────────
+(function () {
+  const MIN_W = 200, MAX_W = 600;
+  let startX = 0, startW = 0, dragging = false;
+
+  function initPanelResize() {
+    const handle = document.getElementById('taskPanelResize');
+    const panel  = document.getElementById('taskPanel');
+    if (!handle || !panel) return;
+
+    // Restore saved width
+    const saved = localStorage.getItem('taskPanelWidth');
+    if (saved) panel.style.width = saved + 'px';
+
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      dragging = true;
+      startX = e.clientX;
+      startW = panel.offsetWidth;
+      handle.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const delta = startX - e.clientX;          // dragging left = wider
+      const newW  = Math.min(MAX_W, Math.max(MIN_W, startW + delta));
+      panel.style.width = newW + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      const handle = document.getElementById('taskPanelResize');
+      if (handle) handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      const panel = document.getElementById('taskPanel');
+      if (panel) localStorage.setItem('taskPanelWidth', panel.offsetWidth);
+    });
+  }
+
+  // Run after DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPanelResize);
+  } else {
+    initPanelResize();
+  }
+})();
 
 function renderTaskPanel() {
   const body = document.getElementById('taskPanelBody');
