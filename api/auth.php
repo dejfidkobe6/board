@@ -164,15 +164,22 @@ if ($action === 'register') {
 })();
 } elseif ($action === 'session_debug') {
 (function () {
+    // Test DB write
+    $dbOk = false; $dbErr = '';
+    try {
+        $db = getDB();
+        $db->query('SELECT 1 FROM php_sessions LIMIT 1');
+        $dbOk = true;
+    } catch (\Throwable $e) { $dbErr = $e->getMessage(); }
     jsonResponse([
-        'session_id'     => session_id(),
+        'session_id'   => session_id(),
         'session_status' => session_status(),
-        'user_id'        => $_SESSION['user_id'] ?? null,
-        'session_keys'   => array_keys($_SESSION),
-        'cookie_sent'    => isset($_COOKIE[session_name()]),
-        'cookie_name'    => session_name(),
-        'save_path'      => session_save_path(),
-        'cookie_params'  => session_get_cookie_params(),
+        'user_id'      => $_SESSION['user_id'] ?? null,
+        'session_keys' => array_keys($_SESSION),
+        'cookie_sent'  => isset($_COOKIE[session_name()]),
+        'db_sessions_ok' => $dbOk,
+        'db_error'     => $dbErr,
+        'open_basedir' => ini_get('open_basedir'),
     ]);
 })();
 } elseif ($action === 'forgot') {

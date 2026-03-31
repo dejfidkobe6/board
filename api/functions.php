@@ -1,6 +1,64 @@
 <?php
 // Helper functions – committed to repo, included by all API files
 
+// ── DB-backed session handler (works on any shared hosting) ─────────────────
+(function () {
+    if (session_status() !== PHP_SESSION_NONE) return; // already started (e.g. session.auto_start)
+
+    $handler = new class implements SessionHandlerInterface {
+        private ?PDO $db = null;
+        private function db(): PDO {
+            if (!$this->db) $this->db = getDB();
+            return $this->db;
+        }
+        public function open(string $path, string $name): bool {
+            // Auto-create table if not exists
+            try {
+                $this->db()->exec(
+                    'CREATE TABLE IF NOT EXISTS php_sessions (
+                        id VARCHAR(128) NOT NULL PRIMARY KEY,
+                        data MEDIUMTEXT NOT NULL,
+                        updated_at INT UNSIGNED NOT NULL
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+                );
+            } catch (\Throwable $e) {}
+            return true;
+        }
+        public function close(): bool { return true; }
+        public function read(string $id): string|false {
+            try {
+                $maxlife = max((int)ini_get('session.gc_maxlifetime'), 86400);
+                $s = $this->db()->prepare('SELECT data FROM php_sessions WHERE id=? AND updated_at > ?');
+                $s->execute([$id, time() - $maxlife]);
+                $row = $s->fetch(PDO::FETCH_ASSOC);
+                return $row ? (string)$row['data'] : '';
+            } catch (\Throwable $e) { return ''; }
+        }
+        public function write(string $id, string $data): bool {
+            try {
+                $this->db()->prepare(
+                    'INSERT INTO php_sessions (id, data, updated_at) VALUES (?,?,?)
+                     ON DUPLICATE KEY UPDATE data=VALUES(data), updated_at=VALUES(updated_at)'
+                )->execute([$id, $data, time()]);
+                return true;
+            } catch (\Throwable $e) { return false; }
+        }
+        public function destroy(string $id): bool {
+            try { $this->db()->prepare('DELETE FROM php_sessions WHERE id=?')->execute([$id]); return true; }
+            catch (\Throwable $e) { return false; }
+        }
+        public function gc(int $max): int|false {
+            try {
+                $s = $this->db()->prepare('DELETE FROM php_sessions WHERE updated_at < ?');
+                $s->execute([time() - $max]);
+                return $s->rowCount();
+            } catch (\Throwable $e) { return false; }
+        }
+    };
+    session_set_save_handler($handler, true);
+    session_start();
+})();
+
 function jsonResponse(array $data, int $code = 200): void {
     http_response_code($code);
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
