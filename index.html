@@ -348,8 +348,8 @@
   /* ─── CARD ─── */
   .card {
     background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
-    cursor: pointer; transition: box-shadow 0.18s, transform 0.15s, background 0.18s;
-    position: relative; overflow: hidden;
+    cursor: grab; transition: box-shadow 0.18s, transform 0.15s, background 0.18s;
+    position: relative; overflow: hidden; user-select: none;
     box-shadow: 0 1px 4px rgba(0,0,0,0.2);
     backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   }
@@ -394,7 +394,7 @@
   .card-attach-item-size { color: var(--muted); flex-shrink: 0; font-size: 10px; }
 
   /* ─── MODALS ─── */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay { display: none; position: fixed; inset: 0; right: var(--panel-w); background: rgba(0,0,0,0.35); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; }
   .modal-overlay.open { display: flex; }
   .modal { background: #1a2a0e; border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
   .modal-wide { width: 96vw; max-width: 96vw; max-height: 96vh; }
@@ -428,7 +428,8 @@
   /* ─── CHECKLIST ─── */
   .cl-total-bar { height: 3px; background: var(--surface3); border-radius: 2px; margin-bottom: 14px; overflow: hidden; }
   .cl-total-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
-  .cl-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; }
+  .cl-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; cursor: grab; user-select: none; }
+  .cl-item:active { cursor: grabbing; }
   .cl-item.completing { animation: fadeOut 0.5s forwards; }
   @keyframes fadeOut { to { opacity: 0; transform: translateX(20px) scale(0.97); } }
   .cl-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
@@ -494,7 +495,7 @@
   .cl-done-undo { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 2px 6px; border-radius: 4px; transition: color 0.12s, background 0.12s; flex-shrink: 0; margin-left: auto; }
   .cl-done-undo:hover { color: var(--accent); background: rgba(200,165,60,0.1); }
   /* Multi-checklist */
-  .cl-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; flex: 1 1 310px; min-width: 310px; max-width: 480px; transition: opacity 0.15s, box-shadow 0.15s; }
+  .cl-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; flex: 1 1 465px; min-width: 465px; max-width: 720px; transition: opacity 0.15s, box-shadow 0.15s; }
   .cl-block.dragging { opacity: 0.45; }
   .cl-block.cl-drop-target { box-shadow: 0 0 0 2px var(--accent); }
   .cl-block-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; cursor: grab; user-select: none; }
@@ -569,8 +570,9 @@
   body.has-bg-image .team-bar { background: rgba(10,20,5,0.55) !important; }
 
   /* ─── APP BODY (board + task panel) ─── */
+  :root { --panel-w: 280px; }
   .app-body { position: relative; height: calc(100vh - 105px); overflow: hidden; }
-  #board { width: 100%; height: 100%; overflow-x: auto; min-height: unset; }
+  #board { width: 100%; height: 100%; overflow-x: auto; min-height: unset; padding-right: var(--panel-w); box-sizing: border-box; }
 
   /* ─── TASK PANEL (fixed, always on top including over modals) ─── */
   .task-panel { position: fixed; right: 0; top: 105px; height: calc(100vh - 105px); z-index: 250; background: rgba(18,28,8,0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-left: 1px solid rgba(255,255,255,0.1); box-shadow: -6px 0 28px rgba(0,0,0,0.45); display: flex; flex-direction: column; overflow: hidden; }
@@ -1894,7 +1896,6 @@ function mkClItemEl(item) {
   const row = document.createElement('div');
   row.className = 'cl-item'; row.id = 'cli-'+item.id;
   row.innerHTML = `
-    <span class="cl-item-drag" title="Přetáhnout">⠿</span>
     <input type="checkbox" class="cl-checkbox" onchange="checkItem('${item.id}',this)">
     <span class="cl-text" title="Dvojklik pro přejmenování">${escHtml(item.text)}</span>
     <span class="cl-author">${author?escHtml(author.name.split(' ')[0]):''}</span>
@@ -2374,6 +2375,13 @@ function findCardAnywhere(cardId) {
   return null;
 }
 
+function setPanelWidthVar() {
+  const panel = document.getElementById('taskPanel');
+  if (!panel) return;
+  const w = panel.classList.contains('collapsed') ? 36 : panel.offsetWidth;
+  document.documentElement.style.setProperty('--panel-w', w + 'px');
+}
+
 function toggleTaskPanel() {
   const panel = document.getElementById('taskPanel');
   const arrow = document.getElementById('taskPanelArrow');
@@ -2386,6 +2394,7 @@ function toggleTaskPanel() {
     if (saved) panel.style.width = saved + 'px';
     renderTaskPanel();
   }
+  setPanelWidthVar();
 }
 
 // ── Task panel resize ────────────────────────────────────────────────────
@@ -2401,6 +2410,7 @@ function toggleTaskPanel() {
     // Restore saved width
     const saved = localStorage.getItem('taskPanelWidth');
     if (saved) panel.style.width = saved + 'px';
+    setPanelWidthVar();
 
     handle.addEventListener('mousedown', e => {
       e.preventDefault();
@@ -2417,6 +2427,7 @@ function toggleTaskPanel() {
       const delta = startX - e.clientX;          // dragging left = wider
       const newW  = Math.min(MAX_W, Math.max(MIN_W, startW + delta));
       panel.style.width = newW + 'px';
+      setPanelWidthVar();
     });
 
     document.addEventListener('mouseup', () => {
@@ -2427,7 +2438,7 @@ function toggleTaskPanel() {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       const panel = document.getElementById('taskPanel');
-      if (panel) localStorage.setItem('taskPanelWidth', panel.offsetWidth);
+      if (panel) { localStorage.setItem('taskPanelWidth', panel.offsetWidth); setPanelWidthVar(); }
     });
   }
 
