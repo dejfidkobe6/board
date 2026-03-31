@@ -59,6 +59,17 @@
     session_start();
 })();
 
+// Idempotent DB migrations – runs once per request after getDB() is available
+function runMigrations(): void {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        $db = getDB();
+        $db->exec("ALTER TABLE projects ADD COLUMN IF NOT EXISTS bg_image VARCHAR(500) NULL DEFAULT NULL");
+    } catch (\Throwable $e) {}
+}
+
 function jsonResponse(array $data, int $code = 200): void {
     http_response_code($code);
     header('Content-Type: application/json; charset=UTF-8');
