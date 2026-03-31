@@ -7,6 +7,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($action === 'list') {
 (function () {
+    runMigrations();
     $user   = requireAuth();
     $appKey = sanitize($_GET['app_key'] ?? '');
 
