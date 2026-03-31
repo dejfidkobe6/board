@@ -486,10 +486,19 @@
   .attach-del:hover { color: var(--danger); }
 
   /* ─── CL ATTACHMENTS ─── */
-  .cl-item-wrap { margin-bottom: 7px; }
+  .cl-item-wrap { margin-bottom: 7px; transition: opacity 0.15s; }
+  .cl-item-wrap.dragging-item { opacity: 0.4; }
+  .cl-item-wrap.item-drop-target > .cl-item { box-shadow: 0 -2px 0 0 var(--accent); }
+  .cl-item-drag { cursor: grab; color: var(--muted); font-size: 14px; padding: 0 3px; flex-shrink: 0; user-select: none; line-height: 1; }
+  .cl-item-drag:hover { color: var(--text2); }
+  .cl-done-undo { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 2px 6px; border-radius: 4px; transition: color 0.12s, background 0.12s; flex-shrink: 0; margin-left: auto; }
+  .cl-done-undo:hover { color: var(--accent); background: rgba(200,165,60,0.1); }
   /* Multi-checklist */
-  .cl-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; flex: 1 1 300px; min-width: 280px; max-width: 480px; }
-  .cl-block-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .cl-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; flex: 1 1 310px; min-width: 310px; max-width: 480px; transition: opacity 0.15s, box-shadow 0.15s; }
+  .cl-block.dragging { opacity: 0.45; }
+  .cl-block.cl-drop-target { box-shadow: 0 0 0 2px var(--accent); }
+  .cl-block-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; cursor: grab; user-select: none; }
+  .cl-block-header:active { cursor: grabbing; }
   .cl-block-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); cursor: text; border-radius: 5px; padding: 2px 6px; border: 1.5px solid transparent; transition: border-color 0.15s, background 0.15s; }
   .cl-block-name:hover { background: var(--surface3); }
   .cl-block-name:focus { outline: none; border-color: var(--accent); background: rgba(255,255,255,0.09); box-shadow: var(--glow); }
@@ -549,10 +558,10 @@
   .app-body { position: relative; height: calc(100vh - 105px); overflow: hidden; }
   #board { width: 100%; height: 100%; overflow-x: auto; min-height: unset; }
 
-  /* ─── TASK PANEL (floats over board, always on top) ─── */
-  .task-panel { position: absolute; right: 0; top: 0; height: 100%; z-index: 50; background: rgba(18,28,8,0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-left: 1px solid rgba(255,255,255,0.1); box-shadow: -6px 0 28px rgba(0,0,0,0.45); display: flex; flex-direction: column; overflow: hidden; }
+  /* ─── TASK PANEL (fixed, always on top including over modals) ─── */
+  .task-panel { position: fixed; right: 0; top: 105px; height: calc(100vh - 105px); z-index: 250; background: rgba(18,28,8,0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-left: 1px solid rgba(255,255,255,0.1); box-shadow: -6px 0 28px rgba(0,0,0,0.45); display: flex; flex-direction: column; overflow: hidden; }
   .task-panel.collapsed { width: 36px !important; }
-  .task-panel-resize { position: absolute; left: 0; top: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 51; background: transparent; transition: background 0.15s; }
+  .task-panel-resize { position: absolute; left: 0; top: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 251; background: transparent; transition: background 0.15s; }
   .task-panel-resize:hover, .task-panel-resize.dragging { background: rgba(200,165,60,0.35); }
   .task-panel.collapsed .task-panel-resize { display: none; }
   .task-panel-toggle { display: flex; align-items: center; justify-content: center; height: 42px; cursor: pointer; color: rgba(255,255,255,0.35); font-size: 13px; flex-shrink: 0; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.07); gap: 6px; transition: color 0.15s; user-select: none; }
@@ -1342,9 +1351,8 @@ function renderBoard() {
       : '';
     el.innerHTML = `
       <div class="col-header">
-        <div class="col-title"><div class="col-dot" style="background:${col.color}"></div>${col.title}</div>
+        <div class="col-title" ondblclick="openRenameColumn('${col.id}')" title="Dvojklik pro přejmenování" style="cursor:default"><div class="col-dot" style="background:${col.color}"></div>${col.title}</div>
         <div style="display:flex;align-items:center;gap:4px;">
-          <button class="col-rename-btn" onclick="openRenameColumn('${col.id}')" title="Přejmenovat sloupec">✏</button>
           ${archiveBtn}
           <span class="col-count">${cards.length}</span>
         </div>
@@ -1676,6 +1684,20 @@ function ensureChecklists(card) {
   return card.checklists;
 }
 
+// Drag state for checklist blocks and items
+let _clDragType = null; // 'checklist' | 'item'
+let _clDragId   = null; // id of dragged checklist or item
+
+function uncheckItem(itemId) {
+  const card = gc(detailCardId); if (!card) return;
+  const found = findClItem(card, itemId); if (!found) return;
+  const { item } = found;
+  item.done = false;
+  delete item.completedBy;
+  delete item.completedAt;
+  saveState(); renderAllChecklists(card); renderBoard();
+}
+
 function findClItem(card, itemId) {
   for (const cl of ensureChecklists(card)) {
     const item = (cl.items||[]).find(i => i.id === itemId);
@@ -1809,12 +1831,43 @@ function mkClItemEl(item) {
   const cardId = detailCardId; // capture for closures
   const div = document.createElement('div');
   div.className = 'cl-item-wrap';
+  div.draggable = true;
+  div.addEventListener('dragstart', e => {
+    _clDragType = 'item'; _clDragId = item.id;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', item.id);
+    setTimeout(() => div.classList.add('dragging-item'), 0);
+    e.stopPropagation();
+  });
+  div.addEventListener('dragend', () => { div.classList.remove('dragging-item'); _clDragType = null; _clDragId = null; });
+  div.addEventListener('dragover', e => {
+    if (_clDragType !== 'item' || _clDragId === item.id) return;
+    e.preventDefault(); e.stopPropagation();
+    div.classList.add('item-drop-target');
+  });
+  div.addEventListener('dragleave', () => div.classList.remove('item-drop-target'));
+  div.addEventListener('drop', e => {
+    div.classList.remove('item-drop-target');
+    if (_clDragType !== 'item' || _clDragId === item.id) return;
+    e.preventDefault(); e.stopPropagation();
+    const card2 = gc(detailCardId); if (!card2) return;
+    const srcFnd = findClItem(card2, _clDragId); if (!srcFnd) return;
+    const tgtFnd = findClItem(card2, item.id); if (!tgtFnd) return;
+    // Remove from source
+    srcFnd.cl.items = srcFnd.cl.items.filter(i => i.id !== _clDragId);
+    // Insert before target
+    const ti = tgtFnd.cl.items.findIndex(i => i.id === item.id);
+    tgtFnd.cl.items.splice(ti, 0, srcFnd.item);
+    saveState(); renderAllChecklists(card2);
+  });
+
   const row = document.createElement('div');
   row.className = 'cl-item'; row.id = 'cli-'+item.id;
   row.innerHTML = `
+    <span class="cl-item-drag" title="Přetáhnout">⠿</span>
     <input type="checkbox" class="cl-checkbox" onchange="checkItem('${item.id}',this)">
-    <span class="cl-text" title="Dvojklik pro přejmenování">${item.text}</span>
-    <span class="cl-author">${author?author.name.split(' ')[0]:''}</span>
+    <span class="cl-text" title="Dvojklik pro přejmenování">${escHtml(item.text)}</span>
+    <span class="cl-author">${author?escHtml(author.name.split(' ')[0]):''}</span>
     <button class="cl-attach-toggle" onclick="toggleClAttach('${item.id}')" title="Přidat přílohu">📎</button>
     <button class="cl-del" onclick="delClItem('${item.id}')">✕</button>`;
 
@@ -1910,33 +1963,71 @@ function renderAllChecklists(card) {
     const block = document.createElement('div');
     block.className = 'cl-block';
 
+    // Drag state tracking
+    block.dataset.clId = cl.id;
+    block.addEventListener('dragover', e => {
+      if (_clDragType !== 'checklist') return;
+      e.preventDefault(); block.classList.add('cl-drop-target');
+    });
+    block.addEventListener('dragleave', e => {
+      if (!block.contains(e.relatedTarget)) block.classList.remove('cl-drop-target');
+    });
+    block.addEventListener('drop', e => {
+      block.classList.remove('cl-drop-target');
+      if (_clDragType !== 'checklist' || _clDragId === cl.id) return;
+      e.preventDefault();
+      const card2 = gc(detailCardId); if (!card2) return;
+      const cls2 = ensureChecklists(card2);
+      const si = cls2.findIndex(c => c.id === _clDragId);
+      const ti = cls2.findIndex(c => c.id === cl.id);
+      if (si < 0 || ti < 0) return;
+      const [moved] = cls2.splice(si, 1); cls2.splice(ti, 0, moved);
+      saveState(); renderAllChecklists(card2);
+    });
+    // Item drop zone on the block itself (drop at end of list)
+    block.addEventListener('dragover', e => {
+      if (_clDragType !== 'item') return;
+      e.preventDefault();
+    });
+    block.addEventListener('drop', e => {
+      if (_clDragType !== 'item') return;
+      // Only handle if drop target is the block or add-row (not an item wrap)
+      if (e.target.closest('.cl-item-wrap')) return;
+      e.preventDefault();
+      const card2 = gc(detailCardId); if (!card2) return;
+      const srcFnd = findClItem(card2, _clDragId); if (!srcFnd) return;
+      const tgtCl = ensureChecklists(card2).find(c => c.id === cl.id); if (!tgtCl) return;
+      if (srcFnd.cl.id === cl.id) return; // same list, noop
+      srcFnd.cl.items = srcFnd.cl.items.filter(i => i.id !== _clDragId);
+      if (!tgtCl.items) tgtCl.items = [];
+      tgtCl.items.push(srcFnd.item);
+      saveState(); renderAllChecklists(card2);
+    });
+
     // Header
     const header = document.createElement('div');
     header.className = 'cl-block-header';
+    header.draggable = true;
+    header.addEventListener('dragstart', e => {
+      _clDragType = 'checklist'; _clDragId = cl.id;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', cl.id);
+      setTimeout(() => block.classList.add('dragging'), 0);
+      e.stopPropagation();
+    });
+    header.addEventListener('dragend', () => { block.classList.remove('dragging'); _clDragType = null; _clDragId = null; });
     const nameEl = document.createElement('span');
     nameEl.className = 'cl-block-name';
     nameEl.textContent = cl.name || 'Checklist';
     nameEl.title = 'Dvojklik pro přejmenování';
     nameEl.addEventListener('dblclick', () => startRenameChecklist(nameEl, cl.id));
-    const btnRename = document.createElement('button');
-    btnRename.className = 'cl-block-move'; btnRename.textContent = '✏'; btnRename.title = 'Přejmenovat checklist';
-    btnRename.onclick = () => startRenameChecklist(nameEl, cl.id);
     const statsEl = document.createElement('span');
     statsEl.className = 'cl-block-stats';
     statsEl.textContent = total ? `(${doneItems.length}/${total})` : '';
-    const btnUp = document.createElement('button');
-    btnUp.className = 'cl-block-move'; btnUp.textContent = '↑'; btnUp.title = 'Přesunout výše';
-    btnUp.disabled = idx === 0;
-    btnUp.onclick = () => moveChecklist(cl.id, -1);
-    const btnDown = document.createElement('button');
-    btnDown.className = 'cl-block-move'; btnDown.textContent = '↓'; btnDown.title = 'Přesunout níže';
-    btnDown.disabled = idx === cls.length - 1;
-    btnDown.onclick = () => moveChecklist(cl.id, 1);
     const btnDel = document.createElement('button');
     btnDel.className = 'cl-block-del'; btnDel.textContent = '✕'; btnDel.title = 'Smazat checklist';
     btnDel.onclick = () => delChecklist(cl.id);
-    header.appendChild(nameEl); header.appendChild(btnRename); header.appendChild(statsEl);
-    header.appendChild(btnUp); header.appendChild(btnDown); header.appendChild(btnDel);
+    header.appendChild(nameEl); header.appendChild(statsEl); header.appendChild(btnDel);
     block.appendChild(header);
 
     // Progress bar
@@ -1988,7 +2079,11 @@ function renderAllChecklists(card) {
           const at = item.completedAt ? fmtDT(item.completedAt) : '';
           const d = document.createElement('div');
           d.className = 'cl-done-item';
-          d.innerHTML = `<span style="font-size:14px;color:var(--green);flex-shrink:0">✓</span><span class="cl-done-text">${item.text}</span><span class="cl-done-meta">${byName}<br>${at}</span>`;
+          d.innerHTML = `<span style="font-size:14px;color:var(--green);flex-shrink:0">✓</span><span class="cl-done-text">${escHtml(item.text)}</span><span class="cl-done-meta">${escHtml(byName)}<br>${at}</span>`;
+          const undoBtn = document.createElement('button');
+          undoBtn.className = 'cl-done-undo'; undoBtn.title = 'Obnovit jako nesplněný'; undoBtn.textContent = '↩';
+          undoBtn.onclick = () => uncheckItem(item.id);
+          d.appendChild(undoBtn);
           block.appendChild(d);
         });
       }
