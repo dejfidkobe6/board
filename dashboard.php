@@ -34,8 +34,12 @@
   .app-name{font-family:'Montserrat',sans-serif;font-size:18px;font-weight:700;color:rgba(255,255,255,0.85)}
   /* ── GRID ── */
   .projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
-  .project-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:20px;cursor:pointer;transition:all 0.2s;position:relative;text-decoration:none;display:block}
+  .project-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:20px;cursor:pointer;transition:all 0.2s;position:relative;text-decoration:none;display:block;overflow:hidden}
   .project-card:hover{background:rgba(255,255,255,0.08);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.25)}
+  .project-card.has-bg-img{background-size:cover;background-position:center;border:none}
+  .project-card.has-bg-img:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,0.45)}
+  .project-card.has-bg-img .card-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.52);pointer-events:none}
+  .project-card.has-bg-img .card-content{position:relative}
   .project-card-color{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
   .project-card-name{font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;color:rgba(255,255,255,0.92);margin-bottom:5px}
   .project-card-desc{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.45;margin-bottom:12px;min-height:18px}
@@ -281,17 +285,24 @@ function projectCard(p, appKey) {
   const appEntry  = appKey === 'stavbaboard' ? 'index.html' : 'plans/index.html';
   const href      = `/${appEntry}?project_id=${p.id}`;
   const canManage = (p.role === 'owner' || p.role === 'admin');
+  const hasBgImg  = !!p.bg_image;
+  const cardStyle = hasBgImg
+    ? `background-image:url('${p.bg_image}');`
+    : `border-left:3px solid ${p.bg_color || '#4a5240'}`;
   return `
     <div style="position:relative">
-      <a class="project-card" href="${href}" style="border-left:3px solid ${p.bg_color || '#4a5240'}">
-        <div class="project-card-name">
-          <span class="project-card-color" style="background:${p.bg_color || '#4a5240'}"></span>
-          ${escHtml(p.name)}
-        </div>
-        <div class="project-card-desc">${escHtml(p.description || '')}</div>
-        <div class="project-card-footer">
-          <span class="role-pill ${roleClass}">${p.role}</span>
-          <span class="member-count">${p.member_count} člen${p.member_count > 4 ? 'ů' : p.member_count > 1 ? 'i' : ''}</span>
+      <a class="project-card${hasBgImg?' has-bg-img':''}" href="${href}" style="${cardStyle}">
+        ${hasBgImg ? '<div class="card-overlay"></div>' : ''}
+        <div class="${hasBgImg?'card-content':''}">
+          <div class="project-card-name">
+            ${!hasBgImg ? `<span class="project-card-color" style="background:${p.bg_color || '#4a5240'}"></span>` : ''}
+            ${escHtml(p.name)}
+          </div>
+          <div class="project-card-desc">${escHtml(p.description || '')}</div>
+          <div class="project-card-footer">
+            <span class="role-pill ${roleClass}">${p.role}</span>
+            <span class="member-count">${p.member_count} člen${p.member_count > 4 ? 'ů' : p.member_count > 1 ? 'i' : ''}</span>
+          </div>
         </div>
       </a>
       <button class="proj-settings-btn" onclick="openMembersModal(${p.id},'${p.role}')" title="Správa členů">👥</button>
