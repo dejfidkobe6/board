@@ -137,11 +137,16 @@ if ($action === 'register') {
     // }
 
     clearRateLimit('login_' . $email);
-    session_regenerate_id(true);
 
+    // Set session data before regenerating ID to avoid race conditions on shared hosting
     $_SESSION['user_id']      = $user['id'];
     $_SESSION['user_name']    = $user['name'];
     $_SESSION['avatar_color'] = $user['avatar_color'];
+    session_write_close();
+
+    // Start fresh session with new ID (carries over existing data)
+    session_start();
+    session_regenerate_id(false);
 
     jsonResponse(['success' => true, 'user' => [
         'id'           => $user['id'],
@@ -313,10 +318,12 @@ if ($action === 'register') {
         ];
     }
 
-    session_regenerate_id(true);
     $_SESSION['user_id']      = $user['id'];
     $_SESSION['user_name']    = $user['name'];
     $_SESSION['avatar_color'] = $user['avatar_color'];
+    session_write_close();
+    session_start();
+    session_regenerate_id(false);
 
     header('Location: /dashboard.php');
     exit;
