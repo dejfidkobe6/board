@@ -25,7 +25,7 @@
             return true;
         }
         public function close(): bool { return true; }
-        public function read(string $id): string|false {
+        public function read($id) {
             try {
                 $maxlife = max((int)ini_get('session.gc_maxlifetime'), 86400);
                 $s = $this->db()->prepare('SELECT data FROM php_sessions WHERE id=? AND updated_at > ?');
@@ -47,7 +47,7 @@
             try { $this->db()->prepare('DELETE FROM php_sessions WHERE id=?')->execute([$id]); return true; }
             catch (\Throwable $e) { return false; }
         }
-        public function gc(int $max): int|false {
+        public function gc($max) {
             try {
                 $s = $this->db()->prepare('DELETE FROM php_sessions WHERE updated_at < ?');
                 $s->execute([time() - $max]);
