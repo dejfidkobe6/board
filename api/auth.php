@@ -138,10 +138,9 @@ if ($action === 'register') {
 
     clearRateLimit('login_' . $email);
 
-    $_SESSION['user_id']      = $user['id'];
+    $_SESSION['user_id']      = (int)$user['id'];
     $_SESSION['user_name']    = $user['name'];
     $_SESSION['avatar_color'] = $user['avatar_color'];
-    session_write_close();
 
     jsonResponse(['success' => true, 'user' => [
         'id'           => $user['id'],
@@ -162,6 +161,19 @@ if ($action === 'register') {
 (function () {
     $user = requireAuth();
     jsonResponse(['success' => true, 'user' => $user]);
+})();
+} elseif ($action === 'session_debug') {
+(function () {
+    jsonResponse([
+        'session_id'     => session_id(),
+        'session_status' => session_status(),
+        'user_id'        => $_SESSION['user_id'] ?? null,
+        'session_keys'   => array_keys($_SESSION),
+        'cookie_sent'    => isset($_COOKIE[session_name()]),
+        'cookie_name'    => session_name(),
+        'save_path'      => session_save_path(),
+        'cookie_params'  => session_get_cookie_params(),
+    ]);
 })();
 } elseif ($action === 'forgot') {
 (function () {
