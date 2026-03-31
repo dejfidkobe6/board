@@ -563,7 +563,7 @@
   .bg-img-remove:hover { background: rgba(200,50,50,0.8); }
   /* When a custom bg image is active — make columns/cards semi-transparent */
   body.has-bg-image { background-size: cover !important; background-position: center !important; background-attachment: fixed !important; }
-  body.has-bg-image #app { background: transparent !important; }
+  body.has-bg-image #app { background-color: transparent !important; }
   body.has-bg-image .column { background: rgba(10,20,5,0.68) !important; }
   body.has-bg-image .card { background: rgba(0,0,0,0.42) !important; }
   body.has-bg-image header { background: rgba(10,20,5,0.78) !important; backdrop-filter: blur(18px); }
@@ -2974,11 +2974,17 @@ async function bootAuth() {
 const BOARD_BG_COLORS = ['#4a5240','#2e3a2a','#1e2d3a','#2a1e3a','#3a1e1e','#1e3a2e','#2a2e1e','#1a2232','#2d2010','#3a2e1a','#1e2820','#2a2010'];
 
 function applyBgImage(url) {
+  const appEl = document.getElementById('app');
+  appEl.style.background = ''; // clear any previously set solid-color shorthand
   if (url) {
-    document.body.style.backgroundImage = `url('${url}')`;
+    appEl.style.backgroundImage = `url('${url}')`;
+    appEl.style.backgroundSize = 'cover';
+    appEl.style.backgroundPosition = 'center';
     document.body.classList.add('has-bg-image');
   } else {
-    document.body.style.backgroundImage = '';
+    appEl.style.backgroundImage = '';
+    appEl.style.backgroundSize = '';
+    appEl.style.backgroundPosition = '';
     document.body.classList.remove('has-bg-image');
   }
 }
