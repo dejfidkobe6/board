@@ -29,6 +29,7 @@ jobs:
           mkdir -p api
           {
             echo "<?php"
+            echo "ini_set('display_errors', '0'); error_reporting(0); ob_start();"
             echo "define('DB_HOST', '${{ secrets.DB_HOST }}');"
             echo "define('DB_NAME', '${{ secrets.DB_NAME }}');"
             echo "define('DB_USER', '${{ secrets.DB_USER }}');"
