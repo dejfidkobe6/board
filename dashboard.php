@@ -208,14 +208,19 @@ let currentUser = null;
 (async () => {
   try {
     const res = await fetch('/api/auth.php?action=me', { credentials: 'include' });
-    if (!res.ok) { location.href = '/login.php'; return; }
+    if (!res.ok) {
+      let errInfo = res.status;
+      try { const d = await res.json(); errInfo = res.status + ' – ' + (d.error || JSON.stringify(d)); } catch {}
+      document.body.innerHTML = '<div style="font-family:monospace;color:#ff6b60;padding:40px;background:#111;min-height:100vh">auth/me: ' + errInfo + '<br><br><a href="/login.php" style="color:#c9922a">→ Přihlásit se</a></div>';
+      return;
+    }
     const data = await res.json();
     currentUser = data.user;
     renderNav();
     await loadProjects();
     handleParams();
-  } catch {
-    location.href = '/login.php';
+  } catch (e) {
+    document.body.innerHTML = '<div style="font-family:monospace;color:#ff6b60;padding:40px;background:#111;min-height:100vh">fetch error: ' + e + '<br><br><a href="/login.php" style="color:#c9922a">→ Přihlásit se</a></div>';
   }
 })();
 
