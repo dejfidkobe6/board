@@ -162,26 +162,6 @@ if ($action === 'register') {
     $user = requireAuth();
     jsonResponse(['success' => true, 'user' => $user]);
 })();
-} elseif ($action === 'session_debug') {
-(function () {
-    // Test DB write
-    $dbOk = false; $dbErr = '';
-    try {
-        $db = getDB();
-        $db->query('SELECT 1 FROM php_sessions LIMIT 1');
-        $dbOk = true;
-    } catch (\Throwable $e) { $dbErr = $e->getMessage(); }
-    jsonResponse([
-        'session_id'   => session_id(),
-        'session_status' => session_status(),
-        'user_id'      => $_SESSION['user_id'] ?? null,
-        'session_keys' => array_keys($_SESSION),
-        'cookie_sent'  => isset($_COOKIE[session_name()]),
-        'db_sessions_ok' => $dbOk,
-        'db_error'     => $dbErr,
-        'open_basedir' => ini_get('open_basedir'),
-    ]);
-})();
 } elseif ($action === 'forgot') {
 (function () {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') jsonResponse(['error' => 'Method not allowed'], 405);
