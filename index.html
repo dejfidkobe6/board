@@ -391,10 +391,10 @@
   .card-attach-item-size { color: var(--muted); flex-shrink: 0; font-size: 10px; }
 
   /* ─── MODALS ─── */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: flex-start; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; }
   .modal-overlay.open { display: flex; }
   .modal { background: #1a2a0e; border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
-  .modal-wide { width: 700px; }
+  .modal-wide { width: 96vw; max-width: 96vw; max-height: 96vh; }
   .modal h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.4px; color: rgba(255,255,255,0.9); margin-bottom: 22px; }
   .modal-close { position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; background: rgba(255,255,255,0.08); border: none; color: rgba(255,255,255,0.5); font-size: 14px; cursor: pointer; border-radius: 7px; display: flex; align-items: center; justify-content: flex-start; transition: all 0.15s; }
   .modal-close:hover { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.9); }
@@ -485,7 +485,7 @@
   /* ─── CL ATTACHMENTS ─── */
   .cl-item-wrap { margin-bottom: 7px; }
   /* Multi-checklist */
-  .cl-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+  .cl-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; flex: 1 1 300px; min-width: 280px; max-width: 480px; }
   .cl-block-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
   .cl-block-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); cursor: text; border-radius: 5px; padding: 2px 6px; border: 1.5px solid transparent; transition: border-color 0.15s, background 0.15s; }
   .cl-block-name:hover { background: var(--surface3); }
@@ -743,8 +743,8 @@
   <div class="team-bar" id="teamBar"></div>
   <div class="app-body">
     <div class="board" id="board"></div>
-    <div class="task-panel" id="taskPanel">
-      <div class="task-panel-toggle" onclick="toggleTaskPanel()" title="Moje úkoly">
+    <div class="task-panel" id="taskPanel" style="width:280px">
+      <div class="task-panel-toggle" onclick="toggleTaskPanel()" title="Skrýt/zobrazit panel úkolů">
         <span id="taskPanelArrow">◁</span>
         <span class="task-panel-label">Moje úkoly</span>
       </div>
@@ -782,33 +782,11 @@
       <input type="file" id="coverImgInput" accept="image/*" style="display:none" onchange="setCoverFromFile(event)">
     </div>
 
-    <!-- PHOTOS SECTION -->
-    <div style="margin-bottom:18px">
-      <div class="section-title" style="margin-bottom:10px">📷 FOTKY KE KARTĚ</div>
-      <div class="detail-photos" id="dPhotos"></div>
-      <div class="drop-zone" id="photoDropZone" onclick="document.getElementById('photoFileInput').click()" ondragover="dzOver(event,'photoDropZone')" ondragleave="dzLeave('photoDropZone')" ondrop="dzDropPhotos(event)">
-        <div class="drop-zone-icon">🖼</div>
-        <div class="drop-zone-text">Přetáhni sem fotky nebo <strong>klikni pro výběr</strong><br><span style="font-size:11px">JPG, PNG, WebP, GIF</span></div>
-        <input type="file" id="photoFileInput" multiple accept="image/*" onchange="addPhotosFromInput(event)">
-      </div>
-    </div>
-
-    <!-- FILE ATTACHMENTS SECTION -->
-    <div style="margin-bottom:18px">
-      <div class="section-title" style="margin-bottom:10px">📎 PŘÍLOHY KE KARTĚ</div>
-      <div class="attach-list" id="dAttachList"></div>
-      <div class="drop-zone" id="attachDropZone" onclick="document.getElementById('attachFileInput').click()" ondragover="dzOver(event,'attachDropZone')" ondragleave="dzLeave('attachDropZone')" ondrop="dzDropFiles(event)">
-        <div class="drop-zone-icon">📁</div>
-        <div class="drop-zone-text">Přetáhni sem soubory nebo <strong>klikni pro výběr</strong><br><span style="font-size:11px">PDF, Word, Excel, ZIP a další</span></div>
-        <input type="file" id="attachFileInput" multiple onchange="addAttachFromInput(event)">
-      </div>
-    </div>
-
     <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <span>✅ CHECKLISTRY</span>
       <button class="cl-add-list-btn" onclick="addChecklist()">+ Checklist</button>
     </div>
-    <div id="clLists"></div>
+    <div id="clLists" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px"></div>
     <div class="modal-actions" style="margin-top:24px">
       <button class="btn btn-ghost" onclick="openEditFromDetail()">✏ Upravit</button>
       <button class="btn btn-danger" onclick="deleteCurrentCard()">🗑 Smazat kartu</button>
@@ -2088,6 +2066,24 @@ function renderAllChecklists(card) {
 
     active.forEach(item => block.appendChild(mkClItemEl(item)));
 
+    // Add item row — above done items
+    const addRow = document.createElement('div');
+    addRow.className = 'cl-add-row';
+    addRow.style = 'flex-wrap:wrap;gap:5px';
+    const inputId = 'clinput-' + cl.id;
+    addRow.innerHTML = `
+      <input type="text" id="${inputId}" placeholder="Přidat položku… nebo @jméno">
+      <button id="cl-at-btn-${cl.id}" class="cl-meta-btn" onclick="openAddRowAssignee('${cl.id}')" title="Přiřadit člena">👤</button>
+      <button id="cl-dl-btn-${cl.id}" class="cl-meta-btn" onclick="openAddRowDeadline('${cl.id}')" title="Nastavit termín">📅</button>
+      <button onclick="addClItem('${cl.id}')">+ Přidat</button>`;
+    const inp = addRow.querySelector('input');
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); addClItem(cl.id); }
+      if (e.key === 'Escape') { closeSuggest(); }
+    });
+    inp.addEventListener('input', e => { handleAtInput(e.target, cl.id); });
+    block.appendChild(addRow);
+
     // Collapsible done section
     if (doneItems.length) {
       const doneKey = card.id + '_' + cl.id;
@@ -2109,24 +2105,6 @@ function renderAllChecklists(card) {
         });
       }
     }
-
-    // Add item row
-    const addRow = document.createElement('div');
-    addRow.className = 'cl-add-row';
-    addRow.style = 'flex-wrap:wrap;gap:5px';
-    const inputId = 'clinput-' + cl.id;
-    addRow.innerHTML = `
-      <input type="text" id="${inputId}" placeholder="Přidat položku… nebo @jméno">
-      <button id="cl-at-btn-${cl.id}" class="cl-meta-btn" onclick="openAddRowAssignee('${cl.id}')" title="Přiřadit člena">👤</button>
-      <button id="cl-dl-btn-${cl.id}" class="cl-meta-btn" onclick="openAddRowDeadline('${cl.id}')" title="Nastavit termín">📅</button>
-      <button onclick="addClItem('${cl.id}')">+ Přidat</button>`;
-    const inp = addRow.querySelector('input');
-    inp.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); addClItem(cl.id); }
-      if (e.key === 'Escape') { closeSuggest(); }
-    });
-    inp.addEventListener('input', e => { handleAtInput(e.target, cl.id); });
-    block.appendChild(addRow);
 
     wrap.appendChild(block);
   });
@@ -2156,6 +2134,8 @@ function addClItem(clId) {
   }
 
   const deadline = (window._pendingClDeadline||{})[clId] || null;
+  // Auto-assign to creator if no assignee specified
+  if (!assignee && currentUser) assignee = String(currentUser.id);
   if (!cl.items) cl.items = [];
   cl.items.push({ id: 'i'+Date.now(), text, done: false, author: currentUser.id, created: new Date().toISOString(), attachments: [], assignee: assignee||null, deadline: deadline||null });
   input.value = '';
