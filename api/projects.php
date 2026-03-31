@@ -166,6 +166,21 @@ if ($action === 'list') {
        ->execute([$projectId, $targetId]);
     jsonResponse(['success' => true]);
 })();
+} elseif ($action === 'update_bg') {
+(function () use ($method) {
+    if ($method !== 'POST') jsonResponse(['error' => 'Method not allowed'], 405);
+    $body      = getBody();
+    $projectId = (int)($body['project_id'] ?? 0);
+    $bgColor   = sanitize($body['bg_color'] ?? '');
+    if (!$projectId || !$bgColor) jsonResponse(['error' => 'Chybí parametry'], 422);
+
+    requireProjectRole($projectId, 'admin');
+
+    $db = getDB();
+    $db->prepare('UPDATE projects SET bg_color = ? WHERE id = ?')
+       ->execute([$bgColor, $projectId]);
+    jsonResponse(['success' => true]);
+})();
 } else {
     jsonResponse(['error' => 'Neznámá akce'], 400);
 }
