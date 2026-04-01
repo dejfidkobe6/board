@@ -522,7 +522,7 @@
   .cl-done-undo { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 2px 6px; border-radius: 4px; transition: color 0.12s, background 0.12s; flex-shrink: 0; margin-left: auto; }
   .cl-done-undo:hover { color: var(--accent); background: rgba(200,165,60,0.1); }
   /* Multi-checklist */
-  .cl-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; flex: 1 1 465px; min-width: 465px; max-width: 720px; transition: opacity 0.15s, box-shadow 0.15s; }
+  .cl-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; break-inside: avoid; margin-bottom: 12px; transition: opacity 0.15s, box-shadow 0.15s; }
   .cl-block.dragging { opacity: 0.45; }
   .cl-block.cl-drop-target { box-shadow: 0 0 0 2px var(--accent); }
   .cl-block-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; cursor: grab; user-select: none; }
@@ -857,7 +857,7 @@
       <span>✅ CHECKLISTRY</span>
       <button class="cl-add-list-btn" onclick="addChecklist()">+ Checklist</button>
     </div>
-    <div id="clLists" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px"></div>
+    <div id="clLists" style="columns:2;column-gap:12px"></div>
     <div class="modal-actions" style="margin-top:24px">
       <button class="btn btn-ghost" onclick="openEditFromDetail()">✏ Upravit</button>
       <button class="btn btn-danger" onclick="deleteCurrentCard()">🗑 Smazat kartu</button>
