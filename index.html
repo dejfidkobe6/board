@@ -1519,14 +1519,7 @@ function mkCard(card) {
       </div>
     </div>`;
 
-  // Cover click → lightbox if it's an image
-  const coverImg = el.querySelector('.card-cover');
-  if (coverImg) {
-    const imgSrc = cardCover && (cardCover.startsWith('data:') || cardCover.startsWith('http')) ? cardCover : (hasCover ? photos[0] : null);
-    if (imgSrc) {
-      coverImg.addEventListener('click', e => { e.stopPropagation(); openLightbox(imgSrc, 'Cover'); });
-    }
-  }
+  // Cover click → opens card detail (bubbles up to el click handler)
 
   // Attachment item clicks → download (safe, no base64 in attribute)
   el.querySelectorAll('.card-attach-item').forEach(item => {
@@ -1615,9 +1608,15 @@ function renderDetailPhotos(card) {
   const wrap = document.getElementById('dPhotos');
   wrap.innerHTML = photos.map((src,i) => `
     <div class="detail-photo-wrap">
-      <img class="detail-photo" src="${src}" onclick="openLightbox('${src}','Fotka ${i+1}')">
+      <img class="detail-photo" data-idx="${i}" src="${src}">
       <button class="detail-photo-del" onclick="deleteCardPhoto(${i})" title="Smazat">✕</button>
     </div>`).join('');
+  wrap.querySelectorAll('.detail-photo').forEach(img => {
+    img.addEventListener('click', e => {
+      e.stopPropagation();
+      openLightbox(card.photos[parseInt(img.dataset.idx)], `Fotka ${parseInt(img.dataset.idx)+1}`);
+    });
+  });
 }
 
 function addPhotosFromInput(e) {
@@ -2137,7 +2136,7 @@ function renderAllChecklists(card) {
     // Collapsible done section
     if (doneItems.length) {
       const doneKey = card.id + '_' + cl.id;
-      if (window._clDoneVisible[doneKey] === undefined) window._clDoneVisible[doneKey] = true;
+      if (window._clDoneVisible[doneKey] === undefined) window._clDoneVisible[doneKey] = false;
       const isVisible = !!window._clDoneVisible[doneKey];
       const doneHeader = document.createElement('div');
       doneHeader.className = 'cl-done-header';
