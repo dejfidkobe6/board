@@ -394,13 +394,24 @@
   .card-attach-item-size { color: var(--muted); flex-shrink: 0; font-size: 10px; }
 
   /* ─── CARD COLOR PICKER ─── */
-  .card-color-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .card-color-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; align-items: center; }
   .card-color-swatch { width: 26px; height: 26px; border-radius: 7px; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; flex-shrink: 0; }
   .card-color-swatch:hover { transform: scale(1.12); border-color: rgba(255,255,255,0.5); }
   .card-color-swatch.sel { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,0.3); }
   .card-color-none { width: 26px; height: 26px; border-radius: 7px; cursor: pointer; border: 2px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--muted); transition: all 0.15s; flex-shrink: 0; }
   .card-color-none:hover { border-color: rgba(255,255,255,0.4); color: var(--text); }
   .card-color-none.sel { border-color: rgba(255,255,255,0.6); color: var(--text); }
+  .card-color-custom { width: 26px; height: 26px; border-radius: 7px; cursor: pointer; border: 2px solid rgba(255,255,255,0.25); overflow: hidden; flex-shrink: 0; transition: all 0.15s; position: relative; background: conic-gradient(red,yellow,lime,cyan,blue,magenta,red); }
+  .card-color-custom:hover { border-color: rgba(255,255,255,0.6); transform: scale(1.12); }
+  .card-color-custom.sel { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,0.3); }
+  .card-color-custom input[type=color] { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; border: none; padding: 0; }
+  /* ─── CARD BG IMAGE ─── */
+  .card-bg-img-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+  .card-bg-img-label { padding: 5px 12px; background: rgba(255,255,255,0.07); border: 1px dashed rgba(255,255,255,0.25); border-radius: 7px; color: rgba(255,255,255,0.6); font-size: 12px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .card-bg-img-label:hover { border-color: rgba(255,255,255,0.5); color: #fff; background: rgba(255,255,255,0.12); }
+  .card-bg-img-thumb { width: 64px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); }
+  .card-bg-img-remove { background: rgba(255,59,48,0.08); border: 1px solid rgba(255,59,48,0.2); border-radius: 7px; color: var(--danger); font-size: 12px; cursor: pointer; padding: 4px 10px; transition: all 0.15s; }
+  .card-bg-img-remove:hover { background: rgba(255,59,48,0.18); }
 
   /* ─── MODALS ─── */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; padding: 16px; padding-right: calc(var(--panel-w) + 16px); }
@@ -867,6 +878,14 @@
     <div class="form-group"><label>Deadline</label><input type="date" id="cardDeadline"></div>
     <div class="form-group"><label>Štítek</label><input type="text" id="cardTag" placeholder="Elektrika, Zednictví, Kontrola..."></div>
     <div class="form-group"><label>Barva karty</label><div class="card-color-row" id="cardColorRow"></div></div>
+    <div class="form-group">
+      <label>Obrázek pozadí karty</label>
+      <div id="cardBgImgRow" class="card-bg-img-row">
+        <label class="card-bg-img-label">📷 Nahrát obrázek<input type="file" id="cardBgImgInput" accept="image/*" style="display:none" onchange="cardBgImgUpload(event)"></label>
+        <img id="cardBgImgThumb" class="card-bg-img-thumb" style="display:none">
+        <button type="button" id="cardBgImgRemove" class="card-bg-img-remove" style="display:none" onclick="cardBgImgRemove()">✕ Odebrat</button>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('cardModal')">Zrušit</button>
       <button class="btn btn-primary" onclick="saveCard()">Uložit</button>
@@ -2275,28 +2294,55 @@ function doExport() {
   closeModal('exportModal');
 }
 
-let editingCardId = null, selAssignees = [], selPriority = 'low', selCardCover = null;
+let editingCardId = null, selAssignees = [], selPriority = 'low', selCardCover = null, selCardCoverImg = null;
 const CARD_COLORS = ['#3a1e1e','#1e2d3a','#2a1e3a','#1e3a2e','#3a2e1a','#2a2010','#38201e','#1e3838','#2e3a2a','#2a2a1e','#1a2232','#302030'];
 
 function renderCardColorSel() {
   const row = document.getElementById('cardColorRow');
   if (!row) return;
-  row.innerHTML = `<div class="card-color-none${selCardCover===null?' sel':''}" onclick="selCardColorFn(null,this)" title="Bez barvy">✕</div>` +
-    CARD_COLORS.map(c=>`<div class="card-color-swatch${selCardCover===c?' sel':''}" style="background:${c}" onclick="selCardColorFn('${c}',this)"></div>`).join('');
+  const isCustom = selCardCover && !CARD_COLORS.includes(selCardCover);
+  row.innerHTML =
+    `<div class="card-color-none${selCardCover===null?' sel':''}" onclick="selCardColorFn(null,this)" title="Bez barvy">✕</div>` +
+    CARD_COLORS.map(c=>`<div class="card-color-swatch${selCardCover===c?' sel':''}" style="background:${c}" onclick="selCardColorFn('${c}',this)"></div>`).join('') +
+    `<div class="card-color-custom${isCustom?' sel':''}" title="Vlastní barva" style="${isCustom?'background:'+selCardCover:''}"><input type="color" value="${isCustom?selCardCover:'#4a90d9'}" oninput="selCardColorCustomFn(this)" onchange="selCardColorCustomFn(this)"></div>`;
 }
 function selCardColorFn(color, el) {
   selCardCover = color;
-  document.querySelectorAll('#cardColorRow .card-color-swatch, #cardColorRow .card-color-none').forEach(e=>e.classList.remove('sel'));
+  document.querySelectorAll('#cardColorRow .card-color-swatch, #cardColorRow .card-color-none, #cardColorRow .card-color-custom').forEach(e=>e.classList.remove('sel'));
   el.classList.add('sel');
 }
+function selCardColorCustomFn(input) {
+  selCardCover = input.value;
+  selCardCoverImg = null;
+  document.querySelectorAll('#cardColorRow .card-color-swatch, #cardColorRow .card-color-none').forEach(e=>e.classList.remove('sel'));
+  const el = input.closest('.card-color-custom');
+  el.style.background = input.value;
+  el.classList.add('sel');
+  renderCardBgImgPreview();
+}
+function renderCardBgImgPreview() {
+  const thumb = document.getElementById('cardBgImgThumb');
+  const removeBtn = document.getElementById('cardBgImgRemove');
+  if (!thumb) return;
+  if (selCardCoverImg) { thumb.src = selCardCoverImg; thumb.style.display = 'block'; removeBtn.style.display = 'inline-block'; }
+  else { thumb.style.display = 'none'; removeBtn.style.display = 'none'; }
+}
+function cardBgImgUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => { selCardCoverImg = ev.target.result; selCardCover = null; renderCardColorSel(); renderCardBgImgPreview(); };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+function cardBgImgRemove() { selCardCoverImg = null; renderCardBgImgPreview(); }
 
 function openAddCard(colId) {
   editingCardId = null;
   document.getElementById('modalTitle').textContent = 'NOVÁ KARTA';
   ['cardName','cardDesc','cardDeadline','cardTag'].forEach(id => document.getElementById(id).value='');
-  selAssignees=[]; selPriority='low'; selCardCover=null;
+  selAssignees=[]; selPriority='low'; selCardCover=null; selCardCoverImg=null;
   renderColSel(colId||(state.columns[0]&&state.columns[0].id));
-  renderAssignSel(); renderPrioritySel(); renderCardColorSel();
+  renderAssignSel(); renderPrioritySel(); renderCardColorSel(); renderCardBgImgPreview();
   document.getElementById('cardModal').classList.add('open');
 }
 function openEditCard(id) {
@@ -2308,8 +2354,9 @@ function openEditCard(id) {
   document.getElementById('cardDeadline').value = card.deadline||'';
   document.getElementById('cardTag').value = card.tag||'';
   selAssignees = [...(card.assignees||[])]; selPriority = card.priority||'low';
+  selCardCoverImg = (card.cover && (card.cover.startsWith('data:') || card.cover.startsWith('blob:'))) ? card.cover : null;
   selCardCover = (card.cover && !card.cover.startsWith('data:') && !card.cover.startsWith('http') && !card.cover.startsWith('blob:')) ? card.cover : null;
-  renderColSel(card.colId); renderAssignSel(); renderPrioritySel(); renderCardColorSel();
+  renderColSel(card.colId); renderAssignSel(); renderPrioritySel(); renderCardColorSel(); renderCardBgImgPreview();
   document.getElementById('cardModal').classList.add('open');
 }
 function delCard(id) { if (confirm('Smazat?')) { state.cards = state.cards.filter(c=>c.id!==id); saveState(); renderBoard(); } }
@@ -2329,13 +2376,12 @@ function selectPriority(el) { selPriority=el.dataset.p; renderPrioritySel(); }
 function saveCard() {
   const name = document.getElementById('cardName').value.trim(); if (!name) { alert('Zadej název.'); return; }
   const data = { title:name, desc:document.getElementById('cardDesc').value, colId:document.getElementById('cardColumn').value, assignees:[...selAssignees], priority:selPriority, deadline:document.getElementById('cardDeadline').value, tag:document.getElementById('cardTag').value };
+  const finalCover = selCardCoverImg || selCardCover || null;
   if (editingCardId) {
     const existing = gc(editingCardId);
     Object.assign(existing, data);
-    // Update cover: use selected color, or keep existing photo cover if no color chosen
-    if (selCardCover !== null) existing.cover = selCardCover;
-    else if (!existing.cover || (!existing.cover.startsWith('data:') && !existing.cover.startsWith('http') && !existing.cover.startsWith('blob:'))) existing.cover = null;
-  } else { state.cards.push({ id:'k'+Date.now(), ...data, cover:selCardCover, photos:[], attachments:[], checklists:[], createdBy:currentUser.id, createdAt:new Date().toISOString() }); }
+    existing.cover = finalCover;
+  } else { state.cards.push({ id:'k'+Date.now(), ...data, cover:finalCover, photos:[], attachments:[], checklists:[], createdBy:currentUser.id, createdAt:new Date().toISOString() }); }
   saveState(); closeModal('cardModal'); renderBoard();
 }
 
