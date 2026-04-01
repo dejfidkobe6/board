@@ -573,10 +573,13 @@
   /* When a custom bg image is active — make columns/cards semi-transparent */
   body.has-bg-image { background-size: cover !important; background-position: center !important; background-attachment: fixed !important; }
   body.has-bg-image #app { background: transparent !important; }
+  body.has-bg-image .board { background: transparent !important; }
+  body.has-bg-image #board { background: transparent !important; }
   body.has-bg-image .column { background: rgba(10,20,5,0.68) !important; }
   body.has-bg-image .card { background: rgba(0,0,0,0.42) !important; }
   body.has-bg-image header { background: rgba(10,20,5,0.78) !important; backdrop-filter: blur(18px); }
   body.has-bg-image .team-bar { background: rgba(10,20,5,0.55) !important; }
+  body.has-bg-image .app-body { background: transparent !important; }
 
   /* ─── APP BODY (board + task panel) ─── */
   :root { --panel-w: 280px; }
