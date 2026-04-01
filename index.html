@@ -1205,6 +1205,8 @@ function openProject(id) {
   const proj = activeProj();
   const appEl = document.getElementById('app');
   appEl.style.display = 'block';
+  // Re-calculate --panel-w now that #app is visible (offsetWidth was 0 when hidden)
+  setPanelWidthVar();
   if (proj.bg_image) {
     applyBgImage(proj.bg_image);
     // applyBgImage already removed inline background from appEl
