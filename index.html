@@ -357,6 +357,11 @@
   }
   .card:hover { background: rgba(255,255,255,0.12); box-shadow: 0 6px 20px rgba(0,0,0,0.25); transform: translateY(-2px); border-color: rgba(255,255,255,0.22); }
   .card.dragging { opacity: 0.5; transform: rotate(1deg) scale(1.02); box-shadow: 0 12px 32px rgba(0,0,0,0.15); }
+  .column.col-dragging { opacity: 0.35; }
+  .column.col-drop-left  { box-shadow: -3px 0 0 2px rgba(200,165,60,0.8); }
+  .column.col-drop-right { box-shadow:  3px 0 0 2px rgba(200,165,60,0.8); }
+  .col-header { cursor: grab; }
+  .col-header:active { cursor: grabbing; }
   .card-cover { width: 100%; height: 120px; object-fit: cover; display: block; border-radius: 12px 12px 0 0; }
   .card-cover-bar { height: 4px; border-radius: 12px 12px 0 0; }
   .card-body { padding: 11px 12px; }
@@ -1205,6 +1210,8 @@ function openProject(id) {
   const proj = activeProj();
   const appEl = document.getElementById('app');
   appEl.style.display = 'block';
+  // Re-calculate --panel-w now that #app is visible (offsetWidth was 0 when hidden)
+  setPanelWidthVar();
   if (proj.bg_image) {
     applyBgImage(proj.bg_image);
     // applyBgImage already removed inline background from appEl
@@ -1426,6 +1433,49 @@ function renderBoard() {
       </div>
       <div class="col-body" id="cb-${col.id}"></div>
       <button class="add-card-btn" onclick="openAddCard('${col.id}')"><span style="font-size:16px;line-height:1">+</span> Přidat kartu</button>`;
+    // ── Column drag-and-drop ──────────────────────────────────────────
+    el.setAttribute('draggable', 'true');
+    el.addEventListener('dragstart', e => {
+      // Ignore if drag originated from inside col-body (card drag)
+      if (e.target.closest && e.target.closest('.col-body')) return;
+      _colDragId = col.id;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/col-id', col.id);
+      setTimeout(() => el.classList.add('col-dragging'), 0);
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('col-dragging');
+      document.querySelectorAll('.col-drop-left,.col-drop-right').forEach(c => { c.classList.remove('col-drop-left'); c.classList.remove('col-drop-right'); });
+      _colDragId = null;
+    });
+    el.addEventListener('dragover', e => {
+      if (!_colDragId || _colDragId === col.id) return;
+      e.preventDefault(); e.stopPropagation();
+      document.querySelectorAll('.col-drop-left,.col-drop-right').forEach(c => { c.classList.remove('col-drop-left'); c.classList.remove('col-drop-right'); });
+      const rect = el.getBoundingClientRect();
+      const isLeft = e.clientX < rect.left + rect.width / 2;
+      el.classList.add(isLeft ? 'col-drop-left' : 'col-drop-right');
+    });
+    el.addEventListener('dragleave', e => {
+      if (!e.relatedTarget || !el.contains(e.relatedTarget)) { el.classList.remove('col-drop-left'); el.classList.remove('col-drop-right'); }
+    });
+    el.addEventListener('drop', e => {
+      el.classList.remove('col-drop-left'); el.classList.remove('col-drop-right');
+      if (!_colDragId || _colDragId === col.id) return;
+      e.preventDefault(); e.stopPropagation();
+      const fromIdx = state.columns.findIndex(c => c.id === _colDragId);
+      let toIdx = state.columns.findIndex(c => c.id === col.id);
+      if (fromIdx < 0 || toIdx < 0) return;
+      const rect = el.getBoundingClientRect();
+      const isLeft = e.clientX < rect.left + rect.width / 2;
+      if (!isLeft) toIdx++;
+      const [moved] = state.columns.splice(fromIdx, 1);
+      const insertAt = fromIdx < toIdx ? toIdx - 1 : toIdx;
+      state.columns.splice(insertAt, 0, moved);
+      _colDragId = null;
+      saveState(); renderBoard();
+    });
+    // ─────────────────────────────────────────────────────────────────
     board.appendChild(el);
     const body = el.querySelector('.col-body');
     setupDrop(body, col.id);
@@ -1530,7 +1580,7 @@ function mkCard(card) {
   });
 
   el.addEventListener('click', () => openDetail(card.id));
-  el.addEventListener('dragstart', e => { e.dataTransfer.setData('cardId',card.id); el.classList.add('dragging'); });
+  el.addEventListener('dragstart', e => { e.stopPropagation(); e.dataTransfer.setData('cardId',card.id); el.classList.add('dragging'); });
   el.addEventListener('dragend', () => el.classList.remove('dragging'));
   return el;
 }
@@ -1544,10 +1594,11 @@ function tagColor(tag) {
 }
 
 function setupDrop(body, colId) {
-  body.addEventListener('dragover', e => { e.preventDefault(); body.classList.add('drag-over'); });
+  body.addEventListener('dragover', e => { if (_colDragId) return; e.preventDefault(); body.classList.add('drag-over'); });
   body.addEventListener('dragleave', () => body.classList.remove('drag-over'));
   body.addEventListener('drop', e => {
     e.preventDefault(); body.classList.remove('drag-over');
+    if (_colDragId) return;
     const card = gc(e.dataTransfer.getData('cardId'));
     if (card) { card.colId = colId; saveState(); renderBoard(); }
   });
@@ -1753,6 +1804,7 @@ function ensureChecklists(card) {
 // Drag state for checklist blocks and items
 let _clDragType = null; // 'checklist' | 'item'
 let _clDragId   = null; // id of dragged checklist or item
+let _colDragId  = null; // id of column being dragged
 
 function uncheckItem(itemId) {
   const card = gc(detailCardId); if (!card) return;
