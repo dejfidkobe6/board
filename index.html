@@ -393,8 +393,17 @@
   .card-attach-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; font-weight: 500; color: var(--text2); }
   .card-attach-item-size { color: var(--muted); flex-shrink: 0; font-size: 10px; }
 
+  /* ─── CARD COLOR PICKER ─── */
+  .card-color-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .card-color-swatch { width: 26px; height: 26px; border-radius: 7px; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; flex-shrink: 0; }
+  .card-color-swatch:hover { transform: scale(1.12); border-color: rgba(255,255,255,0.5); }
+  .card-color-swatch.sel { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,0.3); }
+  .card-color-none { width: 26px; height: 26px; border-radius: 7px; cursor: pointer; border: 2px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--muted); transition: all 0.15s; flex-shrink: 0; }
+  .card-color-none:hover { border-color: rgba(255,255,255,0.4); color: var(--text); }
+  .card-color-none.sel { border-color: rgba(255,255,255,0.6); color: var(--text); }
+
   /* ─── MODALS ─── */
-  .modal-overlay { display: none; position: fixed; inset: 0; right: var(--panel-w); background: rgba(0,0,0,0.35); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay { display: none; position: fixed; inset: 0; right: var(--panel-w); background: rgba(0,0,0,0.35); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
   .modal-overlay.open { display: flex; }
   .modal { background: #1a2a0e; border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
   .modal-wide { width: 96vw; max-width: 96vw; max-height: 96vh; }
@@ -563,7 +572,7 @@
   .bg-img-remove:hover { background: rgba(200,50,50,0.8); }
   /* When a custom bg image is active — make columns/cards semi-transparent */
   body.has-bg-image { background-size: cover !important; background-position: center !important; background-attachment: fixed !important; }
-  body.has-bg-image #app { background-color: transparent !important; }
+  body.has-bg-image #app { background: transparent !important; }
   body.has-bg-image .column { background: rgba(10,20,5,0.68) !important; }
   body.has-bg-image .card { background: rgba(0,0,0,0.42) !important; }
   body.has-bg-image header { background: rgba(10,20,5,0.78) !important; backdrop-filter: blur(18px); }
@@ -575,7 +584,7 @@
   #board { width: 100%; height: 100%; overflow-x: auto; min-height: unset; padding-right: var(--panel-w); box-sizing: border-box; }
 
   /* ─── TASK PANEL (fixed, always on top including over modals) ─── */
-  .task-panel { position: fixed; right: 0; top: 105px; height: calc(100vh - 105px); z-index: 250; background: rgba(18,28,8,0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-left: 1px solid rgba(255,255,255,0.1); box-shadow: -6px 0 28px rgba(0,0,0,0.45); display: flex; flex-direction: column; overflow: hidden; }
+  .task-panel { position: fixed; right: 0; top: 105px; height: calc(100vh - 105px); z-index: 250; background: rgba(18,28,8,0.72); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-left: 1px solid rgba(255,255,255,0.1); box-shadow: -6px 0 28px rgba(0,0,0,0.45); display: flex; flex-direction: column; overflow: hidden; }
   .task-panel.collapsed { width: 36px !important; }
   .task-panel-resize { position: absolute; left: 0; top: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 251; background: transparent; transition: background 0.15s; }
   .task-panel-resize:hover, .task-panel-resize.dragging { background: rgba(200,165,60,0.35); }
@@ -854,6 +863,7 @@
     </div>
     <div class="form-group"><label>Deadline</label><input type="date" id="cardDeadline"></div>
     <div class="form-group"><label>Štítek</label><input type="text" id="cardTag" placeholder="Elektrika, Zednictví, Kontrola..."></div>
+    <div class="form-group"><label>Barva karty</label><div class="card-color-row" id="cardColorRow"></div></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('cardModal')">Zrušit</button>
       <button class="btn btn-primary" onclick="saveCard()">Uložit</button>
@@ -1173,7 +1183,7 @@ function openProject(id) {
   appEl.style.display = 'block';
   if (proj.bg_image) {
     applyBgImage(proj.bg_image);
-    appEl.style.background = '';
+    // applyBgImage already removed inline background from appEl
   } else {
     applyBgImage(null);
     appEl.style.background = proj.bg || 'var(--bg)';
@@ -2262,15 +2272,28 @@ function doExport() {
   closeModal('exportModal');
 }
 
-let editingCardId = null, selAssignees = [], selPriority = 'low';
+let editingCardId = null, selAssignees = [], selPriority = 'low', selCardCover = null;
+const CARD_COLORS = ['#3a1e1e','#1e2d3a','#2a1e3a','#1e3a2e','#3a2e1a','#2a2010','#38201e','#1e3838','#2e3a2a','#2a2a1e','#1a2232','#302030'];
+
+function renderCardColorSel() {
+  const row = document.getElementById('cardColorRow');
+  if (!row) return;
+  row.innerHTML = `<div class="card-color-none${selCardCover===null?' sel':''}" onclick="selCardColorFn(null,this)" title="Bez barvy">✕</div>` +
+    CARD_COLORS.map(c=>`<div class="card-color-swatch${selCardCover===c?' sel':''}" style="background:${c}" onclick="selCardColorFn('${c}',this)"></div>`).join('');
+}
+function selCardColorFn(color, el) {
+  selCardCover = color;
+  document.querySelectorAll('#cardColorRow .card-color-swatch, #cardColorRow .card-color-none').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+}
 
 function openAddCard(colId) {
   editingCardId = null;
   document.getElementById('modalTitle').textContent = 'NOVÁ KARTA';
   ['cardName','cardDesc','cardDeadline','cardTag'].forEach(id => document.getElementById(id).value='');
-  selAssignees=[]; selPriority='low';
+  selAssignees=[]; selPriority='low'; selCardCover=null;
   renderColSel(colId||(state.columns[0]&&state.columns[0].id));
-  renderAssignSel(); renderPrioritySel();
+  renderAssignSel(); renderPrioritySel(); renderCardColorSel();
   document.getElementById('cardModal').classList.add('open');
 }
 function openEditCard(id) {
@@ -2282,7 +2305,8 @@ function openEditCard(id) {
   document.getElementById('cardDeadline').value = card.deadline||'';
   document.getElementById('cardTag').value = card.tag||'';
   selAssignees = [...(card.assignees||[])]; selPriority = card.priority||'low';
-  renderColSel(card.colId); renderAssignSel(); renderPrioritySel();
+  selCardCover = (card.cover && !card.cover.startsWith('data:') && !card.cover.startsWith('http') && !card.cover.startsWith('blob:')) ? card.cover : null;
+  renderColSel(card.colId); renderAssignSel(); renderPrioritySel(); renderCardColorSel();
   document.getElementById('cardModal').classList.add('open');
 }
 function delCard(id) { if (confirm('Smazat?')) { state.cards = state.cards.filter(c=>c.id!==id); saveState(); renderBoard(); } }
@@ -2302,8 +2326,13 @@ function selectPriority(el) { selPriority=el.dataset.p; renderPrioritySel(); }
 function saveCard() {
   const name = document.getElementById('cardName').value.trim(); if (!name) { alert('Zadej název.'); return; }
   const data = { title:name, desc:document.getElementById('cardDesc').value, colId:document.getElementById('cardColumn').value, assignees:[...selAssignees], priority:selPriority, deadline:document.getElementById('cardDeadline').value, tag:document.getElementById('cardTag').value };
-  if (editingCardId) { Object.assign(gc(editingCardId), data); }
-  else { state.cards.push({ id:'k'+Date.now(), ...data, cover:null, photos:[], attachments:[], checklists:[], createdBy:currentUser.id, createdAt:new Date().toISOString() }); }
+  if (editingCardId) {
+    const existing = gc(editingCardId);
+    Object.assign(existing, data);
+    // Update cover: use selected color, or keep existing photo cover if no color chosen
+    if (selCardCover !== null) existing.cover = selCardCover;
+    else if (!existing.cover || (!existing.cover.startsWith('data:') && !existing.cover.startsWith('http') && !existing.cover.startsWith('blob:'))) existing.cover = null;
+  } else { state.cards.push({ id:'k'+Date.now(), ...data, cover:selCardCover, photos:[], attachments:[], checklists:[], createdBy:currentUser.id, createdAt:new Date().toISOString() }); }
   saveState(); closeModal('cardModal'); renderBoard();
 }
 
@@ -3002,17 +3031,20 @@ const BOARD_BG_COLORS = ['#4a5240','#2e3a2a','#1e2d3a','#2a1e3a','#3a1e1e','#1e3
 
 function applyBgImage(url) {
   const appEl = document.getElementById('app');
-  appEl.style.background = ''; // clear any previously set solid-color shorthand
+  const bgProps = ['background','background-color','background-image','background-size','background-position'];
   if (url) {
-    appEl.style.backgroundImage = `url('${url}')`;
-    appEl.style.backgroundSize = 'cover';
-    appEl.style.backgroundPosition = 'center';
+    document.body.style.backgroundImage = `url('${url}')`;
+    document.body.style.backgroundSize = 'cover';
+    document.body.style.backgroundPosition = 'center';
     document.body.classList.add('has-bg-image');
+    // Remove all background inline styles from #app so CSS !important rule takes effect
+    if (appEl) bgProps.forEach(p => appEl.style.removeProperty(p));
   } else {
-    appEl.style.backgroundImage = '';
-    appEl.style.backgroundSize = '';
-    appEl.style.backgroundPosition = '';
+    document.body.style.backgroundImage = '';
+    document.body.style.backgroundSize = '';
+    document.body.style.backgroundPosition = '';
     document.body.classList.remove('has-bg-image');
+    if (appEl) bgProps.forEach(p => appEl.style.removeProperty(p));
   }
 }
 
@@ -3084,12 +3116,9 @@ async function uploadBgImage(e) {
     const res = await fetch('/api/upload_bg.php', { method: 'POST', credentials: 'include', body: fd });
     const data = await res.json();
     if (!data.success) { alert(data.error || 'Chyba nahrávání'); return; }
-    // Apply to body background
     applyBgImage(data.url);
     const proj = activeProj();
     if (proj) { proj.bg_image = data.url; delete proj.bg; }
-    const appEl = document.getElementById('app');
-    if (appEl) appEl.style.background = '';
     saveState();
     document.getElementById('bgPickerDropdown').classList.remove('open');
   } catch {
