@@ -1519,14 +1519,7 @@ function mkCard(card) {
       </div>
     </div>`;
 
-  // Cover click → lightbox if it's an image
-  const coverImg = el.querySelector('.card-cover');
-  if (coverImg) {
-    const imgSrc = cardCover && (cardCover.startsWith('data:') || cardCover.startsWith('http')) ? cardCover : (hasCover ? photos[0] : null);
-    if (imgSrc) {
-      coverImg.addEventListener('click', e => { e.stopPropagation(); openLightbox(imgSrc, 'Cover'); });
-    }
-  }
+  // Cover click → opens card detail (bubbles up to el click handler)
 
   // Attachment item clicks → download (safe, no base64 in attribute)
   el.querySelectorAll('.card-attach-item').forEach(item => {
