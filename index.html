@@ -320,9 +320,11 @@
   .team-bar-chevron { font-size: 10px; color: rgba(255,255,255,0.4); margin-left: 2px; transition: transform 0.2s; }
   .team-bar.open .team-bar-chevron { transform: rotate(180deg); }
   .team-bar-dropdown {
-    display: none; position: absolute; top: 36px; left: 0; right: 0; z-index: 90;
+    display: none; position: absolute; top: 36px; left: 0; z-index: 90;
+    width: 700px; max-width: calc(100vw - var(--panel-w) - 56px);
     background: rgba(40,45,36,0.96); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.08);
+    border-radius: 0 0 14px 0;
     padding: 10px 28px 14px; display: none; flex-wrap: wrap; gap: 8px; align-items: center;
   }
   .team-bar.open .team-bar-dropdown { display: flex; }
