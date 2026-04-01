@@ -595,6 +595,7 @@
   .task-item-row input[type=checkbox] { margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); cursor: pointer; }
   .task-item-text { font-size: 12px; color: rgba(255,255,255,0.82); line-height: 1.4; word-break: break-word; }
   .task-item-card { font-size: 10px; color: rgba(255,255,255,0.28); margin-top: 3px; padding-left: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .task-item-actions { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
   .task-item-dl { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; margin-top: 4px; margin-left: 18px; display: inline-block; }
   .task-item-dl.overdue { background: rgba(255,60,40,0.18); color: #ff7060; }
   .task-item-dl.today { background: rgba(200,165,60,0.18); color: rgba(200,165,60,0.9); }
@@ -1898,16 +1899,11 @@ function mkClItemEl(item) {
   row.innerHTML = `
     <input type="checkbox" class="cl-checkbox" onchange="checkItem('${item.id}',this)">
     <span class="cl-text" title="Dvojklik pro přejmenování">${escHtml(item.text)}</span>
-    <span class="cl-author">${author?escHtml(author.name.split(' ')[0]):''}</span>
-    <button class="cl-attach-toggle" onclick="toggleClAttach('${item.id}')" title="Přidat přílohu">📎</button>
-    <button class="cl-del" onclick="delClItem('${item.id}')">✕</button>`;
+    <span class="cl-author">${author?escHtml(author.name.split(' ')[0]):''}</span>`;
 
-  // Meta row: assignee + deadline
   const today = new Date().toISOString().split('T')[0];
-  const metaRow = document.createElement('div');
-  metaRow.className = 'cl-item-meta';
 
-  // Assignee button
+  // Assignee button (inline in row)
   const assigneeBtn = document.createElement('button');
   assigneeBtn.className = 'cl-meta-btn';
   const assigneeMember = item.assignee ? ((_projectMembers||state.members).find(m=>String(m.id)===String(item.assignee)) || null) : null;
@@ -1918,9 +1914,9 @@ function mkClItemEl(item) {
     assigneeBtn.innerHTML = `👤 Přiřadit`;
   }
   assigneeBtn.onclick = (e) => { e.stopPropagation(); openAssigneePicker(assigneeBtn, item.id, cardId); };
-  metaRow.appendChild(assigneeBtn);
+  row.appendChild(assigneeBtn);
 
-  // Deadline button
+  // Deadline button (inline in row)
   const dlBtn = document.createElement('button');
   dlBtn.className = 'cl-meta-btn';
   if (item.deadline) {
@@ -1931,12 +1927,22 @@ function mkClItemEl(item) {
     dlBtn.innerHTML = `📅 Termín`;
   }
   dlBtn.onclick = (e) => { e.stopPropagation(); openMiniCal(dlBtn, item.id, cardId, item.deadline||null); };
-  metaRow.appendChild(dlBtn);
+  row.appendChild(dlBtn);
+
+  // Attachment toggle + delete (inline in row)
+  const attToggle = document.createElement('button');
+  attToggle.className = 'cl-attach-toggle'; attToggle.title = 'Přidat přílohu'; attToggle.textContent = '📎';
+  attToggle.onclick = () => toggleClAttach(item.id);
+  row.appendChild(attToggle);
+  const delBtn = document.createElement('button');
+  delBtn.className = 'cl-del'; delBtn.textContent = '✕';
+  delBtn.onclick = () => delClItem(item.id);
+  row.appendChild(delBtn);
+
   row.querySelector('.cl-text').addEventListener('dblclick', function() {
     startRenameClItem(row, item.id, item.text);
   });
   div.appendChild(row);
-  div.appendChild(metaRow);
   if (atts.length) {
     const linkRow = document.createElement('div');
     linkRow.className = 'cl-attach-links';
@@ -2281,8 +2287,16 @@ function openEditCard(id) {
 }
 function delCard(id) { if (confirm('Smazat?')) { state.cards = state.cards.filter(c=>c.id!==id); saveState(); renderBoard(); } }
 function renderColSel(sel) { document.getElementById('cardColumn').innerHTML = state.columns.map(c=>`<option value="${c.id}"${c.id===sel?' selected':''}>${c.title}</option>`).join(''); }
-function renderAssignSel() { document.getElementById('assigneeSelect').innerHTML = state.members.map(m=>`<div class="assignee-option${selAssignees.includes(m.id)?' selected':''}" onclick="togAssign('${m.id}',this)"><div class="avatar" style="background:${m.color};width:20px;height:20px;font-size:9px">${ini(m.name)}</div>${m.name.split(' ')[0]}</div>`).join(''); }
-function togAssign(id, el) { if (selAssignees.includes(id)) { selAssignees=selAssignees.filter(a=>a!==id); el.classList.remove('selected'); } else { selAssignees.push(id); el.classList.add('selected'); } }
+function renderAssignSel() {
+  const members = (_projectMembers || state.members).map(m => ({ id: String(m.id), name: m.name, color: m.avatar_color || m.color || '#4A5340' }));
+  document.getElementById('assigneeSelect').innerHTML = members.map(m=>`<div class="assignee-option${selAssignees.map(String).includes(m.id)?' selected':''}" onclick="togAssign('${m.id}',this)"><div class="avatar" style="background:${m.color};width:20px;height:20px;font-size:9px">${ini(m.name)}</div>${m.name.split(' ')[0]}</div>`).join('');
+}
+function togAssign(id, el) {
+  const sId = String(id);
+  const idx = selAssignees.map(String).indexOf(sId);
+  if (idx >= 0) { selAssignees.splice(idx, 1); el.classList.remove('selected'); }
+  else { selAssignees.push(sId); el.classList.add('selected'); }
+}
 function renderPrioritySel() { document.querySelectorAll('.priority-opt').forEach(el=>el.classList.toggle('selected',el.dataset.p===selPriority)); }
 function selectPriority(el) { selPriority=el.dataset.p; renderPrioritySel(); }
 function saveCard() {
@@ -2500,15 +2514,28 @@ function renderTaskPanel() {
       const el = document.createElement('div');
       el.className = 'task-item' + (cls ? ' ' + cls : '');
       const dl = item.deadline;
-      const dlCls = dl ? (dl < today ? 'overdue' : dl === today ? 'today' : 'future') : '';
-      const dlHtml = dl ? `<div class="task-item-dl ${dlCls}">${fmtDate(dl)}</div>` : '';
       el.innerHTML = `
         <div class="task-item-row">
           <input type="checkbox" onclick="checkClItemFromPanel('${item.id}','${card.id}',this)">
           <span class="task-item-text">${escHtml(item.text)}</span>
         </div>
         <div class="task-item-card">📋 ${escHtml(card.title)}</div>
-        ${dlHtml}`;
+        <div class="task-item-actions"></div>`;
+      const actions = el.querySelector('.task-item-actions');
+      // Assignee btn
+      const aBtn = document.createElement('button');
+      aBtn.className = 'cl-meta-btn' + (item.assignee ? ' assigned' : '');
+      const aMember = item.assignee ? ((_projectMembers||state.members).find(m=>String(m.id)===String(item.assignee))||null) : null;
+      aBtn.innerHTML = aMember ? `👤 ${escHtml(aMember.name.split(' ')[0])}` : '👤 Přiřadit';
+      aBtn.onclick = e => { e.stopPropagation(); openAssigneePicker(aBtn, item.id, card.id); };
+      actions.appendChild(aBtn);
+      // Deadline btn
+      const dBtn = document.createElement('button');
+      const dCls = dl ? (dl < today ? 'date-overdue' : dl === today ? 'date-today' : 'has-date') : '';
+      dBtn.className = 'cl-meta-btn' + (dCls ? ' ' + dCls : '');
+      dBtn.innerHTML = dl ? `📅 ${fmtDate(dl)}` : '📅 Termín';
+      dBtn.onclick = e => { e.stopPropagation(); openMiniCal(dBtn, item.id, card.id, dl||null); };
+      actions.appendChild(dBtn);
       body.appendChild(el);
     });
   }
