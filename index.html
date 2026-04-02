@@ -614,10 +614,11 @@
   .task-panel-toggle:hover { color: rgba(255,255,255,0.8); }
   .task-panel-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
   .task-panel.collapsed .task-panel-label { display: none; }
-  .task-panel-body { flex: 1; overflow-y: auto; padding: 8px 6px 14px; display: flex; flex-direction: column; gap: 3px; }
-  .task-panel-body::-webkit-scrollbar { width: 4px; }
-  .task-panel-body::-webkit-scrollbar-track { background: transparent; margin-bottom: 14px; }
-  .task-panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+  .task-panel-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding-bottom: 14px; }
+  .task-panel-body-inner { flex: 1; overflow-y: auto; padding: 8px 6px 2px; display: flex; flex-direction: column; gap: 3px; }
+  .task-panel-body-inner::-webkit-scrollbar { width: 4px; }
+  .task-panel-body-inner::-webkit-scrollbar-track { background: transparent; }
+  .task-panel-body-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
   .task-panel.collapsed .task-panel-body { display: none; }
   .task-panel-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(200,165,60,0.5); padding: 6px 5px 3px; }
   .task-item { padding: 7px 9px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; cursor: pointer; transition: background 0.13s; }
@@ -842,8 +843,10 @@
         <span id="taskPanelArrow">◁</span>
         <span class="task-panel-label">Moje úkoly</span>
       </div>
-      <div class="task-panel-body" id="taskPanelBody">
-        <div class="task-panel-empty">Načítám…</div>
+      <div class="task-panel-body">
+        <div class="task-panel-body-inner" id="taskPanelBody">
+          <div class="task-panel-empty">Načítám…</div>
+        </div>
       </div>
     </div>
   </div>
