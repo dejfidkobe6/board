@@ -421,7 +421,7 @@
   .card-bg-img-remove:hover { background: rgba(255,59,48,0.18); }
 
   /* ─── MODALS ─── */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; padding: 16px; padding-right: calc(var(--panel-w) + 16px); }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; padding: 16px; padding-right: calc(var(--panel-w) + var(--panel-gap) + 16px); }
   .modal-overlay.open { display: flex; }
   .modal { background: #1a2a0e; border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
   .modal-wide { width: 96vw; max-width: 96vw; max-height: 96vh; }
@@ -600,12 +600,12 @@
   body.has-bg-image .app-body { background: transparent !important; }
 
   /* ─── APP BODY (board + task panel) ─── */
-  :root { --panel-w: 280px; }
+  :root { --panel-w: 280px; --panel-gap: 8px; }
   .app-body { position: relative; height: calc(100vh - 105px); overflow: hidden; }
-  #board { width: 100%; height: 100%; overflow-x: auto; min-height: unset; padding-right: var(--panel-w); box-sizing: border-box; }
+  #board { width: 100%; height: 100%; overflow-x: auto; min-height: unset; padding-right: calc(var(--panel-w) + var(--panel-gap)); box-sizing: border-box; }
 
   /* ─── TASK PANEL (fixed, always on top including over modals) ─── */
-  .task-panel { position: fixed; right: 0; top: 105px; height: calc(100vh - 105px); z-index: 250; background: rgba(18,28,8,0.72); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-left: 1px solid rgba(255,255,255,0.1); box-shadow: -6px 0 28px rgba(0,0,0,0.45); display: flex; flex-direction: column; overflow: hidden; }
+  .task-panel { position: fixed; right: var(--panel-gap); top: calc(105px + var(--panel-gap)); height: calc(100vh - 105px - var(--panel-gap) * 2); z-index: 250; background: rgba(18,28,8,0.72); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; box-shadow: -4px 0 24px rgba(0,0,0,0.35); display: flex; flex-direction: column; overflow: hidden; }
   .task-panel.collapsed { width: 36px !important; }
   .task-panel-resize { position: absolute; left: 0; top: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 251; background: transparent; transition: background 0.15s; }
   .task-panel-resize:hover, .task-panel-resize.dragging { background: rgba(200,165,60,0.35); }
@@ -614,7 +614,10 @@
   .task-panel-toggle:hover { color: rgba(255,255,255,0.8); }
   .task-panel-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
   .task-panel.collapsed .task-panel-label { display: none; }
-  .task-panel-body { flex: 1; overflow-y: auto; padding: 8px 6px; display: flex; flex-direction: column; gap: 3px; }
+  .task-panel-body { flex: 1; overflow-y: auto; padding: 8px 6px 14px; display: flex; flex-direction: column; gap: 3px; }
+  .task-panel-body::-webkit-scrollbar { width: 4px; }
+  .task-panel-body::-webkit-scrollbar-track { background: transparent; margin-bottom: 14px; }
+  .task-panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
   .task-panel.collapsed .task-panel-body { display: none; }
   .task-panel-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(200,165,60,0.5); padding: 6px 5px 3px; }
   .task-item { padding: 7px 9px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; cursor: pointer; transition: background 0.13s; }
@@ -2637,8 +2640,10 @@ function findCardAnywhere(cardId) {
 function setPanelWidthVar() {
   const panel = document.getElementById('taskPanel');
   if (!panel) return;
+  const gap = 8;
   const w = panel.classList.contains('collapsed') ? 36 : panel.offsetWidth;
   document.documentElement.style.setProperty('--panel-w', w + 'px');
+  document.documentElement.style.setProperty('--panel-gap', gap + 'px');
 }
 
 function toggleTaskPanel() {
