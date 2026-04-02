@@ -595,6 +595,7 @@
   body.has-bg-image #board { background: transparent !important; }
   body.has-bg-image .column { background: rgba(10,20,5,0.68) !important; }
   body.has-bg-image .card { background: rgba(0,0,0,0.42) !important; }
+  body.has-bg-image .task-panel { background: rgba(10,20,5,0.68) !important; }
   body.has-bg-image header { background: rgba(10,20,5,0.78) !important; backdrop-filter: blur(18px); }
   body.has-bg-image .team-bar { background: rgba(10,20,5,0.55) !important; }
   body.has-bg-image .app-body { background: transparent !important; }
@@ -605,8 +606,8 @@
   #board { width: 100%; height: 100%; overflow-x: auto; min-height: unset; padding-right: calc(var(--panel-w) + var(--panel-gap)); box-sizing: border-box; }
 
   /* ─── TASK PANEL (fixed, always on top including over modals) ─── */
-  .task-panel { position: fixed; right: var(--panel-gap); top: calc(105px + var(--panel-gap)); height: calc(100vh - 105px - var(--panel-gap) * 2); z-index: 250; background: rgba(18,28,8,0.72); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; box-shadow: -4px 0 24px rgba(0,0,0,0.35); display: flex; flex-direction: column; overflow: hidden; }
-  .task-panel.collapsed { width: 36px !important; }
+  .task-panel { position: fixed; right: var(--panel-gap); top: calc(105px + var(--panel-gap)); height: calc(100vh - 105px - var(--panel-gap) * 2); z-index: 250; background: rgba(255,255,255,0.06); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; box-shadow: -4px 0 24px rgba(0,0,0,0.35); display: flex; flex-direction: column; overflow: hidden; padding-bottom: 14px; }
+  .task-panel.collapsed { width: 36px !important; padding-bottom: 0; }
   .task-panel-resize { position: absolute; left: 0; top: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 251; background: transparent; transition: background 0.15s; }
   .task-panel-resize:hover, .task-panel-resize.dragging { background: rgba(200,165,60,0.35); }
   .task-panel.collapsed .task-panel-resize { display: none; }
@@ -614,11 +615,11 @@
   .task-panel-toggle:hover { color: rgba(255,255,255,0.8); }
   .task-panel-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
   .task-panel.collapsed .task-panel-label { display: none; }
-  .task-panel-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding-bottom: 14px; }
-  .task-panel-body-inner { flex: 1; overflow-y: auto; padding: 8px 6px 2px; display: flex; flex-direction: column; gap: 3px; }
+  .task-panel-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .task-panel-body-inner { flex: 1; overflow-y: auto; padding: 8px 6px 2px 6px; display: flex; flex-direction: column; gap: 3px; }
   .task-panel-body-inner::-webkit-scrollbar { width: 4px; }
-  .task-panel-body-inner::-webkit-scrollbar-track { background: transparent; }
-  .task-panel-body-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+  .task-panel-body-inner::-webkit-scrollbar-track { background: transparent; margin-bottom: 6px; }
+  .task-panel-body-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 2px; }
   .task-panel.collapsed .task-panel-body { display: none; }
   .task-panel-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(200,165,60,0.5); padding: 6px 5px 3px; }
   .task-item { padding: 7px 9px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; cursor: pointer; transition: background 0.13s; }
