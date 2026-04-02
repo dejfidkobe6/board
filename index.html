@@ -968,16 +968,18 @@ async function syncKanbanFromServer(projectId) {
     if (!data.success) return;
     const proj = state.projects.find(p => String(p.id) === String(projectId));
     if (!proj) return;
-    if (data.state && (data.state.columns || data.state.cards)) {
-      // Server has data → use it (server is authoritative for cross-device sync)
-      if (data.state.columns)              proj.columns   = data.state.columns;
-      if (data.state.cards)                proj.cards     = data.state.cards;
+    const hasCols = Array.isArray(data.state && data.state.columns) && data.state.columns.length > 0;
+    const hasCards = Array.isArray(data.state && data.state.cards) && data.state.cards.length > 0;
+    if (data.state && (hasCols || hasCards)) {
+      // Server has non-empty data → use it (server is authoritative for cross-device sync)
+      if (hasCols)                          proj.columns   = data.state.columns;
+      if (hasCards)                         proj.cards     = data.state.cards;
       if (Array.isArray(data.state.completed)) proj.completed = data.state.completed;
       try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
       renderBoard();
       updateBadge();
     } else if (proj.columns && proj.columns.length > 0) {
-      // No server state yet but we have local data → push to server
+      // Server has no/empty data but local has data → push local to server
       _doSyncKanbanToServer(projectId);
     }
   } catch(e) {}
@@ -3112,11 +3114,14 @@ async function bootAuth() {
 
   // 5. Open project from state (use activeProjectId as state key)
   if (!state.projects.find(p => p.id === activeProjectId)) {
-    // Create a minimal project stub in local state if not found
+    // Create a minimal project stub — do NOT saveState() here to avoid
+    // scheduling a server sync with empty data before we load from server
     state.projects.push({ id: activeProjectId, name: 'Projekt', columns: [], cards: [], completed: [], members: [] });
-    saveState();
   }
   openProject(activeProjectId);
+
+  // Cancel any sync timer that openProject() may have scheduled with empty data
+  clearTimeout(_kanbanSyncTimer);
 
   // 6. Load latest kanban state from server (cross-device sync)
   await syncKanbanFromServer(activeProjectId);
