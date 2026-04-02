@@ -423,7 +423,11 @@
   /* ─── MODALS ─── */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; padding: 16px; padding-right: calc(var(--panel-w) + var(--panel-gap) + 16px); }
   .modal-overlay.open { display: flex; }
-  .modal { background: #1a2a0e; border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; padding: 28px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .modal { background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; width: 520px; max-width: 95vw; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .modal-scroll { flex: 1; overflow-y: auto; padding: 28px; padding-bottom: 18px; }
+  .modal-scroll::-webkit-scrollbar { width: 5px; }
+  .modal-scroll::-webkit-scrollbar-track { background: transparent; margin-bottom: 18px; margin-top: 18px; }
+  .modal-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
   .modal-wide { width: 96vw; max-width: 96vw; max-height: 96vh; }
   .modal h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.4px; color: rgba(255,255,255,0.9); margin-bottom: 22px; }
   .modal-close { position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; background: transparent; border: none; color: rgba(255,255,255,0.45); font-size: 18px; cursor: pointer; border-radius: 7px; display: flex; align-items: center; justify-content: center; transition: color 0.15s; }
@@ -786,17 +790,19 @@
 <!-- NEW PROJECT MODAL -->
 <div class="modal-overlay" id="projectModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('projectModal')">✕</button>
-    <h2>NOVÝ PROJEKT</h2>
-    <div class="form-group"><label>Název projektu *</label><input type="text" id="projName" placeholder="Např. Rekonstrukce bytu Praha 5"></div>
-    <div class="form-group"><label>Popis (volitelný)</label><input type="text" id="projDesc" placeholder="Stručný popis..."></div>
-    <div class="form-group">
-      <label>Barva / ikona</label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap" id="projColorPicker"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('projectModal')">Zrušit</button>
-      <button class="btn btn-primary" onclick="saveProject()">Vytvořit projekt</button>
+    <div class="modal-scroll">
+      <button class="modal-close" onclick="closeModal('projectModal')">✕</button>
+      <h2>NOVÝ PROJEKT</h2>
+      <div class="form-group"><label>Název projektu *</label><input type="text" id="projName" placeholder="Např. Rekonstrukce bytu Praha 5"></div>
+      <div class="form-group"><label>Popis (volitelný)</label><input type="text" id="projDesc" placeholder="Stručný popis..."></div>
+      <div class="form-group">
+        <label>Barva / ikona</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="projColorPicker"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal('projectModal')">Zrušit</button>
+        <button class="btn btn-primary" onclick="saveProject()">Vytvořit projekt</button>
+      </div>
     </div>
   </div>
 </div>
@@ -856,6 +862,7 @@
 <!-- DETAIL MODAL -->
 <div class="modal-overlay" id="detailModal">
   <div class="modal modal-wide">
+    <div class="modal-scroll">
     <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
     <div class="detail-title" id="dTitle"></div>
     <div class="detail-meta-row" id="dMeta"></div>
@@ -870,12 +877,14 @@
       <button class="btn btn-ghost" onclick="openEditFromDetail()">✏ Upravit</button>
       <button class="btn btn-danger" onclick="deleteCurrentCard()">🗑 Smazat kartu</button>
     </div>
+    </div>
   </div>
 </div>
 
 <!-- CARD MODAL -->
 <div class="modal-overlay" id="cardModal">
   <div class="modal">
+    <div class="modal-scroll">
     <button class="modal-close" onclick="closeModal('cardModal')">✕</button>
     <h2 id="modalTitle">NOVÁ KARTA</h2>
     <div class="form-group"><label>Název karty *</label><input type="text" id="cardName" placeholder="Např. Zazdění příček – 2. NP"></div>
@@ -905,12 +914,14 @@
       <button class="btn btn-ghost" onclick="closeModal('cardModal')">Zrušit</button>
       <button class="btn btn-primary" onclick="saveCard()">Uložit</button>
     </div>
+    </div>
   </div>
 </div>
 
 <!-- MEMBER MODAL -->
 <div class="modal-overlay" id="memberModal">
   <div class="modal">
+    <div class="modal-scroll">
     <button class="modal-close" onclick="closeModal('memberModal')">✕</button>
     <h2>NOVÝ ČLEN</h2>
     <div class="form-group"><label>Jméno a příjmení *</label><input type="text" id="memberName" placeholder="Jan Novák"></div>
@@ -920,12 +931,14 @@
       <button class="btn btn-ghost" onclick="closeModal('memberModal')">Zrušit</button>
       <button class="btn btn-primary" onclick="saveMember()">Přidat</button>
     </div>
+    </div>
   </div>
 </div>
 
 <!-- COLUMN MODAL -->
 <div class="modal-overlay" id="colModal">
   <div class="modal">
+    <div class="modal-scroll">
     <button class="modal-close" onclick="closeModal('colModal')">✕</button>
     <h2 id="colModalTitle">NOVÝ SLOUPEC</h2>
     <div class="form-group"><label>Název *</label><input type="text" id="colName" placeholder="Čekání na materiál" onkeydown="if(event.key==='Enter')saveColumn()"></div>
@@ -933,12 +946,14 @@
       <button class="btn btn-ghost" onclick="closeModal('colModal')">Zrušit</button>
       <button class="btn btn-primary" id="colSaveBtn" onclick="saveColumn()">Přidat</button>
     </div>
+    </div>
   </div>
 </div>
 
 <!-- BACKUP MODAL -->
 <div class="modal-overlay" id="backupModal">
   <div class="modal">
+    <div class="modal-scroll">
     <button class="modal-close" onclick="closeModal('backupModal')">✕</button>
     <h2>🗄 ZÁLOHY DAT</h2>
     <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Každá změna se automaticky zálohuje. Zálohy na serveru jsou přístupné z jakéhokoliv zařízení.</p>
@@ -948,12 +963,14 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('backupModal')">Zavřít</button>
     </div>
+    </div>
   </div>
 </div>
 
 <!-- EXPORT MODAL -->
 <div class="modal-overlay" id="exportModal">
   <div class="modal">
+    <div class="modal-scroll">
     <button class="modal-close" onclick="closeModal('exportModal')">✕</button>
     <h2>EXPORT DO EXCELU</h2>
     <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Vyber sloupce, jejichž splněné položky chceš exportovat. Každý sloupec bude samostatný list v sešitu. Historie se nikdy nemaže.</p>
@@ -965,6 +982,7 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('exportModal')">Zrušit</button>
       <button class="btn btn-primary" onclick="doExport()">📊 Exportovat</button>
+    </div>
     </div>
   </div>
 </div>
