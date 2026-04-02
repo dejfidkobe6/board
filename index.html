@@ -819,6 +819,7 @@
           </div>
         </div>
       </div>
+      <button class="btn btn-ghost" id="backupRestoreBtn" onclick="openBackupModal()" title="Zálohy a obnova dat" style="display:none">🗄 Zálohy</button>
       <button class="btn btn-ghost" onclick="openExportModal()">📊 Export Excel <span class="export-badge" id="exportBadge" style="display:none">0</span></button>
       <button class="btn btn-primary" onclick="openAddCard()">+ Přidat kartu</button>
       <div class="current-user" onclick="logout()">
@@ -928,6 +929,21 @@
   </div>
 </div>
 
+<!-- BACKUP MODAL -->
+<div class="modal-overlay" id="backupModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('backupModal')">✕</button>
+    <h2>🗄 ZÁLOHY DAT</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Každá změna se automaticky zálohuje. Zálohy na serveru jsou přístupné z jakéhokoliv zařízení.</p>
+    <div id="backupServerList" style="margin-bottom:16px"></div>
+    <h3 style="font-size:12px;font-weight:700;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px">ZÁLOHY V TOMTO PROHLÍŽEČI</h3>
+    <div id="backupLocalList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('backupModal')">Zavřít</button>
+    </div>
+  </div>
+</div>
+
 <!-- EXPORT MODAL -->
 <div class="modal-overlay" id="exportModal">
   <div class="modal">
@@ -992,13 +1008,49 @@ function scheduleSyncKanbanToServer() {
 async function _doSyncKanbanToServer(projectId) {
   const proj = state.projects.find(p => String(p.id) === String(projectId));
   if (!proj) return;
+  const cols  = proj.columns   || [];
+  const cards = proj.cards     || [];
+  // Never send empty data if we had data before (client-side guard)
+  if (cols.length === 0 && cards.length === 0) return;
+  // Save rolling local backup before sending to server
+  _saveLocalBackup(projectId, cols, cards, proj.completed || []);
   try {
     await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state: { columns: proj.columns || [], cards: proj.cards || [], completed: proj.completed || [] } })
+      body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [] } })
     });
   } catch(e) {}
+}
+
+// ── Local rolling backups (last 5 snapshots per project in localStorage) ──
+function _saveLocalBackup(projectId, columns, cards, completed) {
+  try {
+    const key = 'besix_backup_' + projectId;
+    const backups = JSON.parse(localStorage.getItem(key) || '[]');
+    backups.unshift({ ts: new Date().toISOString(), columns, cards, completed });
+    if (backups.length > 5) backups.length = 5;
+    localStorage.setItem(key, JSON.stringify(backups));
+  } catch(e) {}
+}
+
+function listLocalBackups(projectId) {
+  try {
+    const key = 'besix_backup_' + (projectId || localStorage.getItem('besix_active_project_id'));
+    return JSON.parse(localStorage.getItem(key) || '[]');
+  } catch(e) { return []; }
+}
+
+function restoreLocalBackup(projectId, index) {
+  const backups = listLocalBackups(projectId);
+  const b = backups[index];
+  if (!b) { alert('Záloha nenalezena'); return; }
+  if (!confirm(`Obnovit zálohu z ${b.ts}?\n${b.columns.length} sloupců, ${b.cards.length} karet\n\nTato akce přepíše aktuální stav.`)) return;
+  const proj = state.projects.find(p => String(p.id) === String(projectId));
+  if (!proj) return;
+  proj.columns = b.columns; proj.cards = b.cards; proj.completed = b.completed || [];
+  saveState(); renderBoard();
+  alert('Záloha obnovena.');
 }
 
 function nd(d) { const x = new Date(); x.setDate(x.getDate()+d); return x.toISOString().split('T')[0]; }
@@ -2296,6 +2348,69 @@ function updateBadge() {
   b.textContent = n;
 }
 
+async function openBackupModal() {
+  const projectId = localStorage.getItem('besix_active_project_id');
+  document.getElementById('backupModal').classList.add('open');
+
+  // Server backups
+  const serverEl = document.getElementById('backupServerList');
+  serverEl.innerHTML = '<div style="font-size:12px;color:var(--muted)">Načítám serverové zálohy…</div>';
+  try {
+    const res = await fetch(`/api/kanban.php?action=backups&project_id=${projectId}`, { credentials: 'include' });
+    const data = await res.json();
+    if (data.success && data.backups.length) {
+      serverEl.innerHTML = `<h3 style="font-size:12px;font-weight:700;letter-spacing:0.06em;color:var(--muted);margin-bottom:8px">ZÁLOHY NA SERVERU (posledních 20)</h3>` +
+        data.backups.map(b => `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px;font-size:12px">
+            <span style="flex:1;color:var(--text)">${new Date(b.saved_at).toLocaleString('cs-CZ')}</span>
+            <span style="color:var(--muted)">${b.columns_count} sl. / ${b.cards_count} karet</span>
+            <button onclick="restoreServerBackup(${b.id})" style="padding:3px 10px;background:rgba(200,165,60,0.15);border:1px solid rgba(200,165,60,0.35);border-radius:6px;color:rgba(200,165,60,0.9);font-size:11px;font-weight:700;cursor:pointer">Obnovit</button>
+          </div>`).join('');
+    } else {
+      serverEl.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Žádné serverové zálohy.</div>';
+    }
+  } catch(e) {
+    serverEl.innerHTML = '<div style="font-size:12px;color:var(--danger);margin-bottom:12px">Chyba při načítání záloh.</div>';
+  }
+
+  // Local backups
+  const localEl = document.getElementById('backupLocalList');
+  const locals = listLocalBackups(projectId);
+  if (locals.length) {
+    localEl.innerHTML = locals.map((b, i) => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px;font-size:12px">
+        <span style="flex:1;color:var(--text)">${new Date(b.ts).toLocaleString('cs-CZ')}</span>
+        <span style="color:var(--muted)">${b.columns.length} sl. / ${b.cards.length} karet</span>
+        <button onclick="restoreLocalBackup('${projectId}',${i});closeModal('backupModal')" style="padding:3px 10px;background:rgba(200,165,60,0.15);border:1px solid rgba(200,165,60,0.35);border-radius:6px;color:rgba(200,165,60,0.9);font-size:11px;font-weight:700;cursor:pointer">Obnovit</button>
+      </div>`).join('');
+  } else {
+    localEl.innerHTML = '<div style="font-size:12px;color:var(--muted)">Žádné lokální zálohy (vytvoří se automaticky při příštím uložení).</div>';
+  }
+}
+
+async function restoreServerBackup(backupId) {
+  if (!confirm('Obnovit tuto zálohu ze serveru? Přepíše aktuální stav.')) return;
+  const projectId = localStorage.getItem('besix_active_project_id');
+  const res = await fetch(`/api/kanban.php?action=restore&project_id=${projectId}&backup_id=${backupId}`, {
+    method: 'POST', credentials: 'include'
+  });
+  const data = await res.json();
+  if (data.success && data.state) {
+    const proj = state.projects.find(p => String(p.id) === String(projectId));
+    if (proj) {
+      if (data.state.columns) proj.columns = data.state.columns;
+      if (data.state.cards)   proj.cards   = data.state.cards;
+      if (data.state.completed) proj.completed = data.state.completed;
+      try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
+      renderBoard(); updateBadge();
+    }
+    closeModal('backupModal');
+    alert('Záloha úspěšně obnovena.');
+  } else {
+    alert('Chyba při obnově zálohy.');
+  }
+}
+
 function openExportModal() {
   if (!state.completed.length) { alert('Žádné splněné položky k exportu.'); return; }
   const cols = [...new Set(state.completed.map(r => r.colName))].sort();
@@ -3261,11 +3376,13 @@ document.addEventListener('click', () => {
 });
 
 function applyRoleRestrictions(role) {
-  // Show bg picker for admin/owner only
+  // Show bg picker + backup button for admin/owner only
   if (role === 'admin' || role === 'owner') {
     const w = document.getElementById('bgPickerWrap');
     if (w) w.style.display = '';
     buildBgSwatches();
+    const bb = document.getElementById('backupRestoreBtn');
+    if (bb) bb.style.display = '';
   }
   if (role !== 'viewer') return;
   // Hide all edit controls for viewers
