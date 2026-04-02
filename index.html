@@ -965,30 +965,21 @@ async function syncKanbanFromServer(projectId) {
   try {
     const res = await fetch(`/api/kanban.php?action=load&project_id=${projectId}`, { credentials: 'include' });
     const data = await res.json();
-    console.log('[kanban sync] server response:', JSON.stringify(data).substring(0, 400));
-    if (!data.success) { console.warn('[kanban sync] success=false, error:', data.error); return; }
+    if (!data.success) return;
     const proj = state.projects.find(p => String(p.id) === String(projectId));
     if (!proj) return;
     const hasCols = Array.isArray(data.state && data.state.columns) && data.state.columns.length > 0;
     const hasCards = Array.isArray(data.state && data.state.cards) && data.state.cards.length > 0;
-    console.log('[kanban sync] hasCols:', hasCols, 'hasCards:', hasCards,
-      'localCols:', proj.columns && proj.columns.length);
     if (data.state && (hasCols || hasCards)) {
-      // Server has non-empty data → use it (server is authoritative for cross-device sync)
-      if (hasCols)                          proj.columns   = data.state.columns;
-      if (hasCards)                         proj.cards     = data.state.cards;
+      if (hasCols)                             proj.columns   = data.state.columns;
+      if (hasCards)                            proj.cards     = data.state.cards;
       if (Array.isArray(data.state.completed)) proj.completed = data.state.completed;
       try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
-      renderBoard();
-      updateBadge();
+      renderBoard(); updateBadge();
     } else if (proj.columns && proj.columns.length > 0) {
-      // Server has no/empty data but local has data → push local to server
-      console.log('[kanban sync] server empty, pushing local data to server');
       _doSyncKanbanToServer(projectId);
-    } else {
-      console.warn('[kanban sync] both server and local are empty — data may be lost');
     }
-  } catch(e) { console.error('[kanban sync] error:', e); }
+  } catch(e) {}
 }
 
 function scheduleSyncKanbanToServer() {
