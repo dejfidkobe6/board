@@ -2124,11 +2124,14 @@ function mkClItemEl(item) {
 
   row.appendChild(metaRow);
 
-  // Show meta row only if item already has assignee/deadline, else collapsed
-  metaRow.style.display = (item.assignee || item.deadline) ? 'flex' : 'none';
+  // Always collapsed by default — expand only on ⋯ click
+  metaRow.style.display = 'none';
   toggleBtn.onclick = (e) => {
     e.stopPropagation();
-    metaRow.style.display = metaRow.style.display === 'none' ? 'flex' : 'none';
+    const opening = metaRow.style.display === 'none';
+    // Collapse all other open meta rows first
+    document.querySelectorAll('.cl-item-meta').forEach(m => { m.style.display = 'none'; });
+    metaRow.style.display = opening ? 'flex' : 'none';
   };
 
   txtSpan.addEventListener('dblclick', function() {
@@ -2766,6 +2769,13 @@ function toggleTaskPanel() {
     initPanelResize();
   }
 })();
+
+// Collapse all cl-item-meta rows when clicking outside a cl-item
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.cl-item')) {
+    document.querySelectorAll('.cl-item-meta').forEach(m => { m.style.display = 'none'; });
+  }
+});
 
 function renderTaskPanel() {
   const body = document.getElementById('taskPanelBody');
