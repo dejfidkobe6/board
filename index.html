@@ -545,8 +545,10 @@
   .cl-block-bar { height: 3px; background: var(--surface3); border-radius: 2px; margin-bottom: 10px; overflow: hidden; }
   .cl-block-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
   .cl-block-stats { font-size: 11px; color: var(--muted); margin-left: 4px; font-weight: 400; }
-  .cl-add-list-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); font-size: 12px; font-family: inherit; padding: 4px 12px; border-radius: 8px; cursor: pointer; transition: background 0.12s; }
+  .cl-add-list-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); font-size: 12px; font-family: inherit; padding: 4px 12px; border-radius: 8px; cursor: pointer; transition: background 0.12s; white-space: nowrap; }
   .cl-add-list-btn:hover { background: var(--surface3); color: var(--text); }
+  #clSearch:focus { border-color: rgba(200,165,60,0.5) !important; background: rgba(255,255,255,0.1) !important; }
+  #clSearch::placeholder { color: rgba(255,255,255,0.3); }
   /* Done section */
   .cl-done-header { display: flex; align-items: center; gap: 8px; padding: 6px 4px; cursor: pointer; color: var(--text2); font-size: 12px; font-weight: 600; border-radius: 8px; user-select: none; transition: background 0.15s; margin-top: 4px; }
   .cl-done-header:hover { background: var(--surface3); }
@@ -872,8 +874,9 @@
     <div class="detail-meta-row" id="dMeta"></div>
     <div id="dDesc"></div>
 
-    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <span>✅ CHECKLISTRY</span>
+    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
+      <span style="white-space:nowrap">✅ CHECKLISTRY</span>
+      <input id="clSearch" type="text" placeholder="Hledat checklist nebo úkol…" oninput="filterChecklists()" style="flex:1;max-width:320px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--text);outline:none;font-family:inherit">
       <button class="cl-add-list-btn" onclick="addChecklist()">+ Checklist</button>
     </div>
     <div id="clLists"></div>
@@ -1687,6 +1690,8 @@ function setupDrop(body, colId) {
 // CARD DETAIL
 function openDetail(id) {
   detailCardId = id;
+  const srch = document.getElementById('clSearch');
+  if (srch) srch.value = '';
   renderDetail();
   document.getElementById('detailModal').classList.add('open');
 }
@@ -1720,8 +1725,6 @@ function renderDetail() {
   const creator = gm(card.createdBy);
   const avs = (card.assignees||[]).map(id=>{ const m=gm(id); return m?`<div class="avatar" style="background:${m.color};width:22px;height:22px;font-size:9px" title="${m.name}">${ini(m.name)}</div>`:'' }).join('');
   document.getElementById('dMeta').innerHTML = `
-    ${card.tag?`<div class="detail-meta-item"><span class="tag" style="background:rgba(240,165,0,0.15);color:#f0a500">${card.tag}</span></div>`:''}
-    <div class="detail-meta-item" style="color:${pColor(card.priority)}">● ${pLabel(card.priority)}</div>
     ${card.deadline?`<div class="detail-meta-item">📅 ${fmtDate(card.deadline)}</div>`:''}
     <div class="detail-meta-item">📋 ${colTitle(card.colId)}</div>
     ${creator?`<div class="detail-meta-item">✍ <strong style="color:var(--text);margin-left:3px">${creator.name}</strong></div>`:''}
@@ -2175,22 +2178,42 @@ function mkClItemEl(item) {
   return div;
 }
 
+function filterChecklists() {
+  const card = gc(detailCardId); if (!card) return;
+  renderAllChecklists(card);
+}
+
 function renderAllChecklists(card) {
   ensureChecklists(card);
   const wrap = document.getElementById('clLists');
   if (!wrap) return;
   wrap.innerHTML = '';
+  const q = (document.getElementById('clSearch')?.value || '').trim().toLowerCase();
   const cls = card.checklists;
   if (!cls.length) {
     wrap.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:4px 0 8px">Žádný checklist — klikni na "+ Checklist" pro přidání.</div>`;
     return;
   }
+  let visibleCount = 0;
   cls.forEach((cl, idx) => {
     const items = cl.items||[];
-    const active = items.filter(i=>!i.done);
-    const doneItems = items.filter(i=>i.done);
+    // Filter by search query — match checklist name OR any item text
+    let filteredActive, filteredDone;
+    if (q) {
+      const clNameMatch = cl.name.toLowerCase().includes(q);
+      filteredActive = items.filter(i => !i.done && (clNameMatch || i.text.toLowerCase().includes(q)));
+      filteredDone   = items.filter(i =>  i.done && (clNameMatch || i.text.toLowerCase().includes(q)));
+      // Hide entire block if nothing matches
+      if (!clNameMatch && filteredActive.length === 0 && filteredDone.length === 0) return;
+    } else {
+      filteredActive = items.filter(i=>!i.done);
+      filteredDone   = items.filter(i=>i.done);
+    }
+    visibleCount++;
+    const active = filteredActive;
+    const doneItems = filteredDone;
     const total = items.length;
-    const pct = total ? Math.round(doneItems.length/total*100) : 0;
+    const pct = total ? Math.round(items.filter(i=>i.done).length/total*100) : 0;
 
     const block = document.createElement('div');
     block.className = 'cl-block';
@@ -2323,6 +2346,9 @@ function renderAllChecklists(card) {
 
     wrap.appendChild(block);
   });
+  if (q && visibleCount === 0) {
+    wrap.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:4px 0 8px">Žádný checklist ani úkol neodpovídá hledanému výrazu.</div>`;
+  }
 }
 
 function openLightbox(src, caption) {
