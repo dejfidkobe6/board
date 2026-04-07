@@ -459,17 +459,19 @@
   /* ─── CHECKLIST ─── */
   .cl-total-bar { height: 3px; background: var(--surface3); border-radius: 2px; margin-bottom: 14px; overflow: hidden; }
   .cl-total-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
-  .cl-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; cursor: grab; user-select: none; }
-  .cl-item:active { cursor: grabbing; }
+  .cl-item { display: flex; flex-direction: column; gap: 5px; padding: 8px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; user-select: none; }
   .cl-item.completing { animation: fadeOut 0.5s forwards; }
   @keyframes fadeOut { to { opacity: 0; transform: translateX(20px) scale(0.97); } }
-  .cl-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
-  .cl-text { flex: 1; font-size: 13px; color: var(--text); cursor: text; border-radius: 5px; padding: 1px 4px; transition: background 0.15s; }
-  .cl-text:hover { background: rgba(0,0,0,0.04); }
+  .cl-item-main { display: flex; align-items: flex-start; gap: 8px; }
+  .cl-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+  .cl-text { flex: 1; min-width: 0; font-size: 13px; color: var(--text); cursor: text; border-radius: 5px; padding: 1px 4px; line-height: 1.45; word-break: break-word; transition: background 0.15s; }
+  .cl-text:hover { background: rgba(255,255,255,0.04); }
   .cl-rename-input { flex: 1; font-size: 13px; color: var(--text); font-family: inherit; background: rgba(255,255,255,0.09); border: 1.5px solid var(--accent); border-radius: 6px; padding: 2px 8px; outline: none; box-shadow: var(--glow); }
-  .cl-author { font-size: 11px; color: var(--muted); white-space: nowrap; }
-  .cl-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 4px; transition: color 0.15s; }
+  .cl-author { font-size: 11px; color: var(--muted); white-space: nowrap; margin-top: 2px; }
+  .cl-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 2px; transition: color 0.15s; flex-shrink: 0; }
   .cl-del:hover { color: var(--danger); }
+  .cl-meta-toggle { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 17px; padding: 0 3px; transition: color 0.15s; flex-shrink: 0; line-height: 1; margin-top: 0; }
+  .cl-meta-toggle:hover { color: rgba(255,255,255,0.75); }
 
   /* ─── MEMBER / MISC ─── */
   .color-options { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -600,6 +602,7 @@
   body.has-bg-image .column { background: rgba(10,20,5,0.68) !important; }
   body.has-bg-image .card { background: rgba(0,0,0,0.42) !important; }
   body.has-bg-image .task-panel { background: rgba(10,20,5,0.68) !important; }
+  body.has-bg-image .modal { background: rgba(10,20,5,0.72) !important; }
   body.has-bg-image header { background: rgba(10,20,5,0.78) !important; backdrop-filter: blur(18px); }
   body.has-bg-image .team-bar { background: rgba(10,20,5,0.55) !important; }
   body.has-bg-image .app-body { background: transparent !important; }
@@ -642,7 +645,7 @@
   .task-panel-empty { font-size: 12px; color: rgba(255,255,255,0.22); text-align: center; padding: 28px 10px; line-height: 1.7; }
 
   /* ─── CL ITEM META (assignee + deadline) ─── */
-  .cl-item-meta { display: flex; align-items: center; gap: 5px; margin-top: 5px; padding-left: 26px; flex-wrap: wrap; }
+  .cl-item-meta { display: flex; align-items: center; gap: 5px; padding-left: 24px; flex-wrap: wrap; }
   .cl-meta-btn { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; font-size: 11px; color: rgba(255,255,255,0.45); cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit; }
   .cl-meta-btn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9); border-color: rgba(255,255,255,0.25); }
   .cl-meta-btn.assigned { background: rgba(200,165,60,0.12); border-color: rgba(200,165,60,0.3); color: rgba(200,165,60,0.9); }
@@ -872,7 +875,7 @@
       <span>✅ CHECKLISTRY</span>
       <button class="cl-add-list-btn" onclick="addChecklist()">+ Checklist</button>
     </div>
-    <div id="clLists" style="columns:2;column-gap:12px"></div>
+    <div id="clLists"></div>
     <div class="modal-actions" style="margin-top:24px">
       <button class="btn btn-ghost" onclick="openEditFromDetail()">✏ Upravit</button>
       <button class="btn btn-danger" onclick="deleteCurrentCard()">🗑 Smazat kartu</button>
@@ -2057,14 +2060,38 @@ function mkClItemEl(item) {
 
   const row = document.createElement('div');
   row.className = 'cl-item'; row.id = 'cli-'+item.id;
-  row.innerHTML = `
-    <input type="checkbox" class="cl-checkbox" onchange="checkItem('${item.id}',this)">
-    <span class="cl-text" title="Dvojklik pro přejmenování">${escHtml(item.text)}</span>
-    <span class="cl-author">${author?escHtml(author.name.split(' ')[0]):''}</span>`;
+
+  // ── Main row: checkbox + text + author + toggle + del ──
+  const mainRow = document.createElement('div');
+  mainRow.className = 'cl-item-main';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox'; cb.className = 'cl-checkbox';
+  cb.onchange = function() { checkItem(item.id, this); };
+  mainRow.appendChild(cb);
+  const txtSpan = document.createElement('span');
+  txtSpan.className = 'cl-text'; txtSpan.title = 'Dvojklik pro přejmenování';
+  txtSpan.textContent = item.text;
+  mainRow.appendChild(txtSpan);
+  if (author) {
+    const authSpan = document.createElement('span');
+    authSpan.className = 'cl-author'; authSpan.textContent = author.name.split(' ')[0];
+    mainRow.appendChild(authSpan);
+  }
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = 'cl-meta-toggle'; toggleBtn.title = 'Přiřadit / Termín'; toggleBtn.textContent = '⋯';
+  mainRow.appendChild(toggleBtn);
+  const delBtn = document.createElement('button');
+  delBtn.className = 'cl-del'; delBtn.textContent = '✕';
+  delBtn.onclick = () => delClItem(item.id);
+  mainRow.appendChild(delBtn);
+  row.appendChild(mainRow);
+
+  // ── Meta row: assignee + deadline + attach ──
+  const metaRow = document.createElement('div');
+  metaRow.className = 'cl-item-meta';
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Assignee button (inline in row)
   const assigneeBtn = document.createElement('button');
   assigneeBtn.className = 'cl-meta-btn';
   const assigneeMember = item.assignee ? ((_projectMembers||state.members).find(m=>String(m.id)===String(item.assignee)) || null) : null;
@@ -2075,9 +2102,8 @@ function mkClItemEl(item) {
     assigneeBtn.innerHTML = `👤 Přiřadit`;
   }
   assigneeBtn.onclick = (e) => { e.stopPropagation(); openAssigneePicker(assigneeBtn, item.id, cardId); };
-  row.appendChild(assigneeBtn);
+  metaRow.appendChild(assigneeBtn);
 
-  // Deadline button (inline in row)
   const dlBtn = document.createElement('button');
   dlBtn.className = 'cl-meta-btn';
   if (item.deadline) {
@@ -2088,19 +2114,23 @@ function mkClItemEl(item) {
     dlBtn.innerHTML = `📅 Termín`;
   }
   dlBtn.onclick = (e) => { e.stopPropagation(); openMiniCal(dlBtn, item.id, cardId, item.deadline||null); };
-  row.appendChild(dlBtn);
+  metaRow.appendChild(dlBtn);
 
-  // Attachment toggle + delete (inline in row)
   const attToggle = document.createElement('button');
   attToggle.className = 'cl-attach-toggle'; attToggle.title = 'Přidat přílohu'; attToggle.textContent = '📎';
   attToggle.onclick = () => toggleClAttach(item.id);
-  row.appendChild(attToggle);
-  const delBtn = document.createElement('button');
-  delBtn.className = 'cl-del'; delBtn.textContent = '✕';
-  delBtn.onclick = () => delClItem(item.id);
-  row.appendChild(delBtn);
+  metaRow.appendChild(attToggle);
 
-  row.querySelector('.cl-text').addEventListener('dblclick', function() {
+  row.appendChild(metaRow);
+
+  // Show meta row only if item already has assignee/deadline, else collapsed
+  metaRow.style.display = (item.assignee || item.deadline) ? 'flex' : 'none';
+  toggleBtn.onclick = (e) => {
+    e.stopPropagation();
+    metaRow.style.display = metaRow.style.display === 'none' ? 'flex' : 'none';
+  };
+
+  txtSpan.addEventListener('dblclick', function() {
     startRenameClItem(row, item.id, item.text);
   });
   div.appendChild(row);
