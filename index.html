@@ -1038,15 +1038,17 @@ async function syncKanbanFromServer(projectId) {
     const hasCards = Array.isArray(data.state && data.state.cards) && data.state.cards.length > 0;
 
     if (data.state && (hasCols || hasCards)) {
-      // Simple authoritative rule:
-      // - Server wins UNLESS user has unsaved local edits (_hasUnsavedChanges)
-      //   AND local data is actually newer (localTs > serverTs).
-      // - If user hasn't edited in this session, local state is stale → always use server.
-      const serverTs = data.state._ts || 0;
-      const localTs  = state._ts      || 0;
-      const localHasUnsavedNewerEdits = _hasUnsavedChanges && localTs > serverTs;
+      // Conflict resolution: local wins only when BOTH conditions hold:
+      //   1. Local timestamp is newer than server timestamp
+      //   2. Local has unsaved edits OR local has more data (richness score)
+      // This prevents a device with stale/less data from overwriting newer data.
+      const serverTs    = data.state._ts || 0;
+      const localTs     = state._ts      || 0;
+      const serverScore = _dataScore({ columns: data.state.columns || [], cards: data.state.cards || [] });
+      const localScore  = _dataScore(proj);
+      const localShouldWin = (localTs > serverTs) && (_hasUnsavedChanges || localScore > serverScore);
 
-      if (!localHasUnsavedNewerEdits) {
+      if (!localShouldWin) {
         // Server wins — update local state
         if (hasCols)                             proj.columns   = data.state.columns;
         if (hasCards)                            proj.cards     = data.state.cards;
@@ -1057,7 +1059,7 @@ async function syncKanbanFromServer(projectId) {
         setSyncDot('ok');
         renderBoard(); updateBadge(); renderTaskPanel();
       } else {
-        // Local has unsaved edits newer than server → push local to server
+        // Local is newer and richer → push local to server
         _doSyncKanbanToServer(projectId);
       }
     } else if (proj.columns && proj.columns.length > 0) {
@@ -1082,10 +1084,10 @@ function scheduleSyncKanbanToServer() {
   _kanbanSyncTimer = setTimeout(() => _doSyncKanbanToServer(projectId), 300);
 }
 
-// Polling — check server every 15 s to catch changes from other devices
+// Polling — check server every 5 s to catch changes from other devices
 function startKanbanPolling(projectId) {
   stopKanbanPolling();
-  _pollTimer = setInterval(() => syncKanbanFromServer(projectId), 15000);
+  _pollTimer = setInterval(() => syncKanbanFromServer(projectId), 5000);
 }
 function stopKanbanPolling() {
   if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
