@@ -66,12 +66,18 @@ if ($action === 'load') {
     $existing->execute([$projectId]);
     $row = $existing->fetch();
     if ($row) {
-        $old = json_decode($row['state_json'], true);
+        $old     = json_decode($row['state_json'], true);
         $oldCols  = count($old['columns'] ?? []);
         $oldCards = count($old['cards']   ?? []);
+        // Reject: would wipe non-empty data with empty payload
         if (($oldCols > 0 || $oldCards > 0) && $cols === 0 && $cards === 0) {
-            // Reject: would wipe non-empty data with empty payload
             jsonResponse(['success' => true, 'skipped' => 'empty_guard']);
+        }
+        // Reject: incoming data is older than what server already has
+        $oldTs = (int)($old['_ts'] ?? 0);
+        $newTs = (int)($newState['_ts'] ?? 0);
+        if ($oldTs > 0 && $newTs > 0 && $newTs < $oldTs) {
+            jsonResponse(['success' => true, 'skipped' => 'stale_ts']);
         }
     }
 
