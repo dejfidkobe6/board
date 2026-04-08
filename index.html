@@ -1038,19 +1038,24 @@ async function syncKanbanFromServer(projectId) {
       const localScore  = _dataScore(proj);
       const serverTs    = data.state._ts || 0;
       const localTs     = state._ts      || 0;
-      // Server wins if it has MORE data, or same amount but newer/equal timestamp.
-      // This prevents a device with less data from overwriting a richer dataset.
-      const serverWins = serverScore > localScore ||
-                         (serverScore === localScore && serverTs >= localTs);
+      // Decision rules (in priority order):
+      // 1. Server has MORE data → server wins (prevents losing cards/checklists)
+      // 2. Server timestamp is newer → server wins (pick up changes from other device)
+      // 3. Local has MORE data AND local is newer → push local (local has unsaved edits)
+      // 4. Equal score + equal/older server ts → push local (local is authoritative)
+      const serverIsNewer = serverTs > localTs;
+      const serverHasMore = serverScore > localScore;
+      const localHasMore  = localScore > serverScore;
+      const serverWins = serverHasMore || (serverIsNewer && !localHasMore);
       if (serverWins) {
         if (hasCols)                             proj.columns   = data.state.columns;
         if (hasCards)                            proj.cards     = data.state.cards;
         if (Array.isArray(data.state.completed)) proj.completed = data.state.completed;
-        if (data.state._ts) state._ts = data.state._ts;
+        state._ts = serverTs;
         try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
         renderBoard(); updateBadge(); renderTaskPanel();
-      } else {
-        // Local has more/newer data → push local to server
+      } else if (localHasMore || (localTs > serverTs && localScore >= serverScore)) {
+        // Local has more or newer data → push to server
         _doSyncKanbanToServer(projectId);
       }
     } else if (proj.columns && proj.columns.length > 0) {
@@ -1350,7 +1355,9 @@ function loginWithMember(id) {
 }
 function openProject(id) {
   state.activeProjectId = id;
-  saveState();
+  // Save only metadata (activeProjectId) — do NOT update _ts here because
+  // syncKanbanFromServer runs right after and needs to compare timestamps fairly.
+  try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
   const proj = activeProj();
   const appEl = document.getElementById('app');
   appEl.style.display = 'block';
