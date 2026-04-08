@@ -1038,28 +1038,20 @@ async function syncKanbanFromServer(projectId) {
     const hasCards = Array.isArray(data.state && data.state.cards) && data.state.cards.length > 0;
 
     if (data.state && (hasCols || hasCards)) {
-      // Conflict resolution: local wins only when BOTH conditions hold:
-      //   1. Local timestamp is newer than server timestamp
-      //   2. Local has unsaved edits OR local has more data (richness score)
-      // This prevents a device with stale/less data from overwriting newer data.
-      const serverTs    = data.state._ts || 0;
-      const localTs     = state._ts      || 0;
-      const serverScore = _dataScore({ columns: data.state.columns || [], cards: data.state.cards || [] });
-      const localScore  = _dataScore(proj);
-      const localShouldWin = (localTs > serverTs) && (_hasUnsavedChanges || localScore > serverScore);
-
-      if (!localShouldWin) {
-        // Server wins — update local state
+      // Simple rule: if user edited in THIS session → push local to server.
+      // Otherwise server always wins — this ensures Ctrl+R always gets fresh data.
+      if (!_hasUnsavedChanges) {
+        // Server wins — update local state and refresh all UI including open modal
         if (hasCols)                             proj.columns   = data.state.columns;
         if (hasCards)                            proj.cards     = data.state.cards;
         if (Array.isArray(data.state.completed)) proj.completed = data.state.completed;
-        state._ts = serverTs;
-        _hasUnsavedChanges = false;
+        state._ts = data.state._ts || Date.now();
         try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
         setSyncDot('ok');
         renderBoard(); updateBadge(); renderTaskPanel();
+        if (detailCardId) renderDetail();  // refresh open card modal
       } else {
-        // Local is newer and richer → push local to server
+        // User has unsaved edits → push local to server
         _doSyncKanbanToServer(projectId);
       }
     } else if (proj.columns && proj.columns.length > 0) {
@@ -1113,7 +1105,7 @@ async function _doSyncKanbanToServer(projectId, _attempt) {
     const res = await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() } })
+      body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: Date.now() } })
     });
     if (res.ok) {
       _hasUnsavedChanges = false;
@@ -1145,7 +1137,7 @@ window.addEventListener('beforeunload', () => {
   const cards = proj.cards    || [];
   if (cols.length === 0 && cards.length === 0) return;
   clearTimeout(_kanbanSyncTimer);
-  const body = JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() } });
+  const body = JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: Date.now() } });
   // sendBeacon survives page unload — browser keeps the request alive after navigation
   try { navigator.sendBeacon(`/api/kanban.php?action=save&project_id=${projectId}`, new Blob([body], { type: 'application/json' })); } catch(e) {}
 });
