@@ -1007,6 +1007,7 @@ const COLORS = ['#f0a500','#e05c00','#4caf50','#2196f3','#9c27b0','#00bcd4','#ff
 function loadState() { try { const s = localStorage.getItem('besix_v1'); return s ? JSON.parse(s) : null; } catch(e) { return null; } }
 function saveState() {
   state._ts = Date.now();
+  _hasUnsavedChanges = true;
   try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
   scheduleSyncKanbanToServer();
   renderTaskPanel();
@@ -1015,6 +1016,7 @@ function saveState() {
 // ── Kanban server sync ────────────────────────────────────────────────────
 let _kanbanSyncTimer = null;
 let _pollTimer = null;
+let _hasUnsavedChanges = false; // true only when user edited data in THIS session
 
 // Data richness score — more columns/cards/items = higher score
 function _dataScore(proj) {
@@ -1053,6 +1055,7 @@ async function syncKanbanFromServer(projectId) {
         if (hasCards)                            proj.cards     = data.state.cards;
         if (Array.isArray(data.state.completed)) proj.completed = data.state.completed;
         state._ts = serverTs;
+        _hasUnsavedChanges = false;
         try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
         setSyncDot('ok');
         renderBoard(); updateBadge(); renderTaskPanel();
@@ -1113,6 +1116,7 @@ async function _doSyncKanbanToServer(projectId, _attempt) {
       body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() } })
     });
     if (res.ok) {
+      _hasUnsavedChanges = false;
       setSyncDot('ok');
     } else {
       throw new Error('HTTP ' + res.status);
@@ -1128,7 +1132,11 @@ async function _doSyncKanbanToServer(projectId, _attempt) {
 }
 
 // ── Flush to server on page unload (Ctrl+R, tab close, navigation) ──────────
+// ONLY fires when user actually edited data in this session (_hasUnsavedChanges).
+// Without this guard, sendBeacon would overwrite server with stale local data
+// if another device had synced newer data in the meantime.
 window.addEventListener('beforeunload', () => {
+  if (!_hasUnsavedChanges) return; // nothing changed locally — don't overwrite server
   const projectId = localStorage.getItem('besix_active_project_id');
   if (!projectId || !state || !state.projects) return;
   const proj = state.projects.find(p => String(p.id) === String(projectId));
