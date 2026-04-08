@@ -1008,6 +1008,7 @@ function loadState() { try { const s = localStorage.getItem('besix_v1'); return 
 function saveState() {
   state._ts = Date.now();
   _hasUnsavedChanges = true;
+  localStorage.setItem('besix_pending_sync', '1'); // survives Ctrl+R — cleared only after successful server save
   try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
   scheduleSyncKanbanToServer();
   renderTaskPanel();
@@ -1017,15 +1018,6 @@ function saveState() {
 let _kanbanSyncTimer = null;
 let _pollTimer = null;
 let _hasUnsavedChanges = false; // true only when user edited data in THIS session
-
-// Data richness score — more columns/cards/items = higher score
-function _dataScore(proj) {
-  const cols  = (proj && proj.columns) || [];
-  const cards = (proj && proj.cards)   || [];
-  const items = cards.reduce((s, c) =>
-    s + (c.checklists||[]).reduce((s2, cl) => s2 + (cl.items||[]).length, 0), 0);
-  return cols.length * 100 + cards.length * 10 + items;
-}
 
 async function syncKanbanFromServer(projectId) {
   try {
@@ -1038,9 +1030,14 @@ async function syncKanbanFromServer(projectId) {
     const hasCards = Array.isArray(data.state && data.state.cards) && data.state.cards.length > 0;
 
     if (data.state && (hasCols || hasCards)) {
-      // Simple rule: if user edited in THIS session → push local to server.
-      // Otherwise server always wins — this ensures Ctrl+R always gets fresh data.
-      if (!_hasUnsavedChanges) {
+      // Local wins if user made edits in this session, OR if a pending-sync flag
+      // survived a Ctrl+R and local data is newer than what server currently has
+      // (handles the race condition where sendBeacon arrives after syncKanbanFromServer).
+      const hasPendingSync = localStorage.getItem('besix_pending_sync') === '1';
+      const serverTs = data.state._ts || 0;
+      const localTs  = state._ts      || 0;
+      const localShouldWin = _hasUnsavedChanges || (hasPendingSync && localTs > serverTs);
+      if (!localShouldWin) {
         // Server wins — update local state and refresh all UI including open modal
         if (hasCols)                             proj.columns   = data.state.columns;
         if (hasCards)                            proj.cards     = data.state.cards;
@@ -1051,7 +1048,7 @@ async function syncKanbanFromServer(projectId) {
         renderBoard(); updateBadge(); renderTaskPanel();
         if (detailCardId) renderDetail();  // refresh open card modal
       } else {
-        // User has unsaved edits → push local to server
+        // Local is newer → push to server
         _doSyncKanbanToServer(projectId);
       }
     } else if (proj.columns && proj.columns.length > 0) {
@@ -1109,6 +1106,7 @@ async function _doSyncKanbanToServer(projectId, _attempt) {
     });
     if (res.ok) {
       _hasUnsavedChanges = false;
+      localStorage.removeItem('besix_pending_sync');
       setSyncDot('ok');
     } else {
       throw new Error('HTTP ' + res.status);
@@ -3420,7 +3418,7 @@ async function bootAuth() {
   // 6. Load latest kanban state from server (cross-device sync)
   await syncKanbanFromServer(activeProjectId);
 
-  // Start polling every 15 s — picks up changes made on other devices
+  // Start polling every 5 s — picks up changes made on other devices
   startKanbanPolling(activeProjectId);
 
   // 7. Show notification popup for overdue/today tasks
