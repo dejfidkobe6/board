@@ -1036,21 +1036,18 @@ async function syncKanbanFromServer(projectId) {
     if (!proj) return;
     const hasCols = Array.isArray(data.state && data.state.columns) && data.state.columns.length > 0;
     const hasCards = Array.isArray(data.state && data.state.cards) && data.state.cards.length > 0;
+
     if (data.state && (hasCols || hasCards)) {
-      const serverScore = _dataScore({ columns: data.state.columns || [], cards: data.state.cards || [] });
-      const localScore  = _dataScore(proj);
-      const serverTs    = data.state._ts || 0;
-      const localTs     = state._ts      || 0;
-      // Decision rules (in priority order):
-      // 1. Server has MORE data → server wins (prevents losing cards/checklists)
-      // 2. Server timestamp is newer → server wins (pick up changes from other device)
-      // 3. Local has MORE data AND local is newer → push local (local has unsaved edits)
-      // 4. Equal score + equal/older server ts → push local (local is authoritative)
-      const serverIsNewer = serverTs > localTs;
-      const serverHasMore = serverScore > localScore;
-      const localHasMore  = localScore > serverScore;
-      const serverWins = serverHasMore || (serverIsNewer && !localHasMore);
-      if (serverWins) {
+      // Simple authoritative rule:
+      // - Server wins UNLESS user has unsaved local edits (_hasUnsavedChanges)
+      //   AND local data is actually newer (localTs > serverTs).
+      // - If user hasn't edited in this session, local state is stale → always use server.
+      const serverTs = data.state._ts || 0;
+      const localTs  = state._ts      || 0;
+      const localHasUnsavedNewerEdits = _hasUnsavedChanges && localTs > serverTs;
+
+      if (!localHasUnsavedNewerEdits) {
+        // Server wins — update local state
         if (hasCols)                             proj.columns   = data.state.columns;
         if (hasCards)                            proj.cards     = data.state.cards;
         if (Array.isArray(data.state.completed)) proj.completed = data.state.completed;
@@ -1059,11 +1056,12 @@ async function syncKanbanFromServer(projectId) {
         try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
         setSyncDot('ok');
         renderBoard(); updateBadge(); renderTaskPanel();
-      } else if (localHasMore || (localTs > serverTs && localScore >= serverScore)) {
-        // Local has more or newer data → push to server
+      } else {
+        // Local has unsaved edits newer than server → push local to server
         _doSyncKanbanToServer(projectId);
       }
     } else if (proj.columns && proj.columns.length > 0) {
+      // Server empty but local has data → push local up
       _doSyncKanbanToServer(projectId);
     }
   } catch(e) {}
