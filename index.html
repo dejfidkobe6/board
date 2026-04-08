@@ -839,6 +839,7 @@
       <button class="btn btn-ghost" id="backupRestoreBtn" onclick="openBackupModal()" title="Zálohy a obnova dat" style="display:none">🗄 Zálohy</button>
       <button class="btn btn-ghost" onclick="openExportModal()">📊 Export Excel <span class="export-badge" id="exportBadge" style="display:none">0</span></button>
       <button class="btn btn-primary" onclick="openAddCard()">+ Přidat kartu</button>
+      <span id="syncDot" title="Synchronizováno" style="width:8px;height:8px;border-radius:50%;background:#36d87c;display:inline-block;flex-shrink:0;margin:0 2px;transition:background 0.3s"></span>
       <div class="current-user" onclick="logout()">
         <div class="av" id="cuAv"></div>
         <span id="cuName"></span>
@@ -1053,6 +1054,7 @@ async function syncKanbanFromServer(projectId) {
         if (Array.isArray(data.state.completed)) proj.completed = data.state.completed;
         state._ts = serverTs;
         try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
+        setSyncDot('ok');
         renderBoard(); updateBadge(); renderTaskPanel();
       } else if (localHasMore || (localTs > serverTs && localScore >= serverScore)) {
         // Local has more or newer data → push to server
@@ -1064,11 +1066,19 @@ async function syncKanbanFromServer(projectId) {
   } catch(e) {}
 }
 
+function setSyncDot(state) { // 'ok' | 'pending' | 'error'
+  const dot = document.getElementById('syncDot');
+  if (!dot) return;
+  dot.style.background = state === 'ok' ? '#36d87c' : state === 'pending' ? '#f0a500' : '#ff5c35';
+  dot.title = state === 'ok' ? 'Synchronizováno' : state === 'pending' ? 'Ukládám…' : 'Chyba synchronizace — pokusím se znovu';
+}
+
 function scheduleSyncKanbanToServer() {
   const projectId = localStorage.getItem('besix_active_project_id');
   if (!projectId) return;
+  setSyncDot('pending');
   clearTimeout(_kanbanSyncTimer);
-  _kanbanSyncTimer = setTimeout(() => _doSyncKanbanToServer(projectId), 600);
+  _kanbanSyncTimer = setTimeout(() => _doSyncKanbanToServer(projectId), 300);
 }
 
 // Polling — check server every 15 s to catch changes from other devices
@@ -1088,22 +1098,33 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-async function _doSyncKanbanToServer(projectId) {
+async function _doSyncKanbanToServer(projectId, _attempt) {
+  _attempt = _attempt || 1;
   const proj = state.projects.find(p => String(p.id) === String(projectId));
   if (!proj) return;
   const cols  = proj.columns   || [];
   const cards = proj.cards     || [];
-  // Never send empty data if we had data before (client-side guard)
-  if (cols.length === 0 && cards.length === 0) return;
-  // Save rolling local backup before sending to server
+  if (cols.length === 0 && cards.length === 0) { setSyncDot('ok'); return; }
   _saveLocalBackup(projectId, cols, cards, proj.completed || []);
   try {
-    await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
+    const res = await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() } })
     });
-  } catch(e) {}
+    if (res.ok) {
+      setSyncDot('ok');
+    } else {
+      throw new Error('HTTP ' + res.status);
+    }
+  } catch(e) {
+    setSyncDot('error');
+    // Retry up to 4 times: 2s, 4s, 8s, 16s
+    if (_attempt < 5) {
+      const delay = Math.pow(2, _attempt) * 1000;
+      setTimeout(() => _doSyncKanbanToServer(projectId, _attempt + 1), delay);
+    }
+  }
 }
 
 // ── Flush to server on page unload (Ctrl+R, tab close, navigation) ──────────
