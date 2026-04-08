@@ -1008,6 +1008,7 @@ function loadState() { try { const s = localStorage.getItem('besix_v1'); return 
 function saveState() {
   state._ts = Date.now();
   _hasUnsavedChanges = true;
+  localStorage.setItem('besix_pending_sync', '1'); // survives Ctrl+R — cleared only after successful server save
   try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
   scheduleSyncKanbanToServer();
   renderTaskPanel();
@@ -1018,15 +1019,6 @@ let _kanbanSyncTimer = null;
 let _pollTimer = null;
 let _hasUnsavedChanges = false; // true only when user edited data in THIS session
 
-// Data richness score — more columns/cards/items = higher score
-function _dataScore(proj) {
-  const cols  = (proj && proj.columns) || [];
-  const cards = (proj && proj.cards)   || [];
-  const items = cards.reduce((s, c) =>
-    s + (c.checklists||[]).reduce((s2, cl) => s2 + (cl.items||[]).length, 0), 0);
-  return cols.length * 100 + cards.length * 10 + items;
-}
-
 async function syncKanbanFromServer(projectId) {
   try {
     const res = await fetch(`/api/kanban.php?action=load&project_id=${projectId}`, { credentials: 'include' });
@@ -1036,34 +1028,31 @@ async function syncKanbanFromServer(projectId) {
     if (!proj) return;
     const hasCols = Array.isArray(data.state && data.state.columns) && data.state.columns.length > 0;
     const hasCards = Array.isArray(data.state && data.state.cards) && data.state.cards.length > 0;
+
     if (data.state && (hasCols || hasCards)) {
-      const serverScore = _dataScore({ columns: data.state.columns || [], cards: data.state.cards || [] });
-      const localScore  = _dataScore(proj);
-      const serverTs    = data.state._ts || 0;
-      const localTs     = state._ts      || 0;
-      // Decision rules (in priority order):
-      // 1. Server has MORE data → server wins (prevents losing cards/checklists)
-      // 2. Server timestamp is newer → server wins (pick up changes from other device)
-      // 3. Local has MORE data AND local is newer → push local (local has unsaved edits)
-      // 4. Equal score + equal/older server ts → push local (local is authoritative)
-      const serverIsNewer = serverTs > localTs;
-      const serverHasMore = serverScore > localScore;
-      const localHasMore  = localScore > serverScore;
-      const serverWins = serverHasMore || (serverIsNewer && !localHasMore);
-      if (serverWins) {
+      // Local wins if user made edits in this session, OR if a pending-sync flag
+      // survived a Ctrl+R and local data is newer than what server currently has
+      // (handles the race condition where sendBeacon arrives after syncKanbanFromServer).
+      const hasPendingSync = localStorage.getItem('besix_pending_sync') === '1';
+      const serverTs = data.state._ts || 0;
+      const localTs  = state._ts      || 0;
+      const localShouldWin = _hasUnsavedChanges || (hasPendingSync && localTs > serverTs);
+      if (!localShouldWin) {
+        // Server wins — update local state and refresh all UI including open modal
         if (hasCols)                             proj.columns   = data.state.columns;
         if (hasCards)                            proj.cards     = data.state.cards;
         if (Array.isArray(data.state.completed)) proj.completed = data.state.completed;
-        state._ts = serverTs;
-        _hasUnsavedChanges = false;
+        state._ts = data.state._ts || Date.now();
         try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
         setSyncDot('ok');
         renderBoard(); updateBadge(); renderTaskPanel();
-      } else if (localHasMore || (localTs > serverTs && localScore >= serverScore)) {
-        // Local has more or newer data → push to server
+        if (detailCardId) renderDetail();  // refresh open card modal
+      } else {
+        // Local is newer → push to server
         _doSyncKanbanToServer(projectId);
       }
     } else if (proj.columns && proj.columns.length > 0) {
+      // Server empty but local has data → push local up
       _doSyncKanbanToServer(projectId);
     }
   } catch(e) {}
@@ -1084,10 +1073,10 @@ function scheduleSyncKanbanToServer() {
   _kanbanSyncTimer = setTimeout(() => _doSyncKanbanToServer(projectId), 300);
 }
 
-// Polling — check server every 15 s to catch changes from other devices
+// Polling — check server every 5 s to catch changes from other devices
 function startKanbanPolling(projectId) {
   stopKanbanPolling();
-  _pollTimer = setInterval(() => syncKanbanFromServer(projectId), 15000);
+  _pollTimer = setInterval(() => syncKanbanFromServer(projectId), 5000);
 }
 function stopKanbanPolling() {
   if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
@@ -1113,10 +1102,11 @@ async function _doSyncKanbanToServer(projectId, _attempt) {
     const res = await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() } })
+      body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: Date.now() } })
     });
     if (res.ok) {
       _hasUnsavedChanges = false;
+      localStorage.removeItem('besix_pending_sync');
       setSyncDot('ok');
     } else {
       throw new Error('HTTP ' + res.status);
@@ -1145,7 +1135,7 @@ window.addEventListener('beforeunload', () => {
   const cards = proj.cards    || [];
   if (cols.length === 0 && cards.length === 0) return;
   clearTimeout(_kanbanSyncTimer);
-  const body = JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() } });
+  const body = JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: Date.now() } });
   // sendBeacon survives page unload — browser keeps the request alive after navigation
   try { navigator.sendBeacon(`/api/kanban.php?action=save&project_id=${projectId}`, new Blob([body], { type: 'application/json' })); } catch(e) {}
 });
@@ -3428,7 +3418,7 @@ async function bootAuth() {
   // 6. Load latest kanban state from server (cross-device sync)
   await syncKanbanFromServer(activeProjectId);
 
-  // Start polling every 15 s — picks up changes made on other devices
+  // Start polling every 5 s — picks up changes made on other devices
   startKanbanPolling(activeProjectId);
 
   // 7. Show notification popup for overdue/today tasks
