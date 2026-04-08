@@ -1013,6 +1013,16 @@ function saveState() {
 
 // ── Kanban server sync ────────────────────────────────────────────────────
 let _kanbanSyncTimer = null;
+let _pollTimer = null;
+
+// Data richness score — more columns/cards/items = higher score
+function _dataScore(proj) {
+  const cols  = (proj && proj.columns) || [];
+  const cards = (proj && proj.cards)   || [];
+  const items = cards.reduce((s, c) =>
+    s + (c.checklists||[]).reduce((s2, cl) => s2 + (cl.items||[]).length, 0), 0);
+  return cols.length * 100 + cards.length * 10 + items;
+}
 
 async function syncKanbanFromServer(projectId) {
   try {
@@ -1024,20 +1034,25 @@ async function syncKanbanFromServer(projectId) {
     const hasCols = Array.isArray(data.state && data.state.columns) && data.state.columns.length > 0;
     const hasCards = Array.isArray(data.state && data.state.cards) && data.state.cards.length > 0;
     if (data.state && (hasCols || hasCards)) {
-      const serverTs = data.state._ts || 0;
-      const localTs  = state._ts  || 0;
-      // If local data is NEWER than server (e.g. Ctrl+R before sync completed),
-      // push local to server instead of overwriting local with stale server data.
-      if (localTs > serverTs && (proj.columns && proj.columns.length > 0)) {
+      const serverScore = _dataScore({ columns: data.state.columns || [], cards: data.state.cards || [] });
+      const localScore  = _dataScore(proj);
+      const serverTs    = data.state._ts || 0;
+      const localTs     = state._ts      || 0;
+      // Server wins if it has MORE data, or same amount but newer/equal timestamp.
+      // This prevents a device with less data from overwriting a richer dataset.
+      const serverWins = serverScore > localScore ||
+                         (serverScore === localScore && serverTs >= localTs);
+      if (serverWins) {
+        if (hasCols)                             proj.columns   = data.state.columns;
+        if (hasCards)                            proj.cards     = data.state.cards;
+        if (Array.isArray(data.state.completed)) proj.completed = data.state.completed;
+        if (data.state._ts) state._ts = data.state._ts;
+        try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
+        renderBoard(); updateBadge(); renderTaskPanel();
+      } else {
+        // Local has more/newer data → push local to server
         _doSyncKanbanToServer(projectId);
-        return;
       }
-      if (hasCols)                             proj.columns   = data.state.columns;
-      if (hasCards)                            proj.cards     = data.state.cards;
-      if (Array.isArray(data.state.completed)) proj.completed = data.state.completed;
-      if (data.state._ts) state._ts = data.state._ts;
-      try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
-      renderBoard(); updateBadge();
     } else if (proj.columns && proj.columns.length > 0) {
       _doSyncKanbanToServer(projectId);
     }
@@ -1050,6 +1065,23 @@ function scheduleSyncKanbanToServer() {
   clearTimeout(_kanbanSyncTimer);
   _kanbanSyncTimer = setTimeout(() => _doSyncKanbanToServer(projectId), 600);
 }
+
+// Polling — check server every 15 s to catch changes from other devices
+function startKanbanPolling(projectId) {
+  stopKanbanPolling();
+  _pollTimer = setInterval(() => syncKanbanFromServer(projectId), 15000);
+}
+function stopKanbanPolling() {
+  if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+}
+
+// Sync immediately when tab becomes visible (switching phone ↔ desktop)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    const pid = localStorage.getItem('besix_active_project_id');
+    if (pid) syncKanbanFromServer(pid);
+  }
+});
 
 async function _doSyncKanbanToServer(projectId) {
   const proj = state.projects.find(p => String(p.id) === String(projectId));
@@ -3359,6 +3391,9 @@ async function bootAuth() {
 
   // 6. Load latest kanban state from server (cross-device sync)
   await syncKanbanFromServer(activeProjectId);
+
+  // Start polling every 15 s — picks up changes made on other devices
+  startKanbanPolling(activeProjectId);
 
   // 7. Show notification popup for overdue/today tasks
   showTaskNotification();
