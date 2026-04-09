@@ -285,52 +285,76 @@
     #activeProjectName { display: none; }
     .current-user { padding: 3px 8px 3px 3px; font-size: 12px; }
 
-    /* Task panel → full-height RIGHT OVERLAY (not a side strip) */
-    .task-panel {
-      position: fixed !important;
-      right: 0 !important; top: 0 !important;
-      height: 100dvh !important; height: 100vh !important;
-      width: min(85vw, 340px) !important;
-      border-radius: 18px 0 0 18px !important;
-      transform: translateX(calc(100% + 2px));
-      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
-      z-index: 600 !important;
-      padding-bottom: env(safe-area-inset-bottom, 12px) !important;
-    }
-    .task-panel.mobile-open { transform: translateX(0); }
-    .task-panel.collapsed   { transform: translateX(calc(100% + 2px)); width: min(85vw, 340px) !important; }
-    .task-panel-resize { display: none !important; }
-    .task-panel-toggle { height: 54px; font-size: 14px; }
-    .panel-pin-btn { display: none !important; }
+    /* App body: leave 52px at bottom for bottom sheet handle */
+    .app-body { height: calc(100dvh - 136px) !important; height: calc(100vh - 136px) !important; overflow: hidden; }
 
-    /* Board: full width (panel is overlay, no offset needed) */
-    #board { padding-right: 8px !important; }
-
-    /* Board columns: wide, snap-scroll */
-    .board {
-      padding: 10px 8px 90px 8px !important;
-      gap: 10px !important;
+    /* Board: horizontal scroll only, full height */
+    #board {
+      height: 100% !important;
+      padding: 0 !important;
+      gap: 0 !important;
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
+      display: flex !important;
+      align-items: stretch !important;
     }
+
+    /* Columns: full-width snap-scroll */
     .column {
-      width: 88vw !important; max-width: 400px;
+      flex-shrink: 0 !important;
+      width: 100vw !important;
+      height: 100% !important;
+      max-height: none !important;
+      border-radius: 0 !important;
       scroll-snap-align: start;
-      flex-shrink: 0;
-      max-height: calc(100dvh - 115px);
-      max-height: calc(100vh - 115px);
     }
+
+    /* Column body scrolls vertically */
     .col-body {
-      max-height: calc(100dvh - 240px);
-      max-height: calc(100vh - 240px);
+      flex: 1 !important;
+      overflow-y: auto !important;
+      max-height: none !important;
       -webkit-overflow-scrolling: touch;
     }
-    .col-header { padding: 14px 14px 10px; }
+    .col-header { padding: 12px 14px 10px; }
     .col-title { font-size: 13px; }
 
-    /* Cards: bigger touch targets */
+    /* Cards */
     .card { touch-action: pan-y; }
     .card-inner { padding: 11px 12px; }
+
+    /* Task panel: bottom sheet */
+    .task-panel {
+      position: fixed !important;
+      bottom: 0 !important; left: 0 !important; right: 0 !important; top: auto !important;
+      width: 100% !important;
+      max-height: 72dvh !important;
+      border-radius: 18px 18px 0 0 !important;
+      transform: translateY(calc(100% - 52px));
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+      z-index: 500 !important;
+    }
+    .task-panel.mobile-open { transform: translateY(0) !important; }
+    .task-panel.collapsed   { transform: translateY(calc(100% - 52px)) !important; width: 100% !important; }
+    .task-panel-resize { display: none !important; }
+    .task-panel-toggle {
+      height: 52px; font-size: 14px;
+      position: relative;
+    }
+    .task-panel-toggle::before {
+      content: '';
+      position: absolute; top: 8px; left: 50%;
+      transform: translateX(-50%);
+      width: 32px; height: 4px;
+      background: rgba(255,255,255,0.25); border-radius: 2px;
+    }
+    .panel-pin-btn { display: none !important; }
+
+    /* Full-screen modals on mobile */
+    .modal-overlay { padding: 0 !important; align-items: flex-end !important; }
+    .modal { border-radius: 18px 18px 0 0 !important; max-height: 92dvh !important; width: 100% !important; max-width: 100% !important; }
 
     /* Project screen */
     .ps-body { padding: 16px 12px; }
@@ -340,42 +364,6 @@
   @media (min-width: 641px) and (max-width: 1024px) {
     .board { padding: 14px 16px; }
     .column { width: 250px; }
-  }
-
-  /* Panel backdrop (mobile overlay) */
-  .panel-backdrop {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.55); z-index: 595;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.28s;
-  }
-  @media (max-width: 640px) {
-    .panel-backdrop { display: block; }
-    .panel-backdrop.active { opacity: 1; pointer-events: all; }
-  }
-
-  /* Mobile FAB — open tasks panel */
-  .mobile-tasks-fab {
-    display: none;
-    position: fixed; bottom: 20px; right: 16px;
-    width: 54px; height: 54px; border-radius: 50%;
-    background: linear-gradient(160deg,#c9922a 0%,#8a5f14 100%);
-    border: none; color: #fff; cursor: pointer;
-    z-index: 310; align-items: center; justify-content: center;
-    box-shadow: 0 4px 18px rgba(140,80,0,0.55);
-    font-size: 22px; transition: transform 0.15s, box-shadow 0.15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .mobile-tasks-fab:active { transform: scale(0.93); box-shadow: 0 2px 8px rgba(140,80,0,0.4); }
-  @media (max-width: 640px) { .mobile-tasks-fab { display: flex; } }
-  .mob-fab-badge {
-    position: absolute; top: -3px; right: -3px;
-    min-width: 18px; height: 18px; border-radius: 9px;
-    background: #ff4444; color: #fff;
-    font-size: 10px; font-weight: 800; letter-spacing: -0.3px;
-    display: flex; align-items: center; justify-content: center;
-    padding: 0 4px; border: 2px solid #111;
-    box-sizing: content-box;
   }
 
   /* Pin button (desktop) */
@@ -957,12 +945,6 @@
       </div>
     </div>
   </div>
-  <!-- Mobile: backdrop + FAB for tasks panel -->
-  <div class="panel-backdrop" id="panelBackdrop" onclick="closeMobilePanel()"></div>
-  <button class="mobile-tasks-fab" id="mobileTasksFab" onclick="toggleTaskPanel()" aria-label="Moje úkoly" style="position:relative">
-    ✓
-    <span class="mob-fab-badge" id="mobFabBadge" style="display:none">0</span>
-  </button>
 </div>
 
 <!-- DETAIL MODAL -->
@@ -2940,17 +2922,16 @@ function setPanelWidthVar() {
 }
 
 function closeMobilePanel() {
-  const panel    = document.getElementById('taskPanel');
-  const backdrop = document.getElementById('panelBackdrop');
-  if (panel)    { panel.classList.remove('mobile-open'); panel.classList.add('collapsed'); }
-  if (backdrop) backdrop.classList.remove('active');
+  const panel = document.getElementById('taskPanel');
+  const arrow = document.getElementById('taskPanelArrow');
+  if (panel) { panel.classList.remove('mobile-open'); panel.classList.add('collapsed'); }
+  if (arrow) arrow.textContent = '▲';
   setPanelWidthVar();
 }
 
 function toggleTaskPanel() {
-  const panel    = document.getElementById('taskPanel');
-  const arrow    = document.getElementById('taskPanelArrow');
-  const backdrop = document.getElementById('panelBackdrop');
+  const panel = document.getElementById('taskPanel');
+  const arrow = document.getElementById('taskPanelArrow');
   if (!panel) return;
 
   if (isMobileView()) {
@@ -2960,7 +2941,7 @@ function toggleTaskPanel() {
     } else {
       panel.classList.remove('collapsed');
       panel.classList.add('mobile-open');
-      if (backdrop) backdrop.classList.add('active');
+      if (arrow) arrow.textContent = '▽';
       renderTaskPanel();
     }
     setPanelWidthVar();
@@ -3037,7 +3018,7 @@ function updateMobileFabBadge() {
       if (arrow) arrow.textContent = '◁';
     } else {
       panel.classList.add('collapsed');
-      if (arrow) arrow.textContent = '▷';
+      if (arrow) arrow.textContent = isMobileView() ? '▲' : '▷';
     }
 
     setPanelWidthVar();
