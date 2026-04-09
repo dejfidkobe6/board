@@ -1059,17 +1059,30 @@ async function _syncToServer(projectId, _attempt) {
   }
 }
 
-// Pull from server — server always wins unless a save is currently in-flight.
-// IMPORTANT: check _syncInFlight both before AND after await — the user may
-// have started an edit while the fetch was in-flight, and that new save must
-// not be overwritten by a stale server response.
+// Pull latest state from server.
+// Three guards prevent overwriting a newer local edit with stale server data:
+//   1. _syncInFlight check at start: a save is in progress → skip entirely
+//   2. _syncInFlight re-check after await: edit started WHILE this fetch was in-flight
+//   3. Timestamp check: server._ts < local._ts → server is behind our last edit
+//                        (handles the race where save completes just before this response)
 async function syncKanbanFromServer(projectId) {
   if (_syncInFlight) return;
   try {
     const res = await fetch(`/api/kanban.php?action=load&project_id=${projectId}`, { credentials: 'include' });
     const data = await res.json();
-    if (_syncInFlight) return; // edit started while fetch was in-flight — abort
+    if (_syncInFlight) return; // edit started while this fetch was in-flight
     if (!data.success || !data.state) return;
+
+    const serverTs = data.state._ts || 0;
+    const localTs  = state._ts      || 0;
+
+    if (serverTs < localTs) {
+      // Server is behind our last edit — push local up.
+      // Happens when: (a) save completed just before this response was processed,
+      // (b) Ctrl+R beacon arrived late, (c) previous save retry is pending.
+      _syncToServer(projectId);
+      return;
+    }
 
     const hasCols  = Array.isArray(data.state.columns) && data.state.columns.length > 0;
     const hasCards = Array.isArray(data.state.cards)   && data.state.cards.length   > 0;
