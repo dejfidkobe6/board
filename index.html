@@ -277,17 +277,62 @@
   .besix-logo-header { height: 30px; width: auto; }
   /* ── MOBILE ── */
   @media (max-width: 640px) {
-    header { height: 44px; padding: 0 10px; }
-    .header-right { gap: 3px; }
+    /* Header */
+    header { height: 48px; padding: 0 12px; }
+    .header-right { gap: 4px; }
     .header-right .btn-ghost { display: none; }
-    .header-right .btn-primary { padding: 5px 10px; font-size: 12px; }
+    .header-right .btn-primary { padding: 7px 13px; font-size: 13px; }
     #activeProjectName { display: none; }
     .current-user { padding: 3px 8px 3px 3px; font-size: 12px; }
-    .board { padding: 12px 8px; gap: 8px; }
-    .task-panel { width: 260px; }
-    .task-panel.collapsed { width: 34px; }
-    .column { width: 82vw; max-width: 310px; }
-    .col-body { max-height: 65vh; }
+
+    /* Task panel → full-height RIGHT OVERLAY (not a side strip) */
+    .task-panel {
+      position: fixed !important;
+      right: 0 !important; top: 0 !important;
+      height: 100dvh !important; height: 100vh !important;
+      width: min(85vw, 340px) !important;
+      border-radius: 18px 0 0 18px !important;
+      transform: translateX(calc(100% + 2px));
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+      z-index: 600 !important;
+      padding-bottom: env(safe-area-inset-bottom, 12px) !important;
+    }
+    .task-panel.mobile-open { transform: translateX(0); }
+    .task-panel.collapsed   { transform: translateX(calc(100% + 2px)); width: min(85vw, 340px) !important; }
+    .task-panel-resize { display: none !important; }
+    .task-panel-toggle { height: 54px; font-size: 14px; }
+    .panel-pin-btn { display: none !important; }
+
+    /* Board: full width (panel is overlay, no offset needed) */
+    #board { padding-right: 8px !important; }
+
+    /* Board columns: wide, snap-scroll */
+    .board {
+      padding: 10px 8px 90px 8px !important;
+      gap: 10px !important;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+    .column {
+      width: 88vw !important; max-width: 400px;
+      scroll-snap-align: start;
+      flex-shrink: 0;
+      max-height: calc(100dvh - 115px);
+      max-height: calc(100vh - 115px);
+    }
+    .col-body {
+      max-height: calc(100dvh - 240px);
+      max-height: calc(100vh - 240px);
+      -webkit-overflow-scrolling: touch;
+    }
+    .col-header { padding: 14px 14px 10px; }
+    .col-title { font-size: 13px; }
+
+    /* Cards: bigger touch targets */
+    .card { touch-action: pan-y; }
+    .card-inner { padding: 11px 12px; }
+
+    /* Project screen */
     .ps-body { padding: 16px 12px; }
     .ps-grid { grid-template-columns: 1fr; gap: 10px; }
     .project-card-new { min-height: 100px; padding: 24px 16px; }
@@ -296,6 +341,53 @@
     .board { padding: 14px 16px; }
     .column { width: 250px; }
   }
+
+  /* Panel backdrop (mobile overlay) */
+  .panel-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55); z-index: 595;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.28s;
+  }
+  @media (max-width: 640px) {
+    .panel-backdrop { display: block; }
+    .panel-backdrop.active { opacity: 1; pointer-events: all; }
+  }
+
+  /* Mobile FAB — open tasks panel */
+  .mobile-tasks-fab {
+    display: none;
+    position: fixed; bottom: 20px; right: 16px;
+    width: 54px; height: 54px; border-radius: 50%;
+    background: linear-gradient(160deg,#c9922a 0%,#8a5f14 100%);
+    border: none; color: #fff; cursor: pointer;
+    z-index: 310; align-items: center; justify-content: center;
+    box-shadow: 0 4px 18px rgba(140,80,0,0.55);
+    font-size: 22px; transition: transform 0.15s, box-shadow 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-tasks-fab:active { transform: scale(0.93); box-shadow: 0 2px 8px rgba(140,80,0,0.4); }
+  @media (max-width: 640px) { .mobile-tasks-fab { display: flex; } }
+  .mob-fab-badge {
+    position: absolute; top: -3px; right: -3px;
+    min-width: 18px; height: 18px; border-radius: 9px;
+    background: #ff4444; color: #fff;
+    font-size: 10px; font-weight: 800; letter-spacing: -0.3px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 4px; border: 2px solid #111;
+    box-sizing: content-box;
+  }
+
+  /* Pin button (desktop) */
+  .panel-pin-btn {
+    background: none; border: none; cursor: pointer;
+    padding: 3px 5px; font-size: 14px; line-height: 1;
+    opacity: 0.35; transition: opacity 0.15s; margin-left: auto;
+    color: rgba(255,255,255,0.8); border-radius: 5px;
+  }
+  .panel-pin-btn:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+  .task-panel.pinned .panel-pin-btn { opacity: 1; color: rgba(200,165,60,0.95); }
+  .task-panel.collapsed .panel-pin-btn { display: none; }
   .header-right { display: flex; gap: 6px; align-items: center; }
   .current-user { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 50px; padding: 4px 12px 4px 4px; font-size: 13px; cursor: pointer; transition: all 0.15s; color: rgba(255,255,255,0.75); }
   .current-user:hover { border-color: rgba(200,165,60,0.4); color: #fff; background: rgba(255,255,255,0.13); }
@@ -851,11 +943,12 @@
   <div class="team-bar" id="teamBar"></div>
   <div class="app-body">
     <div class="board" id="board"></div>
-    <div class="task-panel" id="taskPanel" style="width:280px">
+    <div class="task-panel collapsed" id="taskPanel" style="width:280px">
       <div class="task-panel-resize" id="taskPanelResize"></div>
       <div class="task-panel-toggle" onclick="toggleTaskPanel()" title="Skrýt/zobrazit panel úkolů">
-        <span id="taskPanelArrow">◁</span>
+        <span id="taskPanelArrow">▷</span>
         <span class="task-panel-label">Moje úkoly</span>
+        <button class="panel-pin-btn" id="panelPinBtn" onclick="event.stopPropagation();togglePanelPin()" title="Připnout vždy otevřený">📌</button>
       </div>
       <div class="task-panel-body">
         <div class="task-panel-body-inner" id="taskPanelBody">
@@ -864,6 +957,12 @@
       </div>
     </div>
   </div>
+  <!-- Mobile: backdrop + FAB for tasks panel -->
+  <div class="panel-backdrop" id="panelBackdrop" onclick="closeMobilePanel()"></div>
+  <button class="mobile-tasks-fab" id="mobileTasksFab" onclick="toggleTaskPanel()" aria-label="Moje úkoly" style="position:relative">
+    ✓
+    <span class="mob-fab-badge" id="mobFabBadge" style="display:none">0</span>
+  </button>
 </div>
 
 <!-- DETAIL MODAL -->
@@ -1012,6 +1111,7 @@ function saveState() {
   const projectId = localStorage.getItem('besix_active_project_id');
   if (projectId) _syncToServer(projectId);
   renderTaskPanel();
+  updateMobileFabBadge();
 }
 
 // ── Kanban server sync ────────────────────────────────────────────────────
@@ -2822,19 +2922,52 @@ function findCardAnywhere(cardId) {
   return null;
 }
 
+function isMobileView() { return window.innerWidth <= 640; }
+
 function setPanelWidthVar() {
   const panel = document.getElementById('taskPanel');
   if (!panel) return;
+  if (isMobileView()) {
+    // Panel is overlay on mobile — board uses full width
+    document.documentElement.style.setProperty('--panel-w', '0px');
+    document.documentElement.style.setProperty('--panel-gap', '0px');
+    return;
+  }
   const gap = 8;
   const w = panel.classList.contains('collapsed') ? 36 : panel.offsetWidth;
   document.documentElement.style.setProperty('--panel-w', w + 'px');
   document.documentElement.style.setProperty('--panel-gap', gap + 'px');
 }
 
+function closeMobilePanel() {
+  const panel    = document.getElementById('taskPanel');
+  const backdrop = document.getElementById('panelBackdrop');
+  if (panel)    { panel.classList.remove('mobile-open'); panel.classList.add('collapsed'); }
+  if (backdrop) backdrop.classList.remove('active');
+  setPanelWidthVar();
+}
+
 function toggleTaskPanel() {
-  const panel = document.getElementById('taskPanel');
-  const arrow = document.getElementById('taskPanelArrow');
+  const panel    = document.getElementById('taskPanel');
+  const arrow    = document.getElementById('taskPanelArrow');
+  const backdrop = document.getElementById('panelBackdrop');
   if (!panel) return;
+
+  if (isMobileView()) {
+    const isOpen = panel.classList.contains('mobile-open');
+    if (isOpen) {
+      closeMobilePanel();
+    } else {
+      panel.classList.remove('collapsed');
+      panel.classList.add('mobile-open');
+      if (backdrop) backdrop.classList.add('active');
+      renderTaskPanel();
+    }
+    setPanelWidthVar();
+    return;
+  }
+
+  // Desktop
   panel.classList.toggle('collapsed');
   const collapsed = panel.classList.contains('collapsed');
   if (arrow) arrow.textContent = collapsed ? '▷' : '◁';
@@ -2842,8 +2975,39 @@ function toggleTaskPanel() {
     const saved = localStorage.getItem('taskPanelWidth');
     if (saved) panel.style.width = saved + 'px';
     renderTaskPanel();
+    localStorage.setItem('taskPanelState', 'open');
+  } else {
+    localStorage.setItem('taskPanelState', 'closed');
   }
   setPanelWidthVar();
+}
+
+function togglePanelPin() {
+  const panel  = document.getElementById('taskPanel');
+  const pinBtn = document.getElementById('panelPinBtn');
+  if (!panel) return;
+  const pinned = panel.classList.toggle('pinned');
+  localStorage.setItem('taskPanelPinned', pinned ? 'true' : 'false');
+  if (pinBtn) pinBtn.title = pinned ? 'Odepnout panel' : 'Připnout vždy otevřený';
+}
+
+function updateMobileFabBadge() {
+  const badge = document.getElementById('mobFabBadge');
+  if (!badge) return;
+  const userId = currentUser ? String(currentUser.id) : null;
+  if (!userId) { badge.style.display = 'none'; return; }
+  let count = 0;
+  for (const proj of (state.projects || [])) {
+    for (const card of (proj.cards || [])) {
+      for (const cl of (card.checklists || [])) {
+        for (const item of (cl.items || [])) {
+          if (!item.done && String(item.assignee) === userId) count++;
+        }
+      }
+    }
+  }
+  badge.style.display = count > 0 ? 'flex' : 'none';
+  badge.textContent   = count > 9 ? '9+' : String(count);
 }
 
 // ── Task panel resize ────────────────────────────────────────────────────
@@ -2854,11 +3018,28 @@ function toggleTaskPanel() {
   function initPanelResize() {
     const handle = document.getElementById('taskPanelResize');
     const panel  = document.getElementById('taskPanel');
+    const arrow  = document.getElementById('taskPanelArrow');
     if (!handle || !panel) return;
 
-    // Restore saved width
-    const saved = localStorage.getItem('taskPanelWidth');
-    if (saved) panel.style.width = saved + 'px';
+    // Restore saved width (desktop)
+    const savedW = localStorage.getItem('taskPanelWidth');
+    if (savedW) panel.style.width = savedW + 'px';
+
+    // Restore pinned state
+    const pinned = localStorage.getItem('taskPanelPinned') === 'true';
+    if (pinned) panel.classList.add('pinned');
+
+    // Default: collapsed unless pinned or user explicitly opened it
+    const savedState = localStorage.getItem('taskPanelState');
+    const shouldOpen = pinned || savedState === 'open';
+    if (shouldOpen && !isMobileView()) {
+      panel.classList.remove('collapsed');
+      if (arrow) arrow.textContent = '◁';
+    } else {
+      panel.classList.add('collapsed');
+      if (arrow) arrow.textContent = '▷';
+    }
+
     setPanelWidthVar();
 
     handle.addEventListener('mousedown', e => {
@@ -2907,9 +3088,13 @@ document.addEventListener('click', function(e) {
 });
 
 function renderTaskPanel() {
+  updateMobileFabBadge();
   const body = document.getElementById('taskPanelBody');
   const panel = document.getElementById('taskPanel');
-  if (!body || !panel || panel.classList.contains('collapsed')) return;
+  if (!body || !panel) return;
+  // On mobile the panel uses mobile-open; on desktop it's !collapsed
+  const visible = isMobileView() ? panel.classList.contains('mobile-open') : !panel.classList.contains('collapsed');
+  if (!visible) return;
 
   const userId = currentUser ? String(currentUser.id) : null;
   if (!userId) { body.innerHTML = '<div class="task-panel-empty">Přihlaš se pro zobrazení úkolů.</div>'; return; }
