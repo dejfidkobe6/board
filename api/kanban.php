@@ -73,12 +73,6 @@ if ($action === 'load') {
         if (($oldCols > 0 || $oldCards > 0) && $cols === 0 && $cards === 0) {
             jsonResponse(['success' => true, 'skipped' => 'empty_guard']);
         }
-        // Reject: incoming data is older than what server already has
-        $oldTs = (int)($old['_ts'] ?? 0);
-        $newTs = (int)($newState['_ts'] ?? 0);
-        if ($oldTs > 0 && $newTs > 0 && $newTs < $oldTs) {
-            jsonResponse(['success' => true, 'skipped' => 'stale_ts']);
-        }
     }
 
     $stateJson = json_encode($newState, JSON_UNESCAPED_UNICODE);

@@ -1030,22 +1030,29 @@ async function syncKanbanFromServer(projectId) {
     const hasCards = Array.isArray(data.state && data.state.cards) && data.state.cards.length > 0;
 
     if (data.state && (hasCols || hasCards)) {
-      // Local wins only when user is actively editing in this session.
-      // Server always wins otherwise — ensures Ctrl+R and cross-device sync work correctly.
-      if (_hasUnsavedChanges) {
-        // User has edits in this session → push to server
-        _doSyncKanbanToServer(projectId);
-      } else {
+      // Conflict resolution:
+      //   _hasUnsavedChanges = true  → user is editing right now → push local
+      //   besix_pending_sync = '1' AND local edit is newer than server's last save → push local
+      //                              (handles Ctrl+R race where sendBeacon failed)
+      //   otherwise → server always wins (Ctrl+R fresh load, cross-device sync)
+      const hasPendingSync = localStorage.getItem('besix_pending_sync') === '1';
+      const serverTs = data.state._ts || 0;
+      const localTs  = state._ts      || 0;
+      const localShouldWin = _hasUnsavedChanges || (hasPendingSync && localTs > serverTs);
+      if (!localShouldWin) {
         // Server wins — update local state and refresh all UI including open modal
         if (hasCols)                             proj.columns   = data.state.columns;
         if (hasCards)                            proj.cards     = data.state.cards;
         if (Array.isArray(data.state.completed)) proj.completed = data.state.completed;
         state._ts = data.state._ts || 0;
-        localStorage.removeItem('besix_pending_sync'); // pending changes superseded by server
+        localStorage.removeItem('besix_pending_sync'); // server data supersedes pending edits
         try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
         setSyncDot('ok');
         renderBoard(); updateBadge(); renderTaskPanel();
         if (detailCardId) renderDetail();  // refresh open card modal
+      } else {
+        // Local is newer → push to server
+        _doSyncKanbanToServer(projectId);
       }
     } else if (proj.columns && proj.columns.length > 0) {
       // Server empty but local has data → push local up
@@ -1101,8 +1108,7 @@ async function _doSyncKanbanToServer(projectId, _attempt) {
     const res = await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      // Use state._ts (edit timestamp) so PHP can reject stale saves server-side
-      body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() } })
+      body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: Date.now() } })
     });
     if (res.ok) {
       _hasUnsavedChanges = false;
@@ -1137,8 +1143,7 @@ window.addEventListener('beforeunload', () => {
   const cards = proj.cards    || [];
   if (cols.length === 0 && cards.length === 0) return;
   clearTimeout(_kanbanSyncTimer);
-  // Use state._ts (edit time) so PHP stale-ts guard works correctly
-  const body = JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() } });
+  const body = JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: Date.now() } });
   // sendBeacon survives page unload — browser keeps the request alive after navigation
   try { navigator.sendBeacon(`/api/kanban.php?action=save&project_id=${projectId}`, new Blob([body], { type: 'application/json' })); } catch(e) {}
 });
@@ -3418,23 +3423,16 @@ async function bootAuth() {
   // Cancel any sync timer that openProject() may have scheduled with empty data
   clearTimeout(_kanbanSyncTimer);
 
-  // 6. If there were unsaved edits before last page reload (Ctrl+R), upload them first.
-  // PHP will reject the upload if server already has newer data (stale_ts guard).
-  // Either way, flags are cleared and the subsequent fetch gets authoritative server data.
-  if (localStorage.getItem('besix_pending_sync') === '1') {
-    await _doSyncKanbanToServer(activeProjectId);
-  }
-
-  // 7. Load latest kanban state from server (cross-device sync)
+  // 6. Load latest kanban state from server (cross-device sync)
   await syncKanbanFromServer(activeProjectId);
 
   // Start polling every 5 s — picks up changes made on other devices
   startKanbanPolling(activeProjectId);
 
-  // 8. Show notification popup for overdue/today tasks
+  // 7. Show notification popup for overdue/today tasks
   showTaskNotification();
 
-  // 9. Apply viewer restrictions
+  // 8. Apply viewer restrictions
   applyRoleRestrictions(_projectRole);
 }
 
