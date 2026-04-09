@@ -1023,10 +1023,12 @@ function saveState() {
 let _syncInFlight = false;
 let _syncQueued   = false;
 let _pollTimer    = null;
+let _syncRetrying = false; // true while exponential-backoff timer is running
 
 async function _syncToServer(projectId, _attempt) {
   _attempt = _attempt || 1;
   if (_syncInFlight) { _syncQueued = true; return; }
+  _syncRetrying = false; // we're actively trying now
 
   const proj = state.projects.find(p => String(p.id) === String(projectId));
   if (!proj) return;
@@ -1039,6 +1041,14 @@ async function _syncToServer(projectId, _attempt) {
   _syncQueued   = false;
   setSyncDot('pending');
 
+  const _scheduleRetry = (detail) => {
+    _syncInFlight = false;
+    setSyncDot('error', detail);
+    _syncRetrying = true;
+    const delay = _attempt < 5 ? Math.pow(2, _attempt) * 1000 : 30000;
+    setTimeout(() => { _syncRetrying = false; _syncToServer(projectId, _attempt < 5 ? _attempt + 1 : 1); }, delay);
+  };
+
   try {
     const res = await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
       method: 'POST', credentials: 'include',
@@ -1047,22 +1057,17 @@ async function _syncToServer(projectId, _attempt) {
     });
     _syncInFlight = false;
     if (res.ok) {
+      _syncRetrying = false;
       setSyncDot('ok');
       if (_syncQueued) _syncToServer(projectId);
     } else {
-      // Log the server error for debugging
       const errText = await res.text().catch(() => '');
-      console.error('[kanban] save failed', res.status, errText);
-      setSyncDot('error', res.status);
-      throw new Error('HTTP ' + res.status);
+      console.error('[kanban] save failed HTTP', res.status, errText);
+      _scheduleRetry(res.status);
     }
   } catch(e) {
-    _syncInFlight = false;
-    setSyncDot('error');
-    if (_attempt < 5) {
-      const delay = Math.pow(2, _attempt) * 1000;
-      setTimeout(() => _syncToServer(projectId, _attempt + 1), delay);
-    }
+    console.error('[kanban] save network error:', e.message);
+    _scheduleRetry('net');
   }
 }
 
@@ -1077,7 +1082,7 @@ async function syncKanbanFromServer(projectId) {
     const serverTs = data.state._ts || 0;
     const localTs  = state._ts      || 0;
 
-    if (serverTs < localTs) { _syncToServer(projectId); return; }
+    if (serverTs < localTs) { if (!_syncRetrying) _syncToServer(projectId); return; }
     if (serverTs === localTs) return; // same version — skip
 
     // serverTs > localTs — server has newer data (another device saved)
@@ -1103,8 +1108,13 @@ function setSyncDot(s, detail) { // 'ok' | 'pending' | 'error'
   const dot = document.getElementById('syncDot');
   if (!dot) return;
   dot.style.background = s === 'ok' ? '#36d87c' : s === 'pending' ? '#f0a500' : '#ff5c35';
-  dot.title = s === 'ok' ? 'Synchronizováno' : s === 'pending' ? 'Ukládám…'
-    : ('Chyba synchronizace' + (detail ? ' (' + detail + ')' : '') + ' — zkouším znovu');
+  if (s !== 'error') { dot.title = s === 'ok' ? 'Synchronizováno' : 'Ukládám…'; return; }
+  const errLabel = detail === 401 ? '401 nepřihlášen'
+    : detail === 403 ? '403 nemáš oprávnění'
+    : detail === 503 ? '503 DB nedostupná'
+    : detail === 'net' ? 'síťová chyba'
+    : detail ? String(detail) : '';
+  dot.title = 'Chyba synchronizace' + (errLabel ? ' — ' + errLabel : '') + '\nZkouším znovu…';
 }
 
 // Polling — picks up changes from other devices every 5 s.
