@@ -1052,7 +1052,7 @@ async function _syncToServer(projectId, _attempt) {
   try {
     const res = await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
       method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
       body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() } })
     });
     _syncInFlight = false;
@@ -1153,7 +1153,7 @@ window.addEventListener('beforeunload', () => {
   const cards = proj.cards   || [];
   if (cols.length === 0 && cards.length === 0) return;
   const body = JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() } });
-  try { navigator.sendBeacon(`/api/kanban.php?action=save&project_id=${projectId}`, new Blob([body], { type: 'application/json' })); } catch(e) {}
+  try { navigator.sendBeacon(`/api/kanban.php?action=save&project_id=${projectId}`, new Blob([body], { type: 'text/plain;charset=UTF-8' })); } catch(e) {}
 });
 
 // ── Local rolling backups (last 5 snapshots per project in localStorage) ──
