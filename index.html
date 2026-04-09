@@ -291,23 +291,24 @@
     /* Board: horizontal scroll only, full height */
     #board {
       height: 100% !important;
-      padding: 0 !important;
-      gap: 0 !important;
+      padding: 0 0 0 10px !important;
+      gap: 8px !important;
       overflow-x: auto !important;
       overflow-y: hidden !important;
       scroll-snap-type: x mandatory;
+      scroll-padding-left: 10px;
       -webkit-overflow-scrolling: touch;
       display: flex !important;
       align-items: stretch !important;
     }
 
-    /* Columns: full-width snap-scroll */
+    /* Columns: show ~55px peek of next column */
     .column {
       flex-shrink: 0 !important;
-      width: 100vw !important;
+      width: calc(100vw - 65px) !important;
       height: 100% !important;
       max-height: none !important;
-      border-radius: 0 !important;
+      border-radius: 12px 12px 0 0 !important;
       scroll-snap-align: start;
     }
 
