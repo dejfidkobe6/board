@@ -1007,85 +1007,101 @@ const COLORS = ['#f0a500','#e05c00','#4caf50','#2196f3','#9c27b0','#00bcd4','#ff
 function loadState() { try { const s = localStorage.getItem('besix_v1'); return s ? JSON.parse(s) : null; } catch(e) { return null; } }
 function saveState() {
   state._ts = Date.now();
-  _hasUnsavedChanges = true;
-  localStorage.setItem('besix_pending_sync', '1'); // survives Ctrl+R — cleared only after successful server save
   try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
-  scheduleSyncKanbanToServer();
+  setSyncDot('pending');
+  const projectId = localStorage.getItem('besix_active_project_id');
+  if (projectId) _syncToServer(projectId);
   renderTaskPanel();
 }
 
 // ── Kanban server sync ────────────────────────────────────────────────────
-let _kanbanSyncTimer = null;
-let _pollTimer = null;
-let _hasUnsavedChanges = false; // true only when user edited data in THIS session
+// Design: save immediately on every edit (no debounce), server is always truth on load.
+// _syncInFlight: a POST is in progress — queue another save instead of overlapping.
+// _syncQueued:   saveState() was called while a POST was in-flight; flush after it lands.
+let _pollTimer    = null;
+let _syncInFlight = false;
+let _syncQueued   = false;
 
+async function _syncToServer(projectId, _attempt) {
+  _attempt = _attempt || 1;
+  if (_syncInFlight) { _syncQueued = true; return; }
+
+  const proj = state.projects.find(p => String(p.id) === String(projectId));
+  if (!proj) return;
+  const cols  = proj.columns   || [];
+  const cards = proj.cards     || [];
+  if (cols.length === 0 && cards.length === 0) { setSyncDot('ok'); return; }
+
+  _saveLocalBackup(projectId, cols, cards, proj.completed || []);
+  _syncInFlight = true;
+  _syncQueued   = false;
+
+  try {
+    const res = await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts } })
+    });
+    _syncInFlight = false;
+    if (res.ok) {
+      setSyncDot('ok');
+      if (_syncQueued) _syncToServer(projectId); // flush any edit that arrived mid-flight
+    } else {
+      throw new Error('HTTP ' + res.status);
+    }
+  } catch(e) {
+    _syncInFlight = false;
+    setSyncDot('error');
+    if (_attempt < 5) {
+      const delay = Math.pow(2, _attempt) * 1000;
+      setTimeout(() => _syncToServer(projectId, _attempt + 1), delay);
+    }
+  }
+}
+
+// Pull from server — server always wins unless a save is currently in-flight.
 async function syncKanbanFromServer(projectId) {
+  if (_syncInFlight) return; // our data is mid-save — don't overwrite with stale server state
   try {
     const res = await fetch(`/api/kanban.php?action=load&project_id=${projectId}`, { credentials: 'include' });
     const data = await res.json();
-    if (!data.success) return;
+    if (!data.success || !data.state) return;
+
+    const hasCols  = Array.isArray(data.state.columns) && data.state.columns.length > 0;
+    const hasCards = Array.isArray(data.state.cards)   && data.state.cards.length   > 0;
+    if (!hasCols && !hasCards) return;
+
     const proj = state.projects.find(p => String(p.id) === String(projectId));
     if (!proj) return;
-    const hasCols = Array.isArray(data.state && data.state.columns) && data.state.columns.length > 0;
-    const hasCards = Array.isArray(data.state && data.state.cards) && data.state.cards.length > 0;
 
-    if (data.state && (hasCols || hasCards)) {
-      // Conflict resolution:
-      //   _hasUnsavedChanges = true  → user is editing right now → push local
-      //   besix_pending_sync = '1' AND local edit is newer than server's last save → push local
-      //                              (handles Ctrl+R race where sendBeacon failed)
-      //   otherwise → server always wins (Ctrl+R fresh load, cross-device sync)
-      const hasPendingSync = localStorage.getItem('besix_pending_sync') === '1';
-      const serverTs = data.state._ts || 0;
-      const localTs  = state._ts      || 0;
-      const localShouldWin = _hasUnsavedChanges || (hasPendingSync && localTs > serverTs);
-      if (!localShouldWin) {
-        // Server wins — update local state and refresh all UI including open modal
-        if (hasCols)                             proj.columns   = data.state.columns;
-        if (hasCards)                            proj.cards     = data.state.cards;
-        if (Array.isArray(data.state.completed)) proj.completed = data.state.completed;
-        state._ts = data.state._ts || 0;
-        localStorage.removeItem('besix_pending_sync'); // server data supersedes pending edits
-        try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
-        setSyncDot('ok');
-        renderBoard(); updateBadge(); renderTaskPanel();
-        if (detailCardId) renderDetail();  // refresh open card modal
-      } else {
-        // Local is newer → push to server
-        _doSyncKanbanToServer(projectId);
-      }
-    } else if (proj.columns && proj.columns.length > 0) {
-      // Server empty but local has data → push local up
-      _doSyncKanbanToServer(projectId);
-    }
+    proj.columns   = data.state.columns   || [];
+    proj.cards     = data.state.cards     || [];
+    proj.completed = data.state.completed || [];
+    state._ts = data.state._ts || 0;
+    try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
+    setSyncDot('ok');
+    renderBoard(); updateBadge(); renderTaskPanel();
+    if (detailCardId) renderDetail();
   } catch(e) {}
 }
 
-function setSyncDot(state) { // 'ok' | 'pending' | 'error'
+function setSyncDot(s) { // 'ok' | 'pending' | 'error'
   const dot = document.getElementById('syncDot');
   if (!dot) return;
-  dot.style.background = state === 'ok' ? '#36d87c' : state === 'pending' ? '#f0a500' : '#ff5c35';
-  dot.title = state === 'ok' ? 'Synchronizováno' : state === 'pending' ? 'Ukládám…' : 'Chyba synchronizace — pokusím se znovu';
+  dot.style.background = s === 'ok' ? '#36d87c' : s === 'pending' ? '#f0a500' : '#ff5c35';
+  dot.title = s === 'ok' ? 'Synchronizováno' : s === 'pending' ? 'Ukládám…' : 'Chyba synchronizace — pokusím se znovu';
 }
 
-function scheduleSyncKanbanToServer() {
-  const projectId = localStorage.getItem('besix_active_project_id');
-  if (!projectId) return;
-  setSyncDot('pending');
-  clearTimeout(_kanbanSyncTimer);
-  _kanbanSyncTimer = setTimeout(() => _doSyncKanbanToServer(projectId), 300);
-}
-
-// Polling — check server every 5 s to catch changes from other devices
+// Polling — check server every 3 s for cross-device changes
 function startKanbanPolling(projectId) {
   stopKanbanPolling();
-  _pollTimer = setInterval(() => syncKanbanFromServer(projectId), 5000);
+  _pollTimer = setInterval(() => syncKanbanFromServer(projectId), 3000);
 }
 function stopKanbanPolling() {
   if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
 }
 
-// Sync immediately when tab becomes visible (switching phone ↔ desktop)
+// Sync immediately when tab regains focus (phone ↔ desktop switching)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     const pid = localStorage.getItem('besix_active_project_id');
@@ -1093,58 +1109,17 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-async function _doSyncKanbanToServer(projectId, _attempt) {
-  _attempt = _attempt || 1;
-  const proj = state.projects.find(p => String(p.id) === String(projectId));
-  if (!proj) return;
-  const cols  = proj.columns   || [];
-  const cards = proj.cards     || [];
-  if (cols.length === 0 && cards.length === 0) {
-    localStorage.removeItem('besix_pending_sync');
-    setSyncDot('ok'); return;
-  }
-  _saveLocalBackup(projectId, cols, cards, proj.completed || []);
-  try {
-    const res = await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: Date.now() } })
-    });
-    if (res.ok) {
-      _hasUnsavedChanges = false;
-      localStorage.removeItem('besix_pending_sync');
-      setSyncDot('ok');
-      // Note: if server returned skipped:'stale_ts' it means server has newer data
-      // — flags are cleared and the next poll will fetch the correct server state
-    } else {
-      throw new Error('HTTP ' + res.status);
-    }
-  } catch(e) {
-    setSyncDot('error');
-    // Retry up to 4 times: 2s, 4s, 8s, 16s
-    if (_attempt < 5) {
-      const delay = Math.pow(2, _attempt) * 1000;
-      setTimeout(() => _doSyncKanbanToServer(projectId, _attempt + 1), delay);
-    }
-  }
-}
-
-// ── Flush to server on page unload (Ctrl+R, tab close, navigation) ──────────
-// ONLY fires when user actually edited data in this session (_hasUnsavedChanges).
-// Without this guard, sendBeacon would overwrite server with stale local data
-// if another device had synced newer data in the meantime.
+// Always beacon current state on unload — backup in case the in-flight POST was cancelled.
+// No guard needed: saves are immediate so beacon is only a safety net, not primary.
 window.addEventListener('beforeunload', () => {
-  if (!_hasUnsavedChanges) return; // nothing changed locally — don't overwrite server
   const projectId = localStorage.getItem('besix_active_project_id');
   if (!projectId || !state || !state.projects) return;
   const proj = state.projects.find(p => String(p.id) === String(projectId));
   if (!proj) return;
-  const cols  = proj.columns  || [];
-  const cards = proj.cards    || [];
+  const cols  = proj.columns || [];
+  const cards = proj.cards   || [];
   if (cols.length === 0 && cards.length === 0) return;
-  clearTimeout(_kanbanSyncTimer);
-  const body = JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: Date.now() } });
-  // sendBeacon survives page unload — browser keeps the request alive after navigation
+  const body = JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() } });
   try { navigator.sendBeacon(`/api/kanban.php?action=save&project_id=${projectId}`, new Blob([body], { type: 'application/json' })); } catch(e) {}
 });
 
@@ -3420,13 +3395,14 @@ async function bootAuth() {
   }
   openProject(activeProjectId);
 
-  // Cancel any sync timer that openProject() may have scheduled with empty data
-  clearTimeout(_kanbanSyncTimer);
-
-  // 6. Load latest kanban state from server (cross-device sync)
+  // 6. Load latest kanban state from server.
+  // Wait 600 ms first so any sendBeacon from the previous session (e.g. Ctrl+R race)
+  // has time to land on the server before we fetch — prevents overwriting fresh edits
+  // with a stale snapshot that was stored before the beacon arrived.
+  await new Promise(r => setTimeout(r, 600));
   await syncKanbanFromServer(activeProjectId);
 
-  // Start polling every 5 s — picks up changes made on other devices
+  // Start polling every 3 s — picks up changes made on other devices
   startKanbanPolling(activeProjectId);
 
   // 7. Show notification popup for overdue/today tasks
