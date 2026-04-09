@@ -53,10 +53,14 @@ if ($action === 'load') {
     if (!$projectId) jsonResponse(['error' => 'Chybí project_id'], 422);
     requireProjectRole($projectId, 'member');
 
-    $body = getBody();
-    if (!isset($body['state'])) jsonResponse(['error' => 'Chybí state'], 422);
-
-    $newState = $body['state'];
+    // Accept FormData (multipart) OR raw JSON body
+    if (isset($_POST['state'])) {
+        $newState = json_decode($_POST['state'], true);
+    } else {
+        $body = getBody();
+        $newState = $body['state'] ?? null;
+    }
+    if (!is_array($newState)) jsonResponse(['error' => 'Chybí state'], 422);
     $cols  = count($newState['columns'] ?? []);
     $cards = count($newState['cards']   ?? []);
 
