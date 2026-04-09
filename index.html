@@ -1015,14 +1015,14 @@ function saveState() {
 }
 
 // ── Kanban server sync ────────────────────────────────────────────────────
-// RULE: syncKanbanFromServer only applies server data when serverTs > localTs.
-//   serverTs > localTs  → server has a newer version → apply
-//   serverTs = localTs  → same version (or both 0) → skip, nothing to do
-//   serverTs < localTs  → local is newer (unsaved edit) → push local up
-// Polling is intentionally removed — it was the main source of races.
-// Cross-device sync happens on page load and when the tab regains focus.
+// Timestamp rule in syncKanbanFromServer:
+//   serverTs > localTs  → apply (another device saved newer data)
+//   serverTs = localTs  → skip  (same version, nothing to do)
+//   serverTs < localTs  → push  (local edit not yet on server)
+// _syncInFlight prevents overlapping POSTs; re-checked after every await.
 let _syncInFlight = false;
 let _syncQueued   = false;
+let _pollTimer    = null;
 
 async function _syncToServer(projectId, _attempt) {
   _attempt = _attempt || 1;
@@ -1037,18 +1037,23 @@ async function _syncToServer(projectId, _attempt) {
   _saveLocalBackup(projectId, cols, cards, proj.completed || []);
   _syncInFlight = true;
   _syncQueued   = false;
+  setSyncDot('pending');
 
   try {
     const res = await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts } })
+      body: JSON.stringify({ state: { columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() } })
     });
     _syncInFlight = false;
     if (res.ok) {
       setSyncDot('ok');
       if (_syncQueued) _syncToServer(projectId);
     } else {
+      // Log the server error for debugging
+      const errText = await res.text().catch(() => '');
+      console.error('[kanban] save failed', res.status, errText);
+      setSyncDot('error', res.status);
       throw new Error('HTTP ' + res.status);
     }
   } catch(e) {
@@ -1066,25 +1071,16 @@ async function syncKanbanFromServer(projectId) {
   try {
     const res = await fetch(`/api/kanban.php?action=load&project_id=${projectId}`, { credentials: 'include' });
     const data = await res.json();
-    // Re-check: user may have started an edit while this fetch was in-flight
     if (_syncInFlight) return;
     if (!data.success || !data.state) return;
 
     const serverTs = data.state._ts || 0;
     const localTs  = state._ts      || 0;
 
-    if (serverTs < localTs) {
-      // Server is behind our last local edit — push local state up
-      _syncToServer(projectId);
-      return;
-    }
-    if (serverTs === localTs) {
-      // Identical version — nothing to do (avoids overwriting with a response
-      // that was fetched before the very last save completed)
-      return;
-    }
+    if (serverTs < localTs) { _syncToServer(projectId); return; }
+    if (serverTs === localTs) return; // same version — skip
 
-    // serverTs > localTs — server has genuinely newer data, apply it
+    // serverTs > localTs — server has newer data (another device saved)
     const hasCols  = Array.isArray(data.state.columns) && data.state.columns.length > 0;
     const hasCards = Array.isArray(data.state.cards)   && data.state.cards.length   > 0;
     if (!hasCols && !hasCards) return;
@@ -1103,14 +1099,25 @@ async function syncKanbanFromServer(projectId) {
   } catch(e) {}
 }
 
-function setSyncDot(s) { // 'ok' | 'pending' | 'error'
+function setSyncDot(s, detail) { // 'ok' | 'pending' | 'error'
   const dot = document.getElementById('syncDot');
   if (!dot) return;
   dot.style.background = s === 'ok' ? '#36d87c' : s === 'pending' ? '#f0a500' : '#ff5c35';
-  dot.title = s === 'ok' ? 'Synchronizováno' : s === 'pending' ? 'Ukládám…' : 'Chyba synchronizace — pokusím se znovu';
+  dot.title = s === 'ok' ? 'Synchronizováno' : s === 'pending' ? 'Ukládám…'
+    : ('Chyba synchronizace' + (detail ? ' (' + detail + ')' : '') + ' — zkouším znovu');
 }
 
-// Sync when tab regains focus — picks up changes from other devices
+// Polling — picks up changes from other devices every 5 s.
+// Safe because syncKanbanFromServer only applies data when serverTs > localTs.
+function startKanbanPolling(projectId) {
+  stopKanbanPolling();
+  _pollTimer = setInterval(() => syncKanbanFromServer(projectId), 5000);
+}
+function stopKanbanPolling() {
+  if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+}
+
+// Sync immediately when tab regains focus
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     const pid = localStorage.getItem('besix_active_project_id');
@@ -1118,7 +1125,7 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// Beacon on unload — safety net for any in-flight save that the browser might cancel
+// Safety beacon on unload — covers any in-flight save the browser might cancel
 window.addEventListener('beforeunload', () => {
   const projectId = localStorage.getItem('besix_active_project_id');
   if (!projectId || !state || !state.projects) return;
@@ -3406,8 +3413,7 @@ async function bootAuth() {
   // 600ms delay lets any sendBeacon from the previous session arrive before we read.
   await new Promise(r => setTimeout(r, 600));
   await syncKanbanFromServer(activeProjectId);
-  // No polling — polling was causing saves and reads to race.
-  // Cross-device sync happens via visibilitychange (switching tabs).
+  startKanbanPolling(activeProjectId); // 5 s polling, safe — timestamp guard prevents applying stale data
 
   // 7. Show notification popup for overdue/today tasks
   showTaskNotification();
