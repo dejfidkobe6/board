@@ -1041,9 +1041,9 @@ async function _syncToServer(projectId, _attempt) {
   _syncQueued   = false;
   setSyncDot('pending');
 
-  const _scheduleRetry = (detail) => {
+  const _scheduleRetry = (detail, errText) => {
     _syncInFlight = false;
-    setSyncDot('error', detail);
+    setSyncDot('error', detail, errText);
     _syncRetrying = true;
     const delay = _attempt < 5 ? Math.pow(2, _attempt) * 1000 : 30000;
     setTimeout(() => { _syncRetrying = false; _syncToServer(projectId, _attempt < 5 ? _attempt + 1 : 1); }, delay);
@@ -1063,11 +1063,11 @@ async function _syncToServer(projectId, _attempt) {
     } else {
       const errText = await res.text().catch(() => '');
       console.error('[kanban] save failed HTTP', res.status, errText);
-      _scheduleRetry(res.status);
+      _scheduleRetry(res.status, errText);
     }
   } catch(e) {
     console.error('[kanban] save network error:', e.message);
-    _scheduleRetry('net');
+    _scheduleRetry('net', e.message);
   }
 }
 
@@ -1104,17 +1104,25 @@ async function syncKanbanFromServer(projectId) {
   } catch(e) {}
 }
 
-function setSyncDot(s, detail) { // 'ok' | 'pending' | 'error'
+function setSyncDot(s, detail, errText) { // 'ok' | 'pending' | 'error'
   const dot = document.getElementById('syncDot');
   if (!dot) return;
   dot.style.background = s === 'ok' ? '#36d87c' : s === 'pending' ? '#f0a500' : '#ff5c35';
-  if (s !== 'error') { dot.title = s === 'ok' ? 'Synchronizováno' : 'Ukládám…'; return; }
+  dot.style.cursor = s === 'error' ? 'pointer' : '';
+  if (s !== 'error') {
+    dot.title = s === 'ok' ? 'Synchronizováno' : 'Ukládám…';
+    dot.onclick = null;
+    return;
+  }
   const errLabel = detail === 401 ? '401 nepřihlášen'
     : detail === 403 ? '403 nemáš oprávnění'
     : detail === 503 ? '503 DB nedostupná'
     : detail === 'net' ? 'síťová chyba'
     : detail ? String(detail) : '';
-  dot.title = 'Chyba synchronizace' + (errLabel ? ' — ' + errLabel : '') + '\nZkouším znovu…';
+  const snippet = errText ? errText.replace(/<[^>]+>/g,'').trim().substring(0, 200) : '';
+  dot.title = 'Chyba synchronizace' + (errLabel ? ' — ' + errLabel : '') + '\nZkouším znovu…' + (snippet ? '\n\n' + snippet : '');
+  // Tap/click → alert with full error (helps diagnose on mobile)
+  dot.onclick = () => alert('Sync error ' + (errLabel || detail) + (snippet ? '\n\n' + snippet : ''));
 }
 
 // Polling — picks up changes from other devices every 5 s.
