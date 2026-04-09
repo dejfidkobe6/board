@@ -285,13 +285,13 @@
     #activeProjectName { display: none; }
     .current-user { padding: 3px 8px 3px 3px; font-size: 12px; }
 
-    /* App body: leave 52px at bottom for bottom sheet handle */
+    /* App body fills remaining screen (52px reserved for panel handle) */
     .app-body { height: calc(100dvh - 136px) !important; height: calc(100vh - 136px) !important; overflow: hidden; }
 
-    /* Board: horizontal scroll only, full height */
+    /* Board: horizontal snap-scroll, columns at natural height (not stretched) */
     #board {
       height: 100% !important;
-      padding: 0 0 0 10px !important;
+      padding: 10px 0 10px 10px !important;
       gap: 8px !important;
       overflow-x: auto !important;
       overflow-y: hidden !important;
@@ -299,16 +299,17 @@
       scroll-padding-left: 10px;
       -webkit-overflow-scrolling: touch;
       display: flex !important;
-      align-items: stretch !important;
+      align-items: flex-start !important;
     }
 
-    /* Columns: show ~55px peek of next column */
+    /* Columns: natural height, capped at screen — same look as desktop */
     .column {
       flex-shrink: 0 !important;
       width: calc(100vw - 65px) !important;
-      height: 100% !important;
-      max-height: none !important;
-      border-radius: 12px 12px 0 0 !important;
+      height: auto !important;
+      max-height: calc(100dvh - 156px) !important;
+      max-height: calc(100vh - 156px) !important;
+      border-radius: 12px !important;
       scroll-snap-align: start;
     }
 
@@ -316,7 +317,8 @@
     .col-body {
       flex: 1 !important;
       overflow-y: auto !important;
-      max-height: none !important;
+      max-height: calc(100dvh - 250px) !important;
+      max-height: calc(100vh - 250px) !important;
       -webkit-overflow-scrolling: touch;
     }
     .col-header { padding: 12px 14px 10px; }
@@ -338,7 +340,25 @@
       z-index: 500 !important;
     }
     .task-panel.mobile-open { transform: translateY(0) !important; }
-    .task-panel.collapsed   { transform: translateY(calc(100% - 52px)) !important; width: 100% !important; }
+
+    /* Collapsed: transparent shell, show only a centered pill button */
+    .task-panel.collapsed {
+      transform: translateY(calc(100% - 52px)) !important;
+      width: 100% !important;
+      background: transparent !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .task-panel.collapsed .task-panel-toggle {
+      width: 200px !important;
+      margin: 0 auto !important;
+      border-radius: 14px !important;
+      background: rgba(28,35,22,0.97) !important;
+      border: 1px solid rgba(255,255,255,0.14) !important;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.55) !important;
+    }
     .task-panel-resize { display: none !important; }
     .task-panel-toggle {
       height: 52px; font-size: 14px;
@@ -352,6 +372,10 @@
       background: rgba(255,255,255,0.25); border-radius: 2px;
     }
     .panel-pin-btn { display: none !important; }
+
+    /* Task panel body: no horizontal scroll */
+    .task-panel-body { overflow-x: hidden !important; }
+    .task-panel-body-inner { overflow-x: hidden !important; width: 100%; }
 
     /* Full-screen modals on mobile */
     .modal-overlay { padding: 0 !important; align-items: flex-end !important; }
