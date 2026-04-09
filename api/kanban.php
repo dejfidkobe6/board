@@ -137,5 +137,5 @@ if ($action === 'load') {
     jsonResponse(['success' => true, 'state' => $state]);
 })();
 } else {
-    jsonResponse(['error' => 'Neznámá akce'], 400);
+    jsonResponse(['error' => 'Neznámá akce', 'received_action' => $action, 'method' => $method, 'get_keys' => array_keys($_GET)], 400);
 }
