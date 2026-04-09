@@ -1060,11 +1060,15 @@ async function _syncToServer(projectId, _attempt) {
 }
 
 // Pull from server — server always wins unless a save is currently in-flight.
+// IMPORTANT: check _syncInFlight both before AND after await — the user may
+// have started an edit while the fetch was in-flight, and that new save must
+// not be overwritten by a stale server response.
 async function syncKanbanFromServer(projectId) {
-  if (_syncInFlight) return; // our data is mid-save — don't overwrite with stale server state
+  if (_syncInFlight) return;
   try {
     const res = await fetch(`/api/kanban.php?action=load&project_id=${projectId}`, { credentials: 'include' });
     const data = await res.json();
+    if (_syncInFlight) return; // edit started while fetch was in-flight — abort
     if (!data.success || !data.state) return;
 
     const hasCols  = Array.isArray(data.state.columns) && data.state.columns.length > 0;
