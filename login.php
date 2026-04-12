@@ -59,6 +59,10 @@
       <label>Heslo</label>
       <input type="password" id="pass" placeholder="••••••••" autocomplete="current-password">
     </div>
+    <div class="field" style="flex-direction:row;align-items:center;gap:10px;margin-bottom:8px;display:flex">
+      <input type="checkbox" id="remember" style="width:auto;height:16px;width:16px;accent-color:#c9922a;cursor:pointer;flex-shrink:0">
+      <label for="remember" style="font-size:13px;color:rgba(210,175,80,0.7);cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0;margin:0">Zapamatovat si mě (30 dní)</label>
+    </div>
     <button class="btn-main" id="btnLogin" onclick="doLogin()">Přihlásit se</button>
     <div class="divider"><span>nebo</span></div>
     <a href="/api/auth.php?action=google_redirect" class="btn-google">
@@ -113,7 +117,7 @@
       const res = await fetch('/api/auth.php?action=login', {
         method: 'POST', credentials: 'include',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ email, password: pass })
+        body: JSON.stringify({ email, password: pass, remember_me: document.getElementById('remember').checked })
       });
       const data = await res.json();
       if (data.success) {

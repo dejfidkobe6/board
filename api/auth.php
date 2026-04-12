@@ -142,6 +142,18 @@ if ($action === 'register') {
     $_SESSION['user_name']    = $user['name'];
     $_SESSION['avatar_color'] = $user['avatar_color'];
 
+    // Remember me
+    $rememberMe = (bool)($body['remember_me'] ?? false);
+    if ($rememberMe) {
+        $token   = bin2hex(random_bytes(32));
+        $expires = date('Y-m-d H:i:s', time() + 30 * 86400);
+        $db->prepare('DELETE FROM remember_tokens WHERE user_id = ?')->execute([$user['id']]);
+        $db->prepare('INSERT INTO remember_tokens (user_id, token, expires_at) VALUES (?,?,?)')->execute([$user['id'], $token, $expires]);
+        $cookieOptions = ['expires' => time() + 30 * 86400, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax'];
+        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') $cookieOptions['secure'] = true;
+        setcookie('BESIX_REMEMBER', $user['id'] . ':' . $token, $cookieOptions);
+    }
+
     jsonResponse(['success' => true, 'user' => [
         'id'           => $user['id'],
         'name'         => $user['name'],
@@ -151,6 +163,17 @@ if ($action === 'register') {
 })();
 } elseif ($action === 'logout') {
 (function () {
+    // Clear remember-me token from DB and cookie
+    if (!empty($_COOKIE['BESIX_REMEMBER'])) {
+        $parts = explode(':', $_COOKIE['BESIX_REMEMBER'], 2);
+        if (count($parts) === 2) {
+            try {
+                $db = getDB();
+                $db->prepare('DELETE FROM remember_tokens WHERE token = ?')->execute([$parts[1]]);
+            } catch (\Throwable $e) {}
+        }
+        setcookie('BESIX_REMEMBER', '', ['expires' => time() - 3600, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax']);
+    }
     $_SESSION = [];
     $p = session_get_cookie_params();
     setcookie(session_name(), '', time() - 86400, $p['path'], $p['domain'], $p['secure'], $p['httponly']);

@@ -12,13 +12,24 @@
             return $this->db;
         }
         public function open(string $path, string $name): bool {
-            // Auto-create table if not exists
+            // Auto-create tables if not exists
             try {
                 $this->db()->exec(
                     'CREATE TABLE IF NOT EXISTS php_sessions (
                         id VARCHAR(128) NOT NULL PRIMARY KEY,
                         data MEDIUMTEXT NOT NULL,
                         updated_at INT UNSIGNED NOT NULL
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+                );
+                $this->db()->exec(
+                    'CREATE TABLE IF NOT EXISTS remember_tokens (
+                        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        user_id INT UNSIGNED NOT NULL,
+                        token VARCHAR(64) NOT NULL,
+                        expires_at DATETIME NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE KEY uq_token (token),
+                        KEY idx_user (user_id)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
                 );
             } catch (\Throwable $e) {}
@@ -57,6 +68,44 @@
     };
     session_set_save_handler($handler, true);
     session_start();
+
+    // Auto-login via remember-me cookie
+    if (empty($_SESSION['user_id']) && !empty($_COOKIE['BESIX_REMEMBER'])) {
+        $parts = explode(':', $_COOKIE['BESIX_REMEMBER'], 2);
+        if (count($parts) === 2) {
+            [$cookieUserId, $cookieToken] = $parts;
+            $cookieUserId = (int)$cookieUserId;
+            if ($cookieUserId > 0 && strlen($cookieToken) === 64) {
+                try {
+                    $rdb  = getDB();
+                    $stmt = $rdb->prepare(
+                        'SELECT rt.user_id, u.name, u.avatar_color
+                         FROM remember_tokens rt
+                         JOIN users u ON u.id = rt.user_id
+                         WHERE rt.token = ? AND rt.user_id = ? AND rt.expires_at > NOW()'
+                    );
+                    $stmt->execute([$cookieToken, $cookieUserId]);
+                    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($row) {
+                        // Rotate token
+                        $newToken = bin2hex(random_bytes(32));
+                        $expires  = date('Y-m-d H:i:s', time() + 30 * 86400);
+                        $rdb->prepare('UPDATE remember_tokens SET token=?, expires_at=? WHERE token=?')
+                            ->execute([$newToken, $expires, $cookieToken]);
+                        $cookieOptions = ['expires' => time() + 30 * 86400, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax'];
+                        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') $cookieOptions['secure'] = true;
+                        setcookie('BESIX_REMEMBER', $row['user_id'] . ':' . $newToken, $cookieOptions);
+                        $_SESSION['user_id']      = (int)$row['user_id'];
+                        $_SESSION['user_name']    = $row['name'];
+                        $_SESSION['avatar_color'] = $row['avatar_color'];
+                    } else {
+                        // Invalid/expired token – clear cookie
+                        setcookie('BESIX_REMEMBER', '', ['expires' => time() - 3600, 'path' => '/', 'httponly' => true, 'samesite' => 'Lax']);
+                    }
+                } catch (\Throwable $e) {}
+            }
+        }
+    }
 })();
 
 // Idempotent DB migrations – runs once per request after getDB() is available
