@@ -1125,8 +1125,8 @@
   <div class="fullview-overlay" id="poradyOverlay">
     <div class="fullview-header">
       <span class="fullview-title">📋 Porady</span>
-      <button class="btn btn-ghost" onclick="startPresentation()" id="presentBtn" style="display:none">▶ Prezentovat</button>
-      <button class="btn btn-ghost" onclick="openAddMeeting()">+ Nová porada</button>
+      <button class="btn btn-ghost" onclick="startPresentation()" id="presentBtn">▶ Prezentovat</button>
+      <button class="btn btn-ghost" onclick="manualSaveVersion()" title="Uložit aktuální verzi ručně">💾 Uložit verzi</button>
       <button class="btn btn-ghost" onclick="closePoradyView()">✕ Zavřít</button>
     </div>
     <div class="fullview-body">
@@ -1389,7 +1389,16 @@ async function _syncToServer(projectId, _attempt) {
 
   try {
     const _fd = new FormData();
-    _fd.append('state', JSON.stringify({ columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() }));
+    _fd.append('state', JSON.stringify({
+      columns:         cols,
+      cards:           cards,
+      completed:       proj.completed       || [],
+      _ts:             state._ts            || Date.now(),
+      livingMeeting:   state.livingMeeting  || {},
+      meetingVersions: state.meetingVersions|| [],
+      phases:          state.phases         || [],
+      schedule:        state.schedule       || {},
+    }));
     const res = await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
       method: 'POST', credentials: 'include', body: _fd
     });
@@ -1435,6 +1444,11 @@ async function syncKanbanFromServer(projectId) {
     proj.cards     = data.state.cards     || [];
     proj.completed = data.state.completed || [];
     state._ts = data.state._ts || 0;
+    // Sync shared project data
+    if (data.state.livingMeeting  ) state.livingMeeting   = data.state.livingMeeting;
+    if (data.state.meetingVersions) state.meetingVersions = data.state.meetingVersions;
+    if (Array.isArray(data.state.phases) && data.state.phases.length) state.phases = data.state.phases;
+    if (data.state.schedule && Object.keys(data.state.schedule).length) state.schedule = data.state.schedule;
     try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
     setSyncDot('ok');
     renderBoard(); updateBadge(); renderTaskPanel();
@@ -1490,7 +1504,11 @@ window.addEventListener('beforeunload', () => {
   const cols  = proj.columns || [];
   const cards = proj.cards   || [];
   if (cols.length === 0 && cards.length === 0) return;
-  const beaconState = JSON.stringify({ columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() });
+  const beaconState = JSON.stringify({
+    columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now(),
+    livingMeeting: state.livingMeeting||{}, meetingVersions: state.meetingVersions||[],
+    phases: state.phases||[], schedule: state.schedule||{},
+  });
   const beaconBody = 'state=' + encodeURIComponent(beaconState);
   try { navigator.sendBeacon(`/api/kanban.php?action=save&project_id=${projectId}`, new Blob([beaconBody], { type: 'application/x-www-form-urlencoded' })); } catch(e) {}
 });
@@ -1573,17 +1591,21 @@ let state = loadState() || {
   activeProjectId: DEFAULT_PROJECT_ID,
 };
 
-// Migrate: add meetings, phases, vacations if missing
+// Migrate: add meetings, phases, vacations, livingMeeting if missing
 if (!state.meetings) state.meetings = [];
 if (!state.phases) state.phases = [
-  { id: 'ph1', name: 'Zemní práce', pct: 100, color: '#8bc34a' },
-  { id: 'ph2', name: 'Základy',     pct: 100, color: '#4caf50' },
-  { id: 'ph3', name: 'Hrubá stavba',pct: 60,  color: '#2196f3' },
-  { id: 'ph4', name: 'Střecha',     pct: 20,  color: '#00bcd4' },
-  { id: 'ph5', name: 'Rozvody',     pct: 10,  color: '#9c27b0' },
-  { id: 'ph6', name: 'Dokončovací', pct: 0,   color: '#ff9800' },
+  { id: 'ph1', name: 'Zemní práce', pct: 100, color: '#8bc34a', startDate: '', endDate: '' },
+  { id: 'ph2', name: 'Základy',     pct: 100, color: '#4caf50', startDate: '', endDate: '' },
+  { id: 'ph3', name: 'Hrubá stavba',pct: 60,  color: '#2196f3', startDate: '', endDate: '' },
+  { id: 'ph4', name: 'Střecha',     pct: 20,  color: '#00bcd4', startDate: '', endDate: '' },
+  { id: 'ph5', name: 'Rozvody',     pct: 10,  color: '#9c27b0', startDate: '', endDate: '' },
+  { id: 'ph6', name: 'Dokončovací', pct: 0,   color: '#ff9800', startDate: '', endDate: '' },
 ];
+// Migrate existing phases without date fields
+state.phases.forEach(ph => { if (ph.startDate===undefined) ph.startDate=''; if (ph.endDate===undefined) ph.endDate=''; });
 if (!state.vacations) state.vacations = [];
+if (!state.livingMeeting) state.livingMeeting = { title: 'Týdenní porada', agenda: [] };
+if (!state.meetingVersions) state.meetingVersions = [];
 
 // Migrate old state without projects
 if (!state.projects) {
@@ -3363,20 +3385,19 @@ function renderTaskPanel() {
       }
     }
   }
-  // Meeting tasks
-  for (const mtg of (state.meetings||[])) {
-    for (const ag of (mtg.agenda||[])) {
-      for (const task of (ag.tasks||[])) {
-        if (!task.done && String(task.assignee) === userId) {
-          tasks.push({
-            item: { id:task.id, text:task.text, done:task.done, assignee:task.assignee, deadline:task.deadline||null },
-            card: { id:'mtg_'+mtg.id+'_'+ag.id, title:'📋 Porada: '+mtg.title },
-            source: 'meeting', meetingId: mtg.id, agIdx: (mtg.agenda||[]).indexOf(ag), taskId: task.id,
-          });
-        }
+  // Meeting tasks from living meeting
+  const lm = state.livingMeeting || {};
+  (lm.agenda||[]).forEach((ag, agIdx) => {
+    (ag.tasks||[]).forEach(task => {
+      if (!task.done && String(task.assignee) === userId) {
+        tasks.push({
+          item: { id:task.id, text:task.text, done:task.done, assignee:task.assignee, deadline:task.deadline||null },
+          card: { id:'live_ag_'+agIdx, title:'📋 Porada: '+(lm.title||'Porada') },
+          source: 'meeting', meetingId: 'live', agIdx, taskId: task.id,
+        });
       }
-    }
-  }
+    });
+  });
 
   body.innerHTML = '';
   if (!tasks.length) {
@@ -3407,7 +3428,7 @@ function renderTaskPanel() {
       el.className = 'task-item' + (cls ? ' ' + cls : '');
       const dl = item.deadline;
       const checkHandler = source==='meeting'
-        ? `toggleMtgTask('${meetingId}',${agIdx},'${taskId}',this.checked)`
+        ? `toggleMtgTask(${agIdx},'${taskId}',this.checked)`
         : `checkClItemFromPanel('${item.id}','${card.id}',this)`;
       el.innerHTML = `
         <div class="task-item-row">
@@ -4074,17 +4095,96 @@ function goToProjects() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// PORADY – Meetings
+// PORADY – živá porada s automatickým verzováním každé pondělí
 // ══════════════════════════════════════════════════════════════════════════
-let _activeMeetingId = null;
-let _presentSlides   = [];
-let _presentIdx      = 0;
+let _viewingVersionId = null; // null = živá porada, 'ver_xxx' = archivní verze
+let _presentSlides    = [];
+let _presentIdx       = 0;
 
-function openPoradyView() {
-  if (!state.meetings) state.meetings = [];
-  document.getElementById('poradyOverlay').classList.add('open');
+// ── Verzování ──────────────────────────────────────────────────────────────
+function getLastMonday() {
+  const d = new Date();
+  const day = d.getDay(); // 0=Ne,1=Po,...
+  const diff = day === 0 ? 6 : day - 1;
+  d.setDate(d.getDate() - diff);
+  return d.toISOString().split('T')[0];
+}
+
+function checkAutoVersion() {
+  if (!(state.livingMeeting?.agenda?.length)) return;
+  const monday = getLastMonday();
+  const already = (state.meetingVersions||[]).some(v => v.date === monday);
+  if (!already) createMeetingVersion(monday, true);
+}
+
+function createMeetingVersion(dateStr, auto=false) {
+  if (!state.meetingVersions) state.meetingVersions = [];
+  const ver = {
+    id: 'ver_'+Date.now(),
+    date: dateStr,
+    title: state.livingMeeting.title,
+    agenda: JSON.parse(JSON.stringify(state.livingMeeting.agenda||[])),
+    savedAt: new Date().toISOString(),
+    auto,
+  };
+  state.meetingVersions.unshift(ver);
+  // Keep max 52 versions (1 year)
+  if (state.meetingVersions.length > 52) state.meetingVersions = state.meetingVersions.slice(0, 52);
+  saveState();
+}
+
+function manualSaveVersion() {
+  const today = new Date().toISOString().split('T')[0];
+  const existing = (state.meetingVersions||[]).find(v => v.date === today);
+  if (existing) {
+    // Overwrite today's version
+    existing.agenda  = JSON.parse(JSON.stringify(state.livingMeeting.agenda||[]));
+    existing.title   = state.livingMeeting.title;
+    existing.savedAt = new Date().toISOString();
+    existing.auto    = false;
+    saveState();
+  } else {
+    createMeetingVersion(today, false);
+  }
   renderPoradyList();
-  if (_activeMeetingId) renderMeetingDetail(_activeMeetingId);
+  showToast('Verze uložena: ' + fmtDateLong(today));
+}
+
+function restoreVersion(verId) {
+  const ver = (state.meetingVersions||[]).find(v=>v.id===verId);
+  if (!ver) return;
+  if (!confirm(`Obnovit verzi z ${fmtDateLong(ver.date)}? Aktuální živá porada bude nahrazena.`)) return;
+  // Save current state first
+  manualSaveVersion();
+  state.livingMeeting.agenda = JSON.parse(JSON.stringify(ver.agenda||[]));
+  state.livingMeeting.title  = ver.title || state.livingMeeting.title;
+  saveState();
+  _viewingVersionId = null;
+  renderPoradyList();
+  renderMeetingDetail();
+  showToast('Verze obnovena.');
+}
+
+function showToast(msg) {
+  let t = document.getElementById('poradyToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'poradyToast';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2a3d10;border:1px solid rgba(200,165,60,0.4);color:var(--gold);font-size:13px;font-weight:600;padding:9px 18px;border-radius:8px;z-index:2000;transition:opacity 0.3s;pointer-events:none';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg; t.style.opacity = '1';
+  clearTimeout(t._to);
+  t._to = setTimeout(() => { t.style.opacity='0'; }, 2500);
+}
+
+// ── View ───────────────────────────────────────────────────────────────────
+function openPoradyView() {
+  checkAutoVersion();
+  document.getElementById('poradyOverlay').classList.add('open');
+  _viewingVersionId = null;
+  renderPoradyList();
+  renderMeetingDetail();
 }
 
 function closePoradyView() {
@@ -4100,226 +4200,238 @@ function fmtDateLong(d) {
 
 function renderPoradyList() {
   const list = document.getElementById('poradyList');
-  const mtgs = (state.meetings||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  if (!mtgs.length) {
-    list.innerHTML = '<div style="font-size:12px;color:var(--text2);padding:12px">Žádné porady.<br>Vytvořte první.</div>';
-    return;
+  const lm   = state.livingMeeting || {};
+  const vers  = (state.meetingVersions||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const openTasks = (lm.agenda||[]).reduce((s,a)=>s+(a.tasks||[]).filter(t=>!t.done).length, 0);
+
+  let html = `<div class="porady-item${!_viewingVersionId?' active':''}" onclick="selectMeetingView(null)"
+    style="border-left:3px solid var(--accent);margin-bottom:6px">
+    <div class="porady-item-date" style="color:var(--gold)">📌 Živá porada</div>
+    <div class="porady-item-title">${escHtml(lm.title||'Porada')}</div>
+    ${openTasks?`<div class="porady-item-cnt">${openTasks} otevřených úkolů</div>`:''}
+  </div>`;
+
+  if (vers.length) {
+    html += `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2);padding:8px 12px 4px">Archiv verzí</div>`;
+    html += vers.map(v => {
+      const ag = v.agenda||[];
+      const cnt = ag.reduce((s,a)=>s+(a.tasks||[]).filter(t=>!t.done).length,0);
+      return `<div class="porady-item${_viewingVersionId===v.id?' active':''}" onclick="selectMeetingView('${v.id}')">
+        <div class="porady-item-date">${fmtDateLong(v.date)}${v.auto?' · auto':''}</div>
+        <div class="porady-item-title" style="font-size:12px">${escHtml(v.title||'Porada')}</div>
+        ${cnt?`<div class="porady-item-cnt">${cnt} úkolů</div>`:''}
+      </div>`;
+    }).join('');
   }
-  list.innerHTML = mtgs.map(m => {
-    const openTasks = (m.agenda||[]).reduce((s,a)=>s+(a.tasks||[]).filter(t=>!t.done).length, 0);
-    return `<div class="porady-item${m.id===_activeMeetingId?' active':''}" onclick="selectMeeting('${m.id}')">
-      <div class="porady-item-date">${fmtDateLong(m.date)}</div>
-      <div class="porady-item-title">${escHtml(m.title)}</div>
-      ${openTasks?`<div class="porady-item-cnt">${openTasks} otevřených úkolů</div>`:''}
-    </div>`;
-  }).join('');
+  list.innerHTML = html;
 }
 
-function selectMeeting(id) {
-  _activeMeetingId = id;
+function selectMeetingView(verId) {
+  _viewingVersionId = verId;
   renderPoradyList();
-  renderMeetingDetail(id);
+  renderMeetingDetail();
 }
 
-function renderMeetingDetail(id) {
-  const mtg = (state.meetings||[]).find(m=>m.id===id);
-  if (!mtg) return;
-  const main = document.getElementById('poradyMain');
-  const presentBtn = document.getElementById('presentBtn');
-  if (presentBtn) presentBtn.style.display = '';
+// ── Detail porady ──────────────────────────────────────────────────────────
+function renderMeetingDetail() {
+  const isLive = !_viewingVersionId;
+  const src    = isLive ? (state.livingMeeting||{}) : (state.meetingVersions||[]).find(v=>v.id===_viewingVersionId);
+  if (!src) return;
+  const main    = document.getElementById('poradyMain');
   const members = _projectMembers || state.members || [];
+  const MTG_ID  = isLive ? 'live' : _viewingVersionId;
 
-  // ── Gantt ──
+  // ── Gantt (always live) ──
   let ganttHtml = `<div class="gantt-wrap">
     <div class="porady-section-title">📊 Harmonogram fází stavby</div>`;
   (state.phases||[]).forEach(ph => {
     const active = ph.pct > 0 && ph.pct < 100;
+    const sd = ph.startDate||'', ed = ph.endDate||'';
     ganttHtml += `<div class="gantt-row" data-phase="${ph.id}">
-      <div class="gantt-label" title="${escHtml(ph.name)}">${escHtml(ph.name)}</div>
-      <div class="gantt-bar-wrap">
-        <div class="gantt-bar${active?' gantt-bar-active':''}" style="width:${ph.pct}%;background:${ph.color}">
-          ${ph.pct>12?(active?'▶ Probíhá':ph.pct===100?'✓ Hotovo':''):''}
+      <div class="gantt-label" title="Dvojklik pro přejmenování"
+        ondblclick="editPhaseLabel(this,'${ph.id}')">${escHtml(ph.name)}</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px;min-width:0">
+        <div class="gantt-bar-wrap">
+          <div class="gantt-bar${active?' gantt-bar-active':''}" style="width:${ph.pct}%;background:${ph.color}">
+            ${ph.pct>12?(active?'▶ Probíhá':ph.pct===100?'✓ Hotovo':''):''}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="date" value="${sd}" placeholder="Začátek"
+            style="font-size:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:1px 5px;color:var(--text2);outline:none;font-family:inherit;width:120px"
+            onchange="setPhaseDate('${ph.id}','start',this.value)" title="Datum začátku">
+          <span style="color:var(--text2);font-size:10px">→</span>
+          <input type="date" value="${ed}" placeholder="Konec"
+            style="font-size:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:1px 5px;color:var(--text2);outline:none;font-family:inherit;width:120px"
+            onchange="setPhaseDate('${ph.id}','end',this.value)" title="Datum konce">
         </div>
       </div>
       <div class="gantt-pct">${ph.pct}%</div>
-      <input type="range" min="0" max="100" value="${ph.pct}" style="width:70px;accent-color:${ph.color};cursor:pointer" oninput="setPhase('${ph.id}',+this.value)" onchange="saveState()">
+      <input type="range" min="0" max="100" value="${ph.pct}" style="width:70px;accent-color:${ph.color};cursor:pointer"
+        oninput="setPhase('${ph.id}',+this.value)" onchange="saveState()">
       <button onclick="deletePhase('${ph.id}')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px;padding:0 4px" title="Odebrat fázi">✕</button>
     </div>`;
   });
   ganttHtml += `<div class="gantt-add-row" style="margin-top:10px">
-    <input type="text" id="newPhaseName" placeholder="Název nové fáze…" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text);font-size:12px;font-family:inherit;outline:none">
+    <input type="text" id="newPhaseName" placeholder="Název nové fáze…"
+      style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text);font-size:12px;font-family:inherit;outline:none"
+      onkeydown="if(event.key==='Enter')addPhase()">
     <input type="color" id="newPhaseColor" value="#2196f3" style="width:32px;height:32px;border:none;background:none;cursor:pointer;padding:0">
     <button class="btn btn-ghost" style="font-size:12px" onclick="addPhase()">+ Přidat fázi</button>
   </div></div>`;
 
   // ── Agenda ──
+  const readonly = !isLive;
   let agendaHtml = `<div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div class="porady-section-title">📝 Program porady</div>
-      <button class="btn btn-ghost" style="font-size:12px" onclick="addAgendaItem('${mtg.id}')">+ Přidat bod</button>
+      <div class="porady-section-title">📝 Program porady${readonly?` <span style="font-size:10px;color:var(--text2);font-weight:400;text-transform:none;letter-spacing:0">(archivní verze – pouze pro čtení)</span>`:''}</div>
+      ${!readonly?`<button class="btn btn-ghost" style="font-size:12px" onclick="addAgendaItem()">+ Přidat bod</button>`:''}
     </div>
     <div class="agenda-wrap">`;
 
-  (mtg.agenda||[]).forEach((ag, idx) => {
+  (src.agenda||[]).forEach((ag, idx) => {
     const tasksHtml = (ag.tasks||[]).map(t => {
       const mem = members.find(x=>String(x.id)===String(t.assignee));
       const col  = mem ? (mem.avatar_color||mem.color||'#4A5340') : '#666';
       const nm   = mem ? mem.name.split(' ')[0] : '';
       return `<div class="agenda-task">
-        <input type="checkbox" ${t.done?'checked':''} onchange="toggleMtgTask('${mtg.id}',${idx},'${t.id}',this.checked)">
+        <input type="checkbox" ${t.done?'checked':''} ${readonly?'disabled':''} onchange="toggleMtgTask(${idx},'${t.id}',this.checked)">
         <span class="agenda-task-text${t.done?' done':''}">${escHtml(t.text)}</span>
         ${mem?`<span class="agenda-task-assignee" style="background:${col}22;color:${col};border:1px solid ${col}44">@${escHtml(nm)}</span>`:''}
         ${t.deadline?`<span class="agenda-task-dl">📅 ${fmtDate(t.deadline)}</span>`:''}
-        <button onclick="deleteMtgTask('${mtg.id}',${idx},'${t.id}')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px;padding:0 0 0 4px;margin-left:auto" title="Smazat">✕</button>
+        ${!readonly?`<button onclick="deleteMtgTask(${idx},'${t.id}')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px;padding:0 0 0 4px;margin-left:auto" title="Smazat">✕</button>`:''}
       </div>`;
     }).join('');
     agendaHtml += `<div class="agenda-item">
       <div class="agenda-item-header">
         <div class="agenda-item-num">${idx+1}</div>
         <input class="agenda-item-text" value="${escHtml(ag.text)}" placeholder="Bod programu…"
-          onblur="saveAgendaText('${mtg.id}',${idx},this.value)">
-        <button onclick="deleteAgendaItem('${mtg.id}',${idx})" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;padding:2px 4px;line-height:1" title="Odebrat bod">✕</button>
+          ${readonly?'disabled':''} onblur="saveAgendaText(${idx},this.value)">
+        ${!readonly?`<button onclick="deleteAgendaItem(${idx})" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;padding:2px 4px;line-height:1" title="Odebrat bod">✕</button>`:''}
       </div>
       <div class="agenda-tasks">${tasksHtml}</div>
-      <button class="agenda-add-task" onclick="showAddMtgTask('${mtg.id}',${idx})">+ Přidat úkol &nbsp;<span style="opacity:0.5;font-size:10px">(@Jméno pro přiřazení · RRRR-MM-DD pro termín)</span></button>
-      <input class="agenda-task-input" style="display:none" id="mtgTaskInp_${mtg.id}_${idx}"
+      ${!readonly?`<button class="agenda-add-task" onclick="showAddMtgTask(${idx})">+ Přidat úkol &nbsp;<span style="opacity:0.5;font-size:10px">(@Jméno pro přiřazení · RRRR-MM-DD pro termín)</span></button>
+      <input class="agenda-task-input" style="display:none" id="mtgTaskInp_${idx}"
         placeholder="Úkol… @Pavel 2026-04-30"
-        onkeydown="if(event.key==='Enter')submitMtgTask('${mtg.id}',${idx});if(event.key==='Escape')this.style.display='none'">
+        onkeydown="if(event.key==='Enter')submitMtgTask(${idx});if(event.key==='Escape')this.style.display='none'">`:''}
     </div>`;
   });
-  agendaHtml += `</div></div>`;
+  agendaHtml += `</div>
+    ${readonly?`<div style="margin-top:12px;text-align:right">
+      <button class="btn btn-ghost" style="font-size:12px" onclick="restoreVersion('${_viewingVersionId}')">↩ Obnovit tuto verzi do živé porady</button>
+    </div>`:''}
+  </div>`;
 
-  main.innerHTML = `
-    <div>
-      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:6px">
-        <div style="flex:1">
-          <h2 style="font-size:19px;font-weight:800;color:var(--text);margin-bottom:4px">${escHtml(mtg.title)}</h2>
-          ${mtg.date?`<div style="font-size:13px;color:var(--text2);margin-bottom:2px">📅 ${fmtDateLong(mtg.date)}</div>`:''}
-          ${mtg.location?`<div style="font-size:12px;color:var(--text2)">📍 ${escHtml(mtg.location)}</div>`:''}
-        </div>
-        <button class="btn btn-danger" style="font-size:12px;flex-shrink:0" onclick="deleteMeeting('${mtg.id}')">🗑 Smazat poradu</button>
-      </div>
-    </div>
+  // Title editing (live only)
+  const titleHtml = isLive
+    ? `<input style="font-size:19px;font-weight:800;color:var(--text);background:none;border:none;border-bottom:1px solid transparent;outline:none;font-family:inherit;width:100%;padding:0 0 2px"
+        value="${escHtml(src.title||'Porada')}"
+        onblur="if(state.livingMeeting)state.livingMeeting.title=this.value;saveState()"
+        title="Klikni pro úpravu názvu">`
+    : `<h2 style="font-size:19px;font-weight:800;color:var(--text)">${escHtml(src.title||'Porada')} <span style="font-size:13px;font-weight:400;color:var(--text2)">— archiv ${fmtDateLong(src.date)}</span></h2>`;
+
+  main.innerHTML = `<div style="margin-bottom:16px">${titleHtml}</div>
     ${ganttHtml}
     ${agendaHtml}`;
 }
 
-function openAddMeeting() {
-  document.getElementById('mtgTitle').value = '';
-  document.getElementById('mtgDate').value = new Date().toISOString().split('T')[0];
-  document.getElementById('mtgLocation').value = '';
-  document.getElementById('addMeetingModal').classList.add('open');
+// ── Agenda operace (vždy na livingMeeting) ─────────────────────────────────
+function addAgendaItem() {
+  if (!state.livingMeeting.agenda) state.livingMeeting.agenda = [];
+  state.livingMeeting.agenda.push({ id:'ag_'+Date.now(), text:'', tasks:[] });
+  saveState(); renderMeetingDetail();
 }
 
-function saveMeeting() {
-  const title = document.getElementById('mtgTitle').value.trim();
-  if (!title) { document.getElementById('mtgTitle').focus(); return; }
-  const mtg = {
-    id: 'mtg_'+Date.now(), title,
-    date: document.getElementById('mtgDate').value,
-    location: document.getElementById('mtgLocation').value.trim(),
-    agenda: [], createdAt: new Date().toISOString(),
-  };
-  if (!state.meetings) state.meetings = [];
-  state.meetings.unshift(mtg);
-  saveState();
-  closeModal('addMeetingModal');
-  renderPoradyList();
-  selectMeeting(mtg.id);
+function deleteAgendaItem(idx) {
+  state.livingMeeting.agenda.splice(idx,1);
+  saveState(); renderMeetingDetail();
 }
 
-function deleteMeeting(id) {
-  if (!confirm('Smazat tuto poradu?')) return;
-  state.meetings = (state.meetings||[]).filter(m=>m.id!==id);
-  _activeMeetingId = null;
-  saveState();
-  renderPoradyList();
-  const pb = document.getElementById('presentBtn');
-  if (pb) pb.style.display = 'none';
-  document.getElementById('poradyMain').innerHTML = '<div style="color:var(--text2);font-size:14px;text-align:center;margin-top:80px">Vyberte poradu nebo vytvořte novou</div>';
+function saveAgendaText(idx, text) {
+  if (state.livingMeeting?.agenda?.[idx]) { state.livingMeeting.agenda[idx].text = text; saveState(); }
 }
 
-function addAgendaItem(meetingId) {
-  const mtg = (state.meetings||[]).find(m=>m.id===meetingId);
-  if (!mtg) return;
-  if (!mtg.agenda) mtg.agenda = [];
-  mtg.agenda.push({ id:'ag_'+Date.now(), text:'', tasks:[] });
-  saveState(); renderMeetingDetail(meetingId);
-}
-
-function deleteAgendaItem(meetingId, idx) {
-  const mtg = (state.meetings||[]).find(m=>m.id===meetingId);
-  if (!mtg?.agenda) return;
-  mtg.agenda.splice(idx,1);
-  saveState(); renderMeetingDetail(meetingId);
-}
-
-function saveAgendaText(meetingId, idx, text) {
-  const mtg = (state.meetings||[]).find(m=>m.id===meetingId);
-  if (mtg?.agenda?.[idx]) { mtg.agenda[idx].text = text; saveState(); }
-}
-
-function showAddMtgTask(meetingId, agIdx) {
-  const inp = document.getElementById(`mtgTaskInp_${meetingId}_${agIdx}`);
+function showAddMtgTask(agIdx) {
+  const inp = document.getElementById(`mtgTaskInp_${agIdx}`);
   if (inp) { inp.style.display='block'; inp.focus(); }
 }
 
-function submitMtgTask(meetingId, agIdx) {
-  const inp = document.getElementById(`mtgTaskInp_${meetingId}_${agIdx}`);
+function submitMtgTask(agIdx) {
+  const inp = document.getElementById(`mtgTaskInp_${agIdx}`);
   if (!inp) return;
   let text = inp.value.trim();
   if (!text) { inp.style.display='none'; return; }
-  const mtg = (state.meetings||[]).find(m=>m.id===meetingId);
-  if (!mtg?.agenda?.[agIdx]) return;
+  const ag = state.livingMeeting?.agenda?.[agIdx];
+  if (!ag) return;
   const members = _projectMembers || state.members || [];
   let assignee = null, deadline = null;
-  // @mention
   const atM = text.match(/@(\S+)/);
   if (atM) {
     const q = atM[1].toLowerCase();
     const found = members.find(m=>m.name.toLowerCase().includes(q)||(m.name.split(' ')[0]).toLowerCase().startsWith(q));
     if (found) { assignee = String(found.id); text = text.replace(atM[0],'').trim(); }
   }
-  // date YYYY-MM-DD
   const dlM = text.match(/(\d{4}-\d{2}-\d{2})/);
   if (dlM) { deadline = dlM[1]; text = text.replace(dlM[0],'').trim(); }
   if (!assignee && currentUser) assignee = String(currentUser.id);
-  mtg.agenda[agIdx].tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee, deadline, createdAt:new Date().toISOString() });
-  saveState(); renderMeetingDetail(meetingId); renderTaskPanel();
+  ag.tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee, deadline, createdAt:new Date().toISOString() });
+  saveState(); renderMeetingDetail(); renderTaskPanel();
 }
 
-function toggleMtgTask(meetingId, agIdx, taskId, done) {
-  const mtg = (state.meetings||[]).find(m=>m.id===meetingId);
-  const task = mtg?.agenda?.[agIdx]?.tasks?.find(t=>t.id===taskId);
+function toggleMtgTask(agIdx, taskId, done) {
+  const task = state.livingMeeting?.agenda?.[agIdx]?.tasks?.find(t=>t.id===taskId);
   if (!task) return;
   task.done = done; saveState(); renderTaskPanel();
 }
 
-function deleteMtgTask(meetingId, agIdx, taskId) {
-  const mtg = (state.meetings||[]).find(m=>m.id===meetingId);
-  if (!mtg?.agenda?.[agIdx]) return;
-  mtg.agenda[agIdx].tasks = mtg.agenda[agIdx].tasks.filter(t=>t.id!==taskId);
-  saveState(); renderMeetingDetail(meetingId); renderTaskPanel();
+function deleteMtgTask(agIdx, taskId) {
+  const ag = state.livingMeeting?.agenda?.[agIdx];
+  if (!ag) return;
+  ag.tasks = ag.tasks.filter(t=>t.id!==taskId);
+  saveState(); renderMeetingDetail(); renderTaskPanel();
 }
 
-// ── Gantt fáze ──
+// ── Gantt fáze ─────────────────────────────────────────────────────────────
+function editPhaseLabel(el, phaseId) {
+  const ph = (state.phases||[]).find(p=>p.id===phaseId);
+  if (!ph) return;
+  const inp = document.createElement('input');
+  inp.value = ph.name;
+  inp.style.cssText = 'width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(200,165,60,0.5);border-radius:4px;padding:2px 6px;color:var(--text);font-size:12px;font-weight:600;font-family:inherit;outline:none';
+  const save = () => {
+    const v = inp.value.trim();
+    if (v) { ph.name = v; saveState(); }
+    renderMeetingDetail();
+  };
+  inp.onblur = save;
+  inp.onkeydown = e => { if (e.key==='Enter') inp.blur(); if (e.key==='Escape') { inp.value=ph.name; inp.blur(); } };
+  el.replaceWith(inp);
+  inp.focus(); inp.select();
+}
+
 function setPhase(id, val) {
   const ph = (state.phases||[]).find(p=>p.id===id);
   if (!ph) return;
   ph.pct = val;
-  // live update bar without full re-render
   const row = document.querySelector(`.gantt-row[data-phase="${id}"]`);
   if (row) {
     const bar = row.querySelector('.gantt-bar');
     const pct = row.querySelector('.gantt-pct');
-    if (bar) { bar.style.width = val+'%'; }
+    if (bar) bar.style.width = val+'%';
     if (pct) pct.textContent = val+'%';
   }
 }
 
+function setPhaseDate(id, which, val) {
+  const ph = (state.phases||[]).find(p=>p.id===id);
+  if (!ph) return;
+  if (which==='start') ph.startDate = val; else ph.endDate = val;
+  saveState();
+}
+
 function deletePhase(id) {
   state.phases = (state.phases||[]).filter(p=>p.id!==id);
-  saveState(); renderMeetingDetail(_activeMeetingId);
+  saveState(); renderMeetingDetail();
 }
 
 function addPhase() {
@@ -4327,23 +4439,19 @@ function addPhase() {
   const col = document.getElementById('newPhaseColor');
   if (!inp?.value.trim()) { inp?.focus(); return; }
   if (!state.phases) state.phases = [];
-  state.phases.push({ id:'ph_'+Date.now(), name:inp.value.trim(), pct:0, color:col?col.value:'#2196f3' });
+  state.phases.push({ id:'ph_'+Date.now(), name:inp.value.trim(), pct:0, color:col?col.value:'#2196f3', startDate:'', endDate:'' });
   inp.value = '';
-  saveState(); renderMeetingDetail(_activeMeetingId);
+  saveState(); renderMeetingDetail();
 }
 
-// ── Prezentační režim ──
+// ── Prezentační režim ──────────────────────────────────────────────────────
 function startPresentation() {
-  const mtg = (state.meetings||[]).find(m=>m.id===_activeMeetingId);
-  if (!mtg) return;
+  const lm = state.livingMeeting||{};
   const members = _projectMembers || state.members || [];
   _presentSlides = [];
-  // Titulní slide
-  _presentSlides.push({ title:mtg.title, sub:(mtg.date?fmtDateLong(mtg.date):'')+(mtg.location?' · '+mtg.location:''), tasks:[], type:'title' });
-  // Gantt slide
+  _presentSlides.push({ title:lm.title||'Porada', sub:fmtDateLong(new Date().toISOString().split('T')[0]), tasks:[], type:'title' });
   if ((state.phases||[]).length) _presentSlides.push({ title:'📊 Harmonogram fází stavby', sub:'', tasks:[], type:'gantt' });
-  // Agenda
-  (mtg.agenda||[]).forEach((ag,i) => {
+  (lm.agenda||[]).forEach((ag,i) => {
     if (!ag.text) return;
     const tasks = (ag.tasks||[]).filter(t=>!t.done).map(t => {
       const mem = members.find(x=>String(x.id)===String(t.assignee));
@@ -4357,7 +4465,6 @@ function startPresentation() {
 }
 
 function exitPresentation() { document.getElementById('presentSlide').classList.add('hidden'); }
-
 function presentNav(dir) {
   _presentIdx = Math.max(0, Math.min(_presentSlides.length-1, _presentIdx+dir));
   renderPresentSlide();
@@ -4371,15 +4478,17 @@ function renderPresentSlide() {
   document.getElementById('presentSub').textContent  = s.sub;
   const tasksEl = document.getElementById('presentTasks');
   if (s.type === 'gantt') {
-    tasksEl.innerHTML = (state.phases||[]).map(ph =>
-      `<div class="present-task-row" style="width:100%;max-width:700px">
-        <div style="width:170px;font-size:14px;font-weight:600;color:rgba(255,255,255,0.85);text-align:left">${escHtml(ph.name)}</div>
-        <div style="flex:1;background:rgba(255,255,255,0.1);border-radius:6px;height:20px;overflow:hidden;min-width:200px">
+    tasksEl.innerHTML = (state.phases||[]).map(ph => {
+      const dates = (ph.startDate||ph.endDate) ? `<span style="font-size:11px;color:rgba(255,255,255,0.4)">${ph.startDate?fmtDateLong(ph.startDate):'?'} – ${ph.endDate?fmtDateLong(ph.endDate):'?'}</span>` : '';
+      return `<div class="present-task-row" style="width:100%;max-width:700px;gap:10px">
+        <div style="width:160px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.85);text-align:left">${escHtml(ph.name)}</div>
+        <div style="flex:1;background:rgba(255,255,255,0.1);border-radius:6px;height:18px;overflow:hidden">
           <div style="height:100%;width:${ph.pct}%;background:${ph.color};border-radius:6px"></div>
         </div>
-        <div style="width:42px;text-align:right;font-size:13px;color:rgba(255,255,255,0.5)">${ph.pct}%</div>
-      </div>`
-    ).join('');
+        <div style="width:36px;text-align:right;font-size:12px;color:rgba(255,255,255,0.5)">${ph.pct}%</div>
+        ${dates}
+      </div>`;
+    }).join('');
   } else {
     tasksEl.innerHTML = s.tasks.map(t =>
       `<div class="present-task-row">
