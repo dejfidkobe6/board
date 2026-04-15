@@ -1142,23 +1142,6 @@
     </div>
   </div>
 
-  <!-- ADD MEETING MODAL -->
-  <div class="modal-overlay" id="addMeetingModal">
-    <div class="modal" style="max-width:420px">
-      <div class="modal-scroll">
-        <button class="modal-close" onclick="closeModal('addMeetingModal')">✕</button>
-        <h2>Nová porada</h2>
-        <div class="form-group"><label>Název porady *</label><input type="text" id="mtgTitle" placeholder="Např. Týdenní porada – 15.4."></div>
-        <div class="form-group"><label>Datum</label><input type="date" id="mtgDate"></div>
-        <div class="form-group"><label>Místo / odkaz</label><input type="text" id="mtgLocation" placeholder="Staveniště / Teams odkaz…"></div>
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="closeModal('addMeetingModal')">Zrušit</button>
-          <button class="btn btn-primary" onclick="saveMeeting()">Vytvořit</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- PRESENTATION SLIDE -->
   <div class="present-slide hidden" id="presentSlide">
     <button class="present-exit" onclick="exitPresentation()">✕ Ukončit prezentaci</button>
@@ -1201,6 +1184,23 @@
     <span>▲</span><span>Moje úkoly</span>
     <span class="mob-sheet-badge" id="mobSheetBadge" style="display:none">0</span>
   </button>
+</div>
+
+<!-- ADD MEETING MODAL (outside #app so it renders above poradyOverlay z-index:1200) -->
+<div class="modal-overlay" id="addMeetingModal" style="z-index:1400">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-scroll">
+      <button class="modal-close" onclick="closeModal('addMeetingModal')">✕</button>
+      <h2>Nová porada</h2>
+      <div class="form-group"><label>Název porady *</label><input type="text" id="mtgTitle" placeholder="Např. Týdenní porada – 15.4."></div>
+      <div class="form-group"><label>Datum</label><input type="date" id="mtgDate"></div>
+      <div class="form-group"><label>Místo / odkaz</label><input type="text" id="mtgLocation" placeholder="Staveniště / Teams odkaz…"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal('addMeetingModal')">Zrušit</button>
+        <button class="btn btn-primary" onclick="saveMeeting()">Vytvořit</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- DETAIL MODAL -->
@@ -4208,7 +4208,7 @@ function openAddMeeting() {
   document.getElementById('mtgTitle').value = '';
   document.getElementById('mtgDate').value = new Date().toISOString().split('T')[0];
   document.getElementById('mtgLocation').value = '';
-  openModal('addMeetingModal');
+  document.getElementById('addMeetingModal').classList.add('open');
 }
 
 function saveMeeting() {
