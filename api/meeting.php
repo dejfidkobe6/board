@@ -11,9 +11,12 @@ require_once __DIR__ . '/functions.php';
         meeting_versions MEDIUMTEXT   NOT NULL DEFAULT '[]',
         phases           MEDIUMTEXT   NOT NULL DEFAULT '[]',
         schedule         MEDIUMTEXT   NOT NULL DEFAULT '{}',
+        vac_legend       MEDIUMTEXT   NOT NULL DEFAULT '[]',
         updated_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         CONSTRAINT fk_ms_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    // Migrate existing tables that may lack the vac_legend column
+    try { $db->exec("ALTER TABLE project_meeting_state ADD COLUMN vac_legend MEDIUMTEXT NOT NULL DEFAULT '[]'"); } catch (\Exception $e) {}
 })();
 
 $action = $_GET['action'] ?? '';
@@ -26,7 +29,7 @@ if ($action === 'load') {
     requireProjectRole($projectId, 'viewer');
 
     $db   = getDB();
-    $stmt = $db->prepare('SELECT living_meeting, meeting_versions, phases, schedule FROM project_meeting_state WHERE project_id = ?');
+    $stmt = $db->prepare('SELECT living_meeting, meeting_versions, phases, schedule, vac_legend FROM project_meeting_state WHERE project_id = ?');
     $stmt->execute([$projectId]);
     $row  = $stmt->fetch();
 
@@ -36,6 +39,7 @@ if ($action === 'load') {
             'meetingVersions' => json_decode($row['meeting_versions'], true) ?: [],
             'phases'          => json_decode($row['phases'],           true) ?: [],
             'schedule'        => json_decode($row['schedule'],         true) ?: (object)[],
+            'vacLegend'       => json_decode($row['vac_legend'],       true) ?: [],
         ]]);
     } else {
         jsonResponse(['success' => true, 'data' => null]);
@@ -53,18 +57,20 @@ if ($action === 'load') {
     $meetingVersions = json_encode($body['meetingVersions'] ?? [], JSON_UNESCAPED_UNICODE);
     $phases          = json_encode($body['phases']          ?? [], JSON_UNESCAPED_UNICODE);
     $schedule        = json_encode($body['schedule']        ?? [], JSON_UNESCAPED_UNICODE);
+    $vacLegend       = json_encode($body['vacLegend']       ?? [], JSON_UNESCAPED_UNICODE);
 
     $db = getDB();
     $db->prepare(
-        'INSERT INTO project_meeting_state (project_id, living_meeting, meeting_versions, phases, schedule)
-         VALUES (?,?,?,?,?)
+        'INSERT INTO project_meeting_state (project_id, living_meeting, meeting_versions, phases, schedule, vac_legend)
+         VALUES (?,?,?,?,?,?)
          ON DUPLICATE KEY UPDATE
            living_meeting   = VALUES(living_meeting),
            meeting_versions = VALUES(meeting_versions),
            phases           = VALUES(phases),
            schedule         = VALUES(schedule),
+           vac_legend       = VALUES(vac_legend),
            updated_at       = NOW()'
-    )->execute([$projectId, $livingMeeting, $meetingVersions, $phases, $schedule]);
+    )->execute([$projectId, $livingMeeting, $meetingVersions, $phases, $schedule, $vacLegend]);
 
     jsonResponse(['success' => true]);
 })();

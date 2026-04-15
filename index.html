@@ -1371,6 +1371,7 @@ async function _doSaveMeetingState() {
       meetingVersions: state.meetingVersions || [],
       phases:          state.phases          || [],
       schedule:        state.schedule        || {},
+      vacLegend:       state.vacLegend       || [],
     };
     if (loadData.success && loadData.data) {
       const d = loadData.data;
@@ -1389,6 +1390,10 @@ async function _doSaveMeetingState() {
           merged[date] = { ...(merged[date]||{}), ...vals };
         });
         toSave.schedule = merged;
+      }
+      // vacLegend: local always wins (user may have edited it)
+      if (Array.isArray(d.vacLegend) && d.vacLegend.length && !(state.vacLegend && state.vacLegend.length)) {
+        toSave.vacLegend = d.vacLegend;
       }
     }
     await fetch(`/api/meeting.php?action=save&project_id=${projectId}`, {
@@ -1438,6 +1443,7 @@ async function loadMeetingState() {
     if (Array.isArray(d.meetingVersions) && d.meetingVersions.length)  state.meetingVersions = d.meetingVersions;
     if (Array.isArray(d.phases)          && d.phases.length)           state.phases          = d.phases;
     if (d.schedule        && typeof d.schedule === 'object')            state.schedule        = d.schedule;
+    if (Array.isArray(d.vacLegend)       && d.vacLegend.length)        state.vacLegend       = d.vacLegend;
     try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
   } catch(e) { console.error('[meeting] load error', e); }
 }
