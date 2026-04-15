@@ -80,6 +80,7 @@ jobs:
           server: green.thinline.cz
           username: board_besix_cz
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
           server-dir: /
           exclude: |
             **/.git*
