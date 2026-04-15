@@ -5112,7 +5112,7 @@ function renderVacCalendar() {
           let bg='transparent', fg='transparent', letter='';
           if (legItem)   { bg=legItem.color; fg=legItem.textColor; letter=legItem.key; }
           else if (wknd) { bg='rgba(255,60,60,0.05)'; }
-          html += `<td onclick="vacCellClick('${ds}','${mem.id}')"
+          html += `<td onclick="vacCellClick(event,'${ds}','${mem.id}')" oncontextmenu="vacCellClick(event,'${ds}','${mem.id}');return false;"
             style="width:${CELL}px;min-width:${CELL}px;height:24px;text-align:center;vertical-align:middle;cursor:pointer;background:${bg};color:${fg};font-weight:800;font-size:10px;border:1px solid rgba(255,255,255,0.06);${isToday?'outline:2px solid var(--gold);outline-offset:-2px;':''}user-select:none"
             title="${ds}">${letter}</td>`;
         }
@@ -5127,17 +5127,25 @@ function renderVacCalendar() {
   document.getElementById('vacCalWrap').innerHTML = html;
 }
 
-function vacCellClick(date, memberId) {
+function vacCellClick(event, date, memberId) {
   if (!state.schedule) state.schedule = {};
   if (!state.schedule[date]) state.schedule[date] = {};
   const legend = getVacLegend();
   const cur = state.schedule[date][memberId] || '';
+  if (event.button === 2 || event.type === 'contextmenu') {
+    // Right-click → clear cell
+    if (cur) {
+      delete state.schedule[date][memberId];
+      if (!Object.keys(state.schedule[date]).length) delete state.schedule[date];
+      saveMeetingState(); renderVacCalendar();
+    }
+    return;
+  }
+  // Left-click → cycle through legend items
   const idx = legend.findIndex(l => l.key === cur);
   if (cur === '' || idx === -1) {
-    // Empty / unknown → first item
     state.schedule[date][memberId] = legend[0].key;
   } else if (idx < legend.length - 1) {
-    // Advance to next
     state.schedule[date][memberId] = legend[idx + 1].key;
   } else {
     // Last → clear
