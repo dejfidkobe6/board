@@ -4442,15 +4442,17 @@ function renderMeetingDetail() {
   let ganttHtml = `<div class="gantt-wrap">
     <div class="porady-section-title">📊 Harmonogram fází stavby</div>`;
   (state.phases||[]).forEach(ph => {
-    const active = ph.pct > 0 && ph.pct < 100;
+    const pct    = calcPhasePct(ph);
+    const active = pct > 0 && pct < 100;
     const sd = ph.startDate||'', ed = ph.endDate||'';
+    const noDates = !sd || !ed;
     ganttHtml += `<div class="gantt-row" data-phase="${ph.id}">
       <div class="gantt-label" title="Dvojklik pro přejmenování"
         ondblclick="editPhaseLabel(this,'${ph.id}')">${escHtml(ph.name)}</div>
       <div style="flex:1;display:flex;flex-direction:column;gap:3px;min-width:0">
         <div class="gantt-bar-wrap">
-          <div class="gantt-bar${active?' gantt-bar-active':''}" style="width:${ph.pct}%;background:${ph.color}">
-            ${ph.pct>12?(active?'▶ Probíhá':ph.pct===100?'✓ Hotovo':''):''}
+          <div class="gantt-bar${active?' gantt-bar-active':''}" style="width:${pct}%;background:${ph.color}">
+            ${pct>12?(active?'▶ Probíhá':pct===100?'✓ Hotovo':''):''}
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
@@ -4461,11 +4463,10 @@ function renderMeetingDetail() {
           <input type="date" value="${ed}" placeholder="Konec"
             style="font-size:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:1px 5px;color:var(--text2);outline:none;font-family:inherit;width:120px"
             onchange="setPhaseDate('${ph.id}','end',this.value)" title="Datum konce">
+          ${noDates?`<span style="font-size:9px;color:rgba(255,180,60,0.5);font-style:italic">nastav data pro výpočet</span>`:''}
         </div>
       </div>
-      <div class="gantt-pct">${ph.pct}%</div>
-      <input type="range" min="0" max="100" value="${ph.pct}" style="width:70px;accent-color:${ph.color};cursor:pointer"
-        oninput="setPhase('${ph.id}',+this.value)" onchange="saveMeetingState()">
+      <div class="gantt-pct" title="${noDates?'Nastav data pro automatický výpočet':'Prostavěnost vypočítána z data'}" style="color:${noDates?'rgba(255,255,255,0.2)':'var(--text2)'}">${pct}%</div>
       <button onclick="deletePhase('${ph.id}')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px;padding:0 4px" title="Odebrat fázi">✕</button>
     </div>`;
   });
@@ -4854,6 +4855,21 @@ function setPhaseDate(id, which, val) {
   if (!ph) return;
   if (which==='start') ph.startDate = val; else ph.endDate = val;
   saveMeetingState();
+  renderMeetingDetail(); // re-render so bar updates immediately
+}
+
+// Calculate % completion from dates; falls back to 0 when dates missing
+function calcPhasePct(ph) {
+  const sd = ph.startDate;
+  const ed = ph.endDate;
+  if (!sd || !ed) return 0;
+  const today = new Date().toISOString().split('T')[0];
+  if (today <= sd) return 0;
+  if (today >= ed) return 100;
+  const s = new Date(sd).getTime();
+  const e = new Date(ed).getTime();
+  const n = new Date(today).getTime();
+  return Math.round((n - s) / (e - s) * 100);
 }
 
 function deletePhase(id) {
@@ -4907,12 +4923,13 @@ function renderPresentSlide() {
   if (s.type === 'gantt') {
     tasksEl.innerHTML = (state.phases||[]).map(ph => {
       const dates = (ph.startDate||ph.endDate) ? `<span style="font-size:11px;color:rgba(255,255,255,0.4)">${ph.startDate?fmtDateLong(ph.startDate):'?'} – ${ph.endDate?fmtDateLong(ph.endDate):'?'}</span>` : '';
+      const pct2 = calcPhasePct(ph);
       return `<div class="present-task-row" style="width:100%;max-width:700px;gap:10px">
         <div style="width:160px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.85);text-align:left">${escHtml(ph.name)}</div>
         <div style="flex:1;background:rgba(255,255,255,0.1);border-radius:6px;height:18px;overflow:hidden">
-          <div style="height:100%;width:${ph.pct}%;background:${ph.color};border-radius:6px"></div>
+          <div style="height:100%;width:${pct2}%;background:${ph.color};border-radius:6px"></div>
         </div>
-        <div style="width:36px;text-align:right;font-size:12px;color:rgba(255,255,255,0.5)">${ph.pct}%</div>
+        <div style="width:36px;text-align:right;font-size:12px;color:rgba(255,255,255,0.5)">${pct2}%</div>
         ${dates}
       </div>`;
     }).join('');
