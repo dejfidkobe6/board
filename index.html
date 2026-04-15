@@ -1164,11 +1164,7 @@
         <span id="vacYearLabel" style="font-weight:800;font-size:17px;min-width:52px;text-align:center;color:var(--gold)">2026</span>
         <button class="btn btn-ghost" onclick="vacNavYear(1)" style="padding:5px 10px">▶</button>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;font-size:12px">
-        <span style="display:flex;align-items:center;gap:5px"><span style="background:#c0392b;width:16px;height:16px;border-radius:3px;display:inline-block;line-height:16px;text-align:center;font-size:10px;font-weight:700;color:#fff">S</span> Služba</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="background:#e6a817;width:16px;height:16px;border-radius:3px;display:inline-block;line-height:16px;text-align:center;font-size:10px;font-weight:700;color:#1a1a00">D</span> Dovolená</span>
-        <span style="color:var(--text2);font-size:11px">Kliknutím na buňku cyklujete: prázdné → S → D → prázdné</span>
-      </div>
+      <div id="vacLegendWrap" style="display:flex;align-items:center;gap:8px;font-size:12px;flex-wrap:wrap"></div>
       <button class="btn btn-ghost" onclick="closeVacView()" style="margin-left:auto">✕ Zavřít</button>
     </div>
     <!-- Upcoming duties banner -->
@@ -1696,6 +1692,10 @@ if (!state.vacations) state.vacations = [];
 if (!state.livingMeeting) state.livingMeeting = { title: 'Týdenní porada', agenda: [] };
 if (!state.meetingVersions) state.meetingVersions = [];
 if (!state.autoVersionConfig) state.autoVersionConfig = { dayOfWeek: 1, hour: 23, minute: 59 }; // Monday 23:59
+if (!state.vacLegend || !state.vacLegend.length) state.vacLegend = [
+  { key:'S', label:'Služba',   color:'#c0392b', textColor:'#fff'    },
+  { key:'D', label:'Dovolená', color:'#e6a817', textColor:'#1a1a00' },
+];
 
 // Migrate old state without projects
 if (!state.projects) {
@@ -4947,9 +4947,11 @@ async function openVacView() {
   if (!state.schedule) state.schedule = {};
   _vacYear = new Date().getFullYear();
   document.getElementById('vacOverlay').classList.add('open');
+  renderVacLegend();
   renderVacCalendar();
   // Load fresh from server
   await loadMeetingState();
+  renderVacLegend();
   renderVacCalendar();
 }
 
@@ -4972,31 +4974,32 @@ function renderVacCalendar() {
   const CELL    = 20; // px per day cell
   const NAME_W  = 100;
   const dowLetters = ['Ne','Po','Út','St','Čt','Pá','So'];
+  const legend  = getVacLegend();
 
   document.getElementById('vacYearLabel').textContent = yr;
 
-  // ── Upcoming duties banner ──
+  // ── Upcoming duties banner (show all legend types) ──
   const duties = [];
   for (let i = 0; i < 45; i++) {
     const d = new Date(); d.setDate(d.getDate()+i);
     const ds = d.toISOString().split('T')[0];
     const entry = sched[ds] || {};
     Object.entries(entry).forEach(([mid, type]) => {
-      if (type === 'S') {
-        const mem = members.find(x=>String(x.id)===String(mid));
-        if (mem) duties.push({ name:mem.name.split(' ')[0], color:mem.avatar_color||mem.color||'#4A5340', date:ds });
-      }
+      const mem = members.find(x=>String(x.id)===String(mid));
+      const leg = legend.find(l=>l.key===type);
+      if (mem && leg) duties.push({ name:mem.name.split(' ')[0], memColor:mem.avatar_color||mem.color||'#4A5340', typeColor:leg.color, typeText:leg.textColor, key:leg.key, label:leg.label, date:ds });
     });
   }
   const upEl = document.getElementById('upcomingDuties');
   if (upEl) {
     if (!duties.length) {
-      upEl.innerHTML = '<span style="font-size:12px;color:var(--text2)">Žádné nadcházející služby v příštích 45 dnech</span>';
+      upEl.innerHTML = '<span style="font-size:12px;color:var(--text2)">Žádné nadcházející záznamy v příštích 45 dnech</span>';
     } else {
       upEl.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--gold);white-space:nowrap">Nejbližší služby:</span>
-        ${duties.map(d=>`<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(192,57,43,0.15);border:1px solid rgba(192,57,43,0.3);border-radius:6px;padding:2px 8px">
-          <div style="width:16px;height:16px;border-radius:4px;background:${d.color};display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fff;flex-shrink:0">${ini(d.name)}</div>
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--gold);white-space:nowrap">Nejbližší záznamy:</span>
+        ${duties.map(d=>`<span style="display:inline-flex;align-items:center;gap:5px;background:${d.typeColor}22;border:1px solid ${d.typeColor}44;border-radius:6px;padding:2px 8px">
+          <span style="width:14px;height:14px;border-radius:3px;background:${d.typeColor};color:${d.typeText};font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${escHtml(d.key)}</span>
+          <div style="width:14px;height:14px;border-radius:3px;background:${d.memColor};display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:700;color:#fff;flex-shrink:0">${ini(d.name)}</div>
           <span style="font-size:11px;font-weight:600;color:var(--text)">${escHtml(d.name)}</span>
           <span style="font-size:10px;color:var(--text2)">${fmtDate(d.date)}</span>
         </span>`).join('')}
@@ -5069,10 +5072,10 @@ function renderVacCalendar() {
           const dow  = new Date(yr, m, d).getDay();
           const wknd = dow===0||dow===6;
           const isToday = ds===today;
+          const legItem = type ? legend.find(l=>l.key===type) : null;
           let bg='transparent', fg='transparent', letter='';
-          if (type==='S')      { bg='#c0392b'; fg='#fff'; letter='S'; }
-          else if (type==='D') { bg='#e6a817'; fg='#1a1a00'; letter='D'; }
-          else if (wknd)       { bg='rgba(255,60,60,0.05)'; }
+          if (legItem)   { bg=legItem.color; fg=legItem.textColor; letter=legItem.key; }
+          else if (wknd) { bg='rgba(255,60,60,0.05)'; }
           html += `<td onclick="vacCellClick('${ds}','${mem.id}')"
             style="width:${CELL}px;min-width:${CELL}px;height:24px;text-align:center;vertical-align:middle;cursor:pointer;background:${bg};color:${fg};font-weight:800;font-size:10px;border:1px solid rgba(255,255,255,0.06);${isToday?'outline:2px solid var(--gold);outline-offset:-2px;':''}user-select:none"
             title="${ds}">${letter}</td>`;
@@ -5091,12 +5094,183 @@ function renderVacCalendar() {
 function vacCellClick(date, memberId) {
   if (!state.schedule) state.schedule = {};
   if (!state.schedule[date]) state.schedule[date] = {};
-  const cur = state.schedule[date][memberId]||'';
-  if      (cur==='')  state.schedule[date][memberId] = 'S';
-  else if (cur==='S') state.schedule[date][memberId] = 'D';
-  else { delete state.schedule[date][memberId]; if (!Object.keys(state.schedule[date]).length) delete state.schedule[date]; }
+  const legend = getVacLegend();
+  const cur = state.schedule[date][memberId] || '';
+  const idx = legend.findIndex(l => l.key === cur);
+  if (cur === '' || idx === -1) {
+    // Empty / unknown → first item
+    state.schedule[date][memberId] = legend[0].key;
+  } else if (idx < legend.length - 1) {
+    // Advance to next
+    state.schedule[date][memberId] = legend[idx + 1].key;
+  } else {
+    // Last → clear
+    delete state.schedule[date][memberId];
+    if (!Object.keys(state.schedule[date]).length) delete state.schedule[date];
+  }
   saveMeetingState();
   renderVacCalendar();
+}
+
+// ── Legenda (editovatelné typy záznamu) ────────────────────────────────────
+function getVacLegend() {
+  if (!state.vacLegend || !state.vacLegend.length) {
+    state.vacLegend = [
+      { key:'S', label:'Služba',   color:'#c0392b', textColor:'#fff'    },
+      { key:'D', label:'Dovolená', color:'#e6a817', textColor:'#1a1a00' },
+    ];
+  }
+  return state.vacLegend;
+}
+
+function renderVacLegend() {
+  const wrap = document.getElementById('vacLegendWrap');
+  if (!wrap) return;
+  const legend = getVacLegend();
+  const cycle  = legend.map(l=>l.key).join(' → ');
+  wrap.innerHTML = legend.map((l,i) =>
+    `<span onclick="openVacLegendEdit(${i})" title="Klikni pro úpravu"
+       style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;padding:2px 6px 2px 2px;border:1px solid rgba(255,255,255,0.1);border-radius:6px;transition:background 0.12s"
+       onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+      <span style="background:${l.color};color:${l.textColor};width:18px;height:18px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0">${escHtml(l.key)}</span>
+      <span style="color:var(--text);font-size:12px">${escHtml(l.label)}</span>
+      <span style="font-size:9px;color:var(--text2);margin-left:1px">✏</span>
+    </span>`
+  ).join('') +
+  `<button onclick="addVacLegendItem()"
+     style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:var(--text);font-size:11px;padding:2px 8px;cursor:pointer;font-family:inherit">+ Přidat</button>
+   <span style="color:var(--text2);font-size:11px">prázdné → ${escHtml(cycle)} → prázdné</span>`;
+}
+
+function openVacLegendEdit(idx) {
+  document.getElementById('_vacLegPop')?.remove();
+  const legend = getVacLegend();
+  const item = legend[idx];
+  if (!item) return;
+
+  const pop = document.createElement('div');
+  pop.id = '_vacLegPop';
+  pop.style.cssText = 'position:fixed;z-index:9999;background:#1e2a10;border:1px solid rgba(200,165,60,0.35);border-radius:13px;box-shadow:0 10px 36px rgba(0,0,0,0.65);padding:16px 18px;min-width:250px';
+
+  pop.innerHTML = `
+    <div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:12px">Upravit položku legendy</div>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:11px;color:var(--text2);width:60px;flex-shrink:0">Zkratka:</label>
+        <input id="vlKey" value="${escHtml(item.key)}" maxlength="3"
+          style="width:44px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:14px;font-weight:800;padding:4px 6px;text-align:center;font-family:inherit;outline:none;text-transform:uppercase">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:11px;color:var(--text2);width:60px;flex-shrink:0">Název:</label>
+        <input id="vlLabel" value="${escHtml(item.label)}"
+          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;padding:4px 8px;font-family:inherit;outline:none">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:11px;color:var(--text2);width:60px;flex-shrink:0">Barva:</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input id="vlColor" type="color" value="${item.color}"
+            style="width:34px;height:28px;border:none;background:none;cursor:pointer;padding:0;border-radius:4px">
+          <span style="font-size:10px;color:var(--text2)">pozadí</span>
+          <input id="vlText" type="color" value="${item.textColor}"
+            style="width:34px;height:28px;border:none;background:none;cursor:pointer;padding:0;border-radius:4px;margin-left:6px">
+          <span style="font-size:10px;color:var(--text2)">text</span>
+        </div>
+      </div>
+      <div id="vlPreview" style="display:flex;align-items:center;gap:8px;margin-top:2px">
+        <label style="font-size:11px;color:var(--text2);width:60px;flex-shrink:0">Náhled:</label>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:14px;gap:8px">
+      <button onclick="deleteVacLegendItem(${idx})"
+        style="background:rgba(255,60,40,0.12);border:1px solid rgba(255,60,40,0.3);border-radius:6px;color:#ff7060;font-size:11px;padding:5px 12px;cursor:pointer;font-family:inherit">✕ Smazat</button>
+      <div style="display:flex;gap:6px">
+        <button onclick="document.getElementById('_vacLegPop')?.remove()"
+          style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;padding:5px 12px;cursor:pointer;font-family:inherit">Zrušit</button>
+        <button onclick="saveVacLegendEdit(${idx})"
+          style="background:rgba(200,165,60,0.15);border:1px solid rgba(200,165,60,0.4);border-radius:6px;color:var(--gold);font-size:11px;padding:5px 12px;cursor:pointer;font-family:inherit;font-weight:600">Uložit</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(pop);
+
+  // Position below legend wrap
+  const anchor = document.getElementById('vacLegendWrap');
+  if (anchor) {
+    const r = anchor.getBoundingClientRect();
+    pop.style.top  = `${Math.min(r.bottom + 8, window.innerHeight - 320)}px`;
+    pop.style.left = `${Math.min(r.left, window.innerWidth - 270)}px`;
+  }
+
+  // Live preview
+  const updatePreview = () => {
+    const k = document.getElementById('vlKey')?.value.trim()||'?';
+    const c = document.getElementById('vlColor')?.value||'#888';
+    const t = document.getElementById('vlText')?.value||'#fff';
+    const prev = document.getElementById('vlPreview');
+    if (prev) prev.innerHTML = `<label style="font-size:11px;color:var(--text2);width:60px;flex-shrink:0">Náhled:</label>
+      <span style="background:${c};color:${t};width:24px;height:24px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">${escHtml(k.toUpperCase())}</span>
+      <span style="font-size:12px;color:var(--text);margin-left:4px">${escHtml(document.getElementById('vlLabel')?.value||'')}</span>`;
+  };
+  ['vlKey','vlLabel','vlColor','vlText'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', updatePreview);
+  });
+  updatePreview();
+
+  document.getElementById('vlKey')?.focus();
+
+  setTimeout(() => {
+    document.addEventListener('click', function h(e) {
+      const p = document.getElementById('_vacLegPop');
+      if (p && !p.contains(e.target) && !e.target.closest('#vacLegendWrap')) {
+        p.remove(); document.removeEventListener('click', h, true);
+      }
+    }, { capture: true });
+  }, 0);
+}
+
+function saveVacLegendEdit(idx) {
+  const legend = getVacLegend();
+  const item   = legend[idx];
+  if (!item) return;
+  const key   = (document.getElementById('vlKey')?.value.trim().toUpperCase() || '');
+  const label = (document.getElementById('vlLabel')?.value.trim() || '');
+  const color = document.getElementById('vlColor')?.value || item.color;
+  const textColor = document.getElementById('vlText')?.value || item.textColor;
+  if (!key || !label) { alert('Vyplňte zkratku i název.'); return; }
+  if (legend.some((l,i) => i !== idx && l.key === key)) { alert(`Zkratka "${key}" je již použita.`); return; }
+  const oldKey = item.key;
+  item.key = key; item.label = label; item.color = color; item.textColor = textColor;
+  // If key changed — update all schedule entries
+  if (oldKey !== key) {
+    Object.values(state.schedule || {}).forEach(day => {
+      Object.keys(day).forEach(mid => { if (day[mid] === oldKey) day[mid] = key; });
+    });
+  }
+  document.getElementById('_vacLegPop')?.remove();
+  saveMeetingState(); renderVacLegend(); renderVacCalendar();
+}
+
+function deleteVacLegendItem(idx) {
+  const legend = getVacLegend();
+  if (legend.length <= 1) { alert('Musí zůstat alespoň jedna položka.'); return; }
+  if (!confirm(`Smazat "${legend[idx].label}"? Záznamy tohoto typu v kalendáři budou odstraněny.`)) return;
+  const key = legend[idx].key;
+  Object.values(state.schedule || {}).forEach(day => {
+    Object.keys(day).forEach(mid => { if (day[mid] === key) delete day[mid]; });
+  });
+  legend.splice(idx, 1);
+  document.getElementById('_vacLegPop')?.remove();
+  saveMeetingState(); renderVacLegend(); renderVacCalendar();
+}
+
+function addVacLegendItem() {
+  const legend = getVacLegend();
+  const usedKeys = new Set(legend.map(l=>l.key));
+  const freeKey  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').find(c=>!usedKeys.has(c)) || '?';
+  const palette  = ['#2196f3','#9c27b0','#4caf50','#ff5722','#00bcd4','#8bc34a','#ff9800','#607d8b'];
+  legend.push({ key: freeKey, label: 'Nová položka', color: palette[legend.length % palette.length], textColor: '#fff' });
+  saveMeetingState(); renderVacLegend();
+  openVacLegendEdit(legend.length - 1);
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────
