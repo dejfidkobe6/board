@@ -820,6 +820,139 @@
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ─── PORADY + DOVOLENÉ OVERLAY ─── */
+  .fullview-overlay {
+    display: none; position: fixed; inset: 0; z-index: 1200;
+    background: rgba(10,15,6,0.92); backdrop-filter: blur(6px);
+    flex-direction: column; overflow: hidden;
+  }
+  .fullview-overlay.open { display: flex; }
+  .fullview-header {
+    display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .fullview-title { font-size: 16px; font-weight: 700; color: var(--text); flex: 1; }
+  .fullview-body { display: flex; flex: 1; overflow: hidden; }
+
+  /* ─── PORADY SIDEBAR ─── */
+  .porady-sidebar {
+    width: 260px; flex-shrink: 0; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .porady-sidebar-head {
+    padding: 12px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .porady-list { flex: 1; overflow-y: auto; padding: 6px; }
+  .porady-item {
+    padding: 9px 12px; border-radius: 8px; cursor: pointer;
+    margin-bottom: 3px; border: 1px solid transparent; transition: all 0.15s;
+  }
+  .porady-item:hover { background: var(--surface2); }
+  .porady-item.active { background: rgba(200,165,60,0.12); border-color: rgba(200,165,60,0.3); }
+  .porady-item-date { font-size: 10px; color: var(--text2); margin-bottom: 2px; }
+  .porady-item-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .porady-item-cnt { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  /* ─── PORADY MAIN ─── */
+  .porady-main { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+  .porady-section-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text2); margin-bottom: 10px;
+  }
+
+  /* Gantt / harmonogram */
+  .gantt-wrap { background: var(--surface2); border-radius: 12px; padding: 16px; border: 1px solid var(--border); }
+  .gantt-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .gantt-label { width: 160px; flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gantt-bar-wrap { flex: 1; background: rgba(255,255,255,0.07); border-radius: 6px; height: 22px; position: relative; overflow: hidden; cursor: pointer; }
+  .gantt-bar { height: 100%; border-radius: 6px; transition: width 0.4s; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.9); white-space: nowrap; overflow: hidden; }
+  .gantt-bar-active { box-shadow: 0 0 10px rgba(200,165,60,0.4); }
+  .gantt-pct { font-size: 11px; color: var(--text2); width: 38px; text-align: right; flex-shrink: 0; }
+  .gantt-add-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+  /* Agenda items */
+  .agenda-wrap { display: flex; flex-direction: column; gap: 10px; }
+  .agenda-item {
+    background: var(--surface2); border-radius: 10px; border: 1px solid var(--border);
+    padding: 12px 14px;
+  }
+  .agenda-item-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .agenda-item-num { width: 22px; height: 22px; border-radius: 50%; background: rgba(200,165,60,0.15); color: var(--gold); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .agenda-item-text { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; background: none; border: none; outline: none; font-family: inherit; cursor: text; padding: 0; }
+  .agenda-item-text:focus { color: var(--text); }
+  .agenda-tasks { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .agenda-task {
+    display: flex; align-items: center; gap: 8px; padding: 5px 8px;
+    background: rgba(255,255,255,0.04); border-radius: 6px; border: 1px solid transparent;
+  }
+  .agenda-task input[type=checkbox] { accent-color: var(--accent); flex-shrink: 0; }
+  .agenda-task-text { flex: 1; font-size: 12px; color: var(--text); }
+  .agenda-task-text.done { text-decoration: line-through; color: var(--text2); }
+  .agenda-task-assignee { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: rgba(200,165,60,0.12); color: var(--gold); white-space: nowrap; }
+  .agenda-task-dl { font-size: 10px; color: var(--text2); }
+  .agenda-add-task { font-size: 12px; color: var(--text2); background: none; border: none; cursor: pointer; padding: 3px 0; text-align: left; transition: color 0.15s; }
+  .agenda-add-task:hover { color: var(--accent); }
+  .agenda-task-input {
+    width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 10px; color: var(--text); font-size: 12px; font-family: inherit; outline: none; margin-top: 4px;
+  }
+  .agenda-task-input:focus { border-color: rgba(200,165,60,0.4); }
+
+  /* Presentation mode */
+  .present-slide {
+    position: fixed; inset: 0; z-index: 2000; background: #0e1408;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 48px; text-align: center;
+  }
+  .present-slide.hidden { display: none; }
+  .present-num { font-size: 13px; color: rgba(200,165,60,0.5); margin-bottom: 16px; }
+  .present-text { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; max-width: 800px; }
+  .present-sub { font-size: 16px; color: rgba(200,165,60,0.7); margin-top: 16px; }
+  .present-tasks { margin-top: 24px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; max-width: 600px; }
+  .present-task-row { font-size: 15px; color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 10px; }
+  .present-task-row .av-sm { width: 22px; height: 22px; border-radius: 6px; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; flex-shrink: 0; }
+  .present-nav { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); display: flex; gap: 16px; }
+  .present-nav button { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .present-nav button:hover { background: rgba(255,255,255,0.15); }
+  .present-nav button:disabled { opacity: 0.3; cursor: default; }
+  .present-exit { position: fixed; top: 20px; right: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.6); border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .present-exit:hover { color: #fff; }
+
+  /* ─── DOVOLENÉ ─── */
+  .vac-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .vac-month-nav { display: flex; align-items: center; gap: 8px; }
+  .vac-month-label { font-size: 15px; font-weight: 700; color: var(--text); min-width: 160px; text-align: center; }
+  .vac-timeline { overflow-x: auto; }
+  .vac-table { border-collapse: collapse; min-width: 100%; }
+  .vac-table th { font-size: 10px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 3px; text-align: center; width: 28px; }
+  .vac-table th.today-col { color: var(--gold); }
+  .vac-table .vac-name-col { width: 140px; text-align: left; padding: 4px 8px; font-size: 12px; font-weight: 600; color: var(--text); }
+  .vac-cell { width: 28px; height: 28px; border-radius: 3px; cursor: pointer; position: relative; }
+  .vac-cell:hover { background: rgba(255,255,255,0.08) !important; }
+  .vac-cell.vac-day { background: rgba(200,165,60,0.35) !important; border-radius: 0; }
+  .vac-cell.vac-start { border-radius: 6px 0 0 6px !important; }
+  .vac-cell.vac-end { border-radius: 0 6px 6px 0 !important; }
+  .vac-cell.vac-single { border-radius: 6px !important; }
+  .vac-cell.weekend { opacity: 0.5; }
+  .vac-cell.today-cell { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .vac-add-form { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; align-items: flex-end; }
+  .vac-add-form label { font-size: 11px; font-weight: 600; color: var(--text2); display: flex; flex-direction: column; gap: 4px; }
+  .vac-add-form input, .vac-add-form select {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 7px;
+    padding: 6px 10px; color: var(--text); font-size: 12px; font-family: inherit; outline: none;
+  }
+  .vac-add-form input:focus, .vac-add-form select:focus { border-color: rgba(200,165,60,0.4); }
+  .vac-entry-list { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .vac-entry-chip {
+    display: flex; align-items: center; gap: 7px; padding: 5px 10px;
+    background: rgba(200,165,60,0.1); border: 1px solid rgba(200,165,60,0.25); border-radius: 8px;
+    font-size: 12px; color: var(--text);
+  }
+  .vac-entry-chip .av { width: 20px; height: 20px; font-size: 8px; flex-shrink: 0; }
+  .vac-chip-del { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; margin-left: 2px; }
+  .vac-chip-del:hover { color: var(--danger); }
 </style>
 </head>
 <body>
@@ -940,6 +1073,8 @@
     <div class="logo" style="display:flex;align-items:center;gap:9px"><img src="/assets/besix-logo.png" class="besix-logo-header" width="28" height="28" style="object-fit:cover;border-radius:3px;flex-shrink:0;display:block;" alt="BeSix"><span style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:15px;letter-spacing:-0.3px;color:inherit">BeSix<span style="font-weight:400;opacity:0.55;margin-left:3px">Board</span></span> <span id="activeProjectName" style="font-size:12px;color:rgba(255,255,255,0.4);font-weight:500;margin-left:4px"></span></div>
     <div class="header-right">
       <button class="btn btn-ghost" onclick="goToProjects()" title="Všechny projekty">◈ Projekty</button>
+      <button class="btn btn-ghost" id="poradyNavBtn" onclick="openPoradyView()" title="Porady – harmonogram a úkoly" style="display:none">📋 Porady</button>
+      <button class="btn btn-ghost" id="vacNavBtn" onclick="openVacView()" title="Plán dovolených" style="display:none">🏖 Dovolené</button>
       <div class="bg-picker-wrap" id="bgPickerWrap" style="display:none">
         <button class="btn btn-ghost" onclick="toggleBgPicker(event)" title="Barva pozadí boardu">🎨 Pozadí</button>
         <div class="bg-picker-dropdown" id="bgPickerDropdown">
@@ -986,6 +1121,81 @@
       </div>
     </div>
   </div>
+  <!-- PORADY OVERLAY -->
+  <div class="fullview-overlay" id="poradyOverlay">
+    <div class="fullview-header">
+      <span class="fullview-title">📋 Porady</span>
+      <button class="btn btn-ghost" onclick="startPresentation()" id="presentBtn" style="display:none">▶ Prezentovat</button>
+      <button class="btn btn-ghost" onclick="openAddMeeting()">+ Nová porada</button>
+      <button class="btn btn-ghost" onclick="closePoradyView()">✕ Zavřít</button>
+    </div>
+    <div class="fullview-body">
+      <div class="porady-sidebar">
+        <div class="porady-sidebar-head">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2)">Seznam porad</div>
+        </div>
+        <div class="porady-list" id="poradyList"></div>
+      </div>
+      <div class="porady-main" id="poradyMain">
+        <div style="color:var(--text2);font-size:14px;text-align:center;margin-top:80px">Vyberte poradu nebo vytvořte novou</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD MEETING MODAL -->
+  <div class="modal-overlay" id="addMeetingModal">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-scroll">
+        <button class="modal-close" onclick="closeModal('addMeetingModal')">✕</button>
+        <h2>Nová porada</h2>
+        <div class="form-group"><label>Název porady *</label><input type="text" id="mtgTitle" placeholder="Např. Týdenní porada – 15.4."></div>
+        <div class="form-group"><label>Datum</label><input type="date" id="mtgDate"></div>
+        <div class="form-group"><label>Místo / odkaz</label><input type="text" id="mtgLocation" placeholder="Staveniště / Teams odkaz…"></div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeModal('addMeetingModal')">Zrušit</button>
+          <button class="btn btn-primary" onclick="saveMeeting()">Vytvořit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRESENTATION SLIDE -->
+  <div class="present-slide hidden" id="presentSlide">
+    <button class="present-exit" onclick="exitPresentation()">✕ Ukončit prezentaci</button>
+    <div class="present-num" id="presentNum"></div>
+    <div class="present-text" id="presentText"></div>
+    <div class="present-sub" id="presentSub"></div>
+    <div class="present-tasks" id="presentTasks"></div>
+    <div class="present-nav">
+      <button id="presentPrev" onclick="presentNav(-1)">◀ Předchozí</button>
+      <button id="presentNext" onclick="presentNav(1)">Další ▶</button>
+    </div>
+  </div>
+
+  <!-- DOVOLENÉ / ROZPIS SLUŽEB OVERLAY -->
+  <div class="fullview-overlay" id="vacOverlay">
+    <div class="fullview-header" style="gap:16px;flex-wrap:wrap">
+      <span class="fullview-title">🗓 Rozpis služeb a dovolených</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="btn btn-ghost" onclick="vacNavYear(-1)" style="padding:5px 10px">◀</button>
+        <span id="vacYearLabel" style="font-weight:800;font-size:17px;min-width:52px;text-align:center;color:var(--gold)">2026</span>
+        <button class="btn btn-ghost" onclick="vacNavYear(1)" style="padding:5px 10px">▶</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;font-size:12px">
+        <span style="display:flex;align-items:center;gap:5px"><span style="background:#c0392b;width:16px;height:16px;border-radius:3px;display:inline-block;line-height:16px;text-align:center;font-size:10px;font-weight:700;color:#fff">S</span> Služba</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="background:#e6a817;width:16px;height:16px;border-radius:3px;display:inline-block;line-height:16px;text-align:center;font-size:10px;font-weight:700;color:#1a1a00">D</span> Dovolená</span>
+        <span style="color:var(--text2);font-size:11px">Kliknutím na buňku cyklujete: prázdné → S → D → prázdné</span>
+      </div>
+      <button class="btn btn-ghost" onclick="closeVacView()" style="margin-left:auto">✕ Zavřít</button>
+    </div>
+    <!-- Upcoming duties banner -->
+    <div id="upcomingDuties" style="padding:8px 16px;background:rgba(200,165,60,0.06);border-bottom:1px solid var(--border);flex-shrink:0;min-height:36px;display:flex;align-items:center"></div>
+    <!-- Calendar -->
+    <div style="flex:1;overflow:auto;padding:12px 16px">
+      <div id="vacCalWrap" style="min-width:max-content"></div>
+    </div>
+  </div>
+
   <!-- Mobile: floating pill button to open task panel -->
   <button class="mobile-sheet-btn" id="mobileTasksBtn" onclick="toggleTaskPanel()" aria-label="Moje úkoly">
     <span>▲</span><span>Moje úkoly</span>
@@ -1362,6 +1572,18 @@ let state = loadState() || {
   projects: [ mkDefaultProject() ],
   activeProjectId: DEFAULT_PROJECT_ID,
 };
+
+// Migrate: add meetings, phases, vacations if missing
+if (!state.meetings) state.meetings = [];
+if (!state.phases) state.phases = [
+  { id: 'ph1', name: 'Zemní práce', pct: 100, color: '#8bc34a' },
+  { id: 'ph2', name: 'Základy',     pct: 100, color: '#4caf50' },
+  { id: 'ph3', name: 'Hrubá stavba',pct: 60,  color: '#2196f3' },
+  { id: 'ph4', name: 'Střecha',     pct: 20,  color: '#00bcd4' },
+  { id: 'ph5', name: 'Rozvody',     pct: 10,  color: '#9c27b0' },
+  { id: 'ph6', name: 'Dokončovací', pct: 0,   color: '#ff9800' },
+];
+if (!state.vacations) state.vacations = [];
 
 // Migrate old state without projects
 if (!state.projects) {
@@ -3129,13 +3351,28 @@ function renderTaskPanel() {
 
   const today = new Date().toISOString().split('T')[0];
   const tasks = [];
+  // Kanban checklist tasks
   for (const proj of state.projects) {
     for (const card of (proj.cards||[])) {
       for (const cl of (card.checklists||[])) {
         for (const item of (cl.items||[])) {
           if (!item.done && String(item.assignee) === userId) {
-            tasks.push({ item, card });
+            tasks.push({ item, card, source: 'kanban' });
           }
+        }
+      }
+    }
+  }
+  // Meeting tasks
+  for (const mtg of (state.meetings||[])) {
+    for (const ag of (mtg.agenda||[])) {
+      for (const task of (ag.tasks||[])) {
+        if (!task.done && String(task.assignee) === userId) {
+          tasks.push({
+            item: { id:task.id, text:task.text, done:task.done, assignee:task.assignee, deadline:task.deadline||null },
+            card: { id:'mtg_'+mtg.id+'_'+ag.id, title:'📋 Porada: '+mtg.title },
+            source: 'meeting', meetingId: mtg.id, agIdx: (mtg.agenda||[]).indexOf(ag), taskId: task.id,
+          });
         }
       }
     }
@@ -3165,31 +3402,36 @@ function renderTaskPanel() {
     lbl.className = 'task-panel-section';
     lbl.textContent = label;
     body.appendChild(lbl);
-    items.forEach(({ item, card }) => {
+    items.forEach(({ item, card, source, meetingId, agIdx, taskId }) => {
       const el = document.createElement('div');
       el.className = 'task-item' + (cls ? ' ' + cls : '');
       const dl = item.deadline;
+      const checkHandler = source==='meeting'
+        ? `toggleMtgTask('${meetingId}',${agIdx},'${taskId}',this.checked)`
+        : `checkClItemFromPanel('${item.id}','${card.id}',this)`;
       el.innerHTML = `
         <div class="task-item-row">
-          <input type="checkbox" onclick="checkClItemFromPanel('${item.id}','${card.id}',this)">
+          <input type="checkbox" onchange="${checkHandler}">
           <span class="task-item-text">${escHtml(item.text)}</span>
         </div>
-        <div class="task-item-card">📋 ${escHtml(card.title)}</div>
+        <div class="task-item-card">${escHtml(card.title)}</div>
         <div class="task-item-actions"></div>`;
       const actions = el.querySelector('.task-item-actions');
-      // Assignee btn
-      const aBtn = document.createElement('button');
-      aBtn.className = 'cl-meta-btn' + (item.assignee ? ' assigned' : '');
-      const aMember = item.assignee ? ((_projectMembers||state.members).find(m=>String(m.id)===String(item.assignee))||null) : null;
-      aBtn.innerHTML = aMember ? `👤 ${escHtml(aMember.name.split(' ')[0])}` : '👤 Přiřadit';
-      aBtn.onclick = e => { e.stopPropagation(); openAssigneePicker(aBtn, item.id, card.id); };
-      actions.appendChild(aBtn);
+      // Assignee btn (kanban only)
+      if (source !== 'meeting') {
+        const aBtn = document.createElement('button');
+        aBtn.className = 'cl-meta-btn' + (item.assignee ? ' assigned' : '');
+        const aMember = item.assignee ? ((_projectMembers||state.members).find(m=>String(m.id)===String(item.assignee))||null) : null;
+        aBtn.innerHTML = aMember ? `👤 ${escHtml(aMember.name.split(' ')[0])}` : '👤 Přiřadit';
+        aBtn.onclick = e => { e.stopPropagation(); openAssigneePicker(aBtn, item.id, card.id); };
+        actions.appendChild(aBtn);
+      }
       // Deadline btn
       const dBtn = document.createElement('button');
       const dCls = dl ? (dl < today ? 'date-overdue' : dl === today ? 'date-today' : 'has-date') : '';
       dBtn.className = 'cl-meta-btn' + (dCls ? ' ' + dCls : '');
       dBtn.innerHTML = dl ? `📅 ${fmtDate(dl)}` : '📅 Termín';
-      dBtn.onclick = e => { e.stopPropagation(); openMiniCal(dBtn, item.id, card.id, dl||null); };
+      dBtn.onclick = e => { e.stopPropagation(); if (source!=='meeting') openMiniCal(dBtn, item.id, card.id, dl||null); };
       actions.appendChild(dBtn);
       body.appendChild(el);
     });
@@ -3785,6 +4027,12 @@ document.addEventListener('click', () => {
 });
 
 function applyRoleRestrictions(role) {
+  // Show Porady + Dovolene buttons for everyone with project access
+  const pb = document.getElementById('poradyNavBtn');
+  const vb = document.getElementById('vacNavBtn');
+  if (pb) pb.style.display = '';
+  if (vb) vb.style.display = '';
+
   // Show bg picker + backup button for admin/owner only
   if (role === 'admin' || role === 'owner') {
     const w = document.getElementById('bgPickerWrap');
@@ -3823,6 +4071,481 @@ async function logoutToLogin() {
 // ── Override goToProjects → dashboard.php ──────────────────────────────────
 function goToProjects() {
   window.location.href = '/dashboard.php';
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PORADY – Meetings
+// ══════════════════════════════════════════════════════════════════════════
+let _activeMeetingId = null;
+let _presentSlides   = [];
+let _presentIdx      = 0;
+
+function openPoradyView() {
+  if (!state.meetings) state.meetings = [];
+  document.getElementById('poradyOverlay').classList.add('open');
+  renderPoradyList();
+  if (_activeMeetingId) renderMeetingDetail(_activeMeetingId);
+}
+
+function closePoradyView() {
+  document.getElementById('poradyOverlay').classList.remove('open');
+}
+
+function fmtDateLong(d) {
+  if (!d) return '';
+  const [y,mo,day] = d.split('-');
+  const months = ['ledna','února','března','dubna','května','června','července','srpna','září','října','listopadu','prosince'];
+  return `${parseInt(day)}. ${months[parseInt(mo)-1]} ${y}`;
+}
+
+function renderPoradyList() {
+  const list = document.getElementById('poradyList');
+  const mtgs = (state.meetings||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if (!mtgs.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text2);padding:12px">Žádné porady.<br>Vytvořte první.</div>';
+    return;
+  }
+  list.innerHTML = mtgs.map(m => {
+    const openTasks = (m.agenda||[]).reduce((s,a)=>s+(a.tasks||[]).filter(t=>!t.done).length, 0);
+    return `<div class="porady-item${m.id===_activeMeetingId?' active':''}" onclick="selectMeeting('${m.id}')">
+      <div class="porady-item-date">${fmtDateLong(m.date)}</div>
+      <div class="porady-item-title">${escHtml(m.title)}</div>
+      ${openTasks?`<div class="porady-item-cnt">${openTasks} otevřených úkolů</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function selectMeeting(id) {
+  _activeMeetingId = id;
+  renderPoradyList();
+  renderMeetingDetail(id);
+}
+
+function renderMeetingDetail(id) {
+  const mtg = (state.meetings||[]).find(m=>m.id===id);
+  if (!mtg) return;
+  const main = document.getElementById('poradyMain');
+  const presentBtn = document.getElementById('presentBtn');
+  if (presentBtn) presentBtn.style.display = '';
+  const members = _projectMembers || state.members || [];
+
+  // ── Gantt ──
+  let ganttHtml = `<div class="gantt-wrap">
+    <div class="porady-section-title">📊 Harmonogram fází stavby</div>`;
+  (state.phases||[]).forEach(ph => {
+    const active = ph.pct > 0 && ph.pct < 100;
+    ganttHtml += `<div class="gantt-row" data-phase="${ph.id}">
+      <div class="gantt-label" title="${escHtml(ph.name)}">${escHtml(ph.name)}</div>
+      <div class="gantt-bar-wrap">
+        <div class="gantt-bar${active?' gantt-bar-active':''}" style="width:${ph.pct}%;background:${ph.color}">
+          ${ph.pct>12?(active?'▶ Probíhá':ph.pct===100?'✓ Hotovo':''):''}
+        </div>
+      </div>
+      <div class="gantt-pct">${ph.pct}%</div>
+      <input type="range" min="0" max="100" value="${ph.pct}" style="width:70px;accent-color:${ph.color};cursor:pointer" oninput="setPhase('${ph.id}',+this.value)" onchange="saveState()">
+      <button onclick="deletePhase('${ph.id}')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px;padding:0 4px" title="Odebrat fázi">✕</button>
+    </div>`;
+  });
+  ganttHtml += `<div class="gantt-add-row" style="margin-top:10px">
+    <input type="text" id="newPhaseName" placeholder="Název nové fáze…" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text);font-size:12px;font-family:inherit;outline:none">
+    <input type="color" id="newPhaseColor" value="#2196f3" style="width:32px;height:32px;border:none;background:none;cursor:pointer;padding:0">
+    <button class="btn btn-ghost" style="font-size:12px" onclick="addPhase()">+ Přidat fázi</button>
+  </div></div>`;
+
+  // ── Agenda ──
+  let agendaHtml = `<div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="porady-section-title">📝 Program porady</div>
+      <button class="btn btn-ghost" style="font-size:12px" onclick="addAgendaItem('${mtg.id}')">+ Přidat bod</button>
+    </div>
+    <div class="agenda-wrap">`;
+
+  (mtg.agenda||[]).forEach((ag, idx) => {
+    const tasksHtml = (ag.tasks||[]).map(t => {
+      const mem = members.find(x=>String(x.id)===String(t.assignee));
+      const col  = mem ? (mem.avatar_color||mem.color||'#4A5340') : '#666';
+      const nm   = mem ? mem.name.split(' ')[0] : '';
+      return `<div class="agenda-task">
+        <input type="checkbox" ${t.done?'checked':''} onchange="toggleMtgTask('${mtg.id}',${idx},'${t.id}',this.checked)">
+        <span class="agenda-task-text${t.done?' done':''}">${escHtml(t.text)}</span>
+        ${mem?`<span class="agenda-task-assignee" style="background:${col}22;color:${col};border:1px solid ${col}44">@${escHtml(nm)}</span>`:''}
+        ${t.deadline?`<span class="agenda-task-dl">📅 ${fmtDate(t.deadline)}</span>`:''}
+        <button onclick="deleteMtgTask('${mtg.id}',${idx},'${t.id}')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px;padding:0 0 0 4px;margin-left:auto" title="Smazat">✕</button>
+      </div>`;
+    }).join('');
+    agendaHtml += `<div class="agenda-item">
+      <div class="agenda-item-header">
+        <div class="agenda-item-num">${idx+1}</div>
+        <input class="agenda-item-text" value="${escHtml(ag.text)}" placeholder="Bod programu…"
+          onblur="saveAgendaText('${mtg.id}',${idx},this.value)">
+        <button onclick="deleteAgendaItem('${mtg.id}',${idx})" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;padding:2px 4px;line-height:1" title="Odebrat bod">✕</button>
+      </div>
+      <div class="agenda-tasks">${tasksHtml}</div>
+      <button class="agenda-add-task" onclick="showAddMtgTask('${mtg.id}',${idx})">+ Přidat úkol &nbsp;<span style="opacity:0.5;font-size:10px">(@Jméno pro přiřazení · RRRR-MM-DD pro termín)</span></button>
+      <input class="agenda-task-input" style="display:none" id="mtgTaskInp_${mtg.id}_${idx}"
+        placeholder="Úkol… @Pavel 2026-04-30"
+        onkeydown="if(event.key==='Enter')submitMtgTask('${mtg.id}',${idx});if(event.key==='Escape')this.style.display='none'">
+    </div>`;
+  });
+  agendaHtml += `</div></div>`;
+
+  main.innerHTML = `
+    <div>
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:6px">
+        <div style="flex:1">
+          <h2 style="font-size:19px;font-weight:800;color:var(--text);margin-bottom:4px">${escHtml(mtg.title)}</h2>
+          ${mtg.date?`<div style="font-size:13px;color:var(--text2);margin-bottom:2px">📅 ${fmtDateLong(mtg.date)}</div>`:''}
+          ${mtg.location?`<div style="font-size:12px;color:var(--text2)">📍 ${escHtml(mtg.location)}</div>`:''}
+        </div>
+        <button class="btn btn-danger" style="font-size:12px;flex-shrink:0" onclick="deleteMeeting('${mtg.id}')">🗑 Smazat poradu</button>
+      </div>
+    </div>
+    ${ganttHtml}
+    ${agendaHtml}`;
+}
+
+function openAddMeeting() {
+  document.getElementById('mtgTitle').value = '';
+  document.getElementById('mtgDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('mtgLocation').value = '';
+  openModal('addMeetingModal');
+}
+
+function saveMeeting() {
+  const title = document.getElementById('mtgTitle').value.trim();
+  if (!title) { document.getElementById('mtgTitle').focus(); return; }
+  const mtg = {
+    id: 'mtg_'+Date.now(), title,
+    date: document.getElementById('mtgDate').value,
+    location: document.getElementById('mtgLocation').value.trim(),
+    agenda: [], createdAt: new Date().toISOString(),
+  };
+  if (!state.meetings) state.meetings = [];
+  state.meetings.unshift(mtg);
+  saveState();
+  closeModal('addMeetingModal');
+  renderPoradyList();
+  selectMeeting(mtg.id);
+}
+
+function deleteMeeting(id) {
+  if (!confirm('Smazat tuto poradu?')) return;
+  state.meetings = (state.meetings||[]).filter(m=>m.id!==id);
+  _activeMeetingId = null;
+  saveState();
+  renderPoradyList();
+  const pb = document.getElementById('presentBtn');
+  if (pb) pb.style.display = 'none';
+  document.getElementById('poradyMain').innerHTML = '<div style="color:var(--text2);font-size:14px;text-align:center;margin-top:80px">Vyberte poradu nebo vytvořte novou</div>';
+}
+
+function addAgendaItem(meetingId) {
+  const mtg = (state.meetings||[]).find(m=>m.id===meetingId);
+  if (!mtg) return;
+  if (!mtg.agenda) mtg.agenda = [];
+  mtg.agenda.push({ id:'ag_'+Date.now(), text:'', tasks:[] });
+  saveState(); renderMeetingDetail(meetingId);
+}
+
+function deleteAgendaItem(meetingId, idx) {
+  const mtg = (state.meetings||[]).find(m=>m.id===meetingId);
+  if (!mtg?.agenda) return;
+  mtg.agenda.splice(idx,1);
+  saveState(); renderMeetingDetail(meetingId);
+}
+
+function saveAgendaText(meetingId, idx, text) {
+  const mtg = (state.meetings||[]).find(m=>m.id===meetingId);
+  if (mtg?.agenda?.[idx]) { mtg.agenda[idx].text = text; saveState(); }
+}
+
+function showAddMtgTask(meetingId, agIdx) {
+  const inp = document.getElementById(`mtgTaskInp_${meetingId}_${agIdx}`);
+  if (inp) { inp.style.display='block'; inp.focus(); }
+}
+
+function submitMtgTask(meetingId, agIdx) {
+  const inp = document.getElementById(`mtgTaskInp_${meetingId}_${agIdx}`);
+  if (!inp) return;
+  let text = inp.value.trim();
+  if (!text) { inp.style.display='none'; return; }
+  const mtg = (state.meetings||[]).find(m=>m.id===meetingId);
+  if (!mtg?.agenda?.[agIdx]) return;
+  const members = _projectMembers || state.members || [];
+  let assignee = null, deadline = null;
+  // @mention
+  const atM = text.match(/@(\S+)/);
+  if (atM) {
+    const q = atM[1].toLowerCase();
+    const found = members.find(m=>m.name.toLowerCase().includes(q)||(m.name.split(' ')[0]).toLowerCase().startsWith(q));
+    if (found) { assignee = String(found.id); text = text.replace(atM[0],'').trim(); }
+  }
+  // date YYYY-MM-DD
+  const dlM = text.match(/(\d{4}-\d{2}-\d{2})/);
+  if (dlM) { deadline = dlM[1]; text = text.replace(dlM[0],'').trim(); }
+  if (!assignee && currentUser) assignee = String(currentUser.id);
+  mtg.agenda[agIdx].tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee, deadline, createdAt:new Date().toISOString() });
+  saveState(); renderMeetingDetail(meetingId); renderTaskPanel();
+}
+
+function toggleMtgTask(meetingId, agIdx, taskId, done) {
+  const mtg = (state.meetings||[]).find(m=>m.id===meetingId);
+  const task = mtg?.agenda?.[agIdx]?.tasks?.find(t=>t.id===taskId);
+  if (!task) return;
+  task.done = done; saveState(); renderTaskPanel();
+}
+
+function deleteMtgTask(meetingId, agIdx, taskId) {
+  const mtg = (state.meetings||[]).find(m=>m.id===meetingId);
+  if (!mtg?.agenda?.[agIdx]) return;
+  mtg.agenda[agIdx].tasks = mtg.agenda[agIdx].tasks.filter(t=>t.id!==taskId);
+  saveState(); renderMeetingDetail(meetingId); renderTaskPanel();
+}
+
+// ── Gantt fáze ──
+function setPhase(id, val) {
+  const ph = (state.phases||[]).find(p=>p.id===id);
+  if (!ph) return;
+  ph.pct = val;
+  // live update bar without full re-render
+  const row = document.querySelector(`.gantt-row[data-phase="${id}"]`);
+  if (row) {
+    const bar = row.querySelector('.gantt-bar');
+    const pct = row.querySelector('.gantt-pct');
+    if (bar) { bar.style.width = val+'%'; }
+    if (pct) pct.textContent = val+'%';
+  }
+}
+
+function deletePhase(id) {
+  state.phases = (state.phases||[]).filter(p=>p.id!==id);
+  saveState(); renderMeetingDetail(_activeMeetingId);
+}
+
+function addPhase() {
+  const inp = document.getElementById('newPhaseName');
+  const col = document.getElementById('newPhaseColor');
+  if (!inp?.value.trim()) { inp?.focus(); return; }
+  if (!state.phases) state.phases = [];
+  state.phases.push({ id:'ph_'+Date.now(), name:inp.value.trim(), pct:0, color:col?col.value:'#2196f3' });
+  inp.value = '';
+  saveState(); renderMeetingDetail(_activeMeetingId);
+}
+
+// ── Prezentační režim ──
+function startPresentation() {
+  const mtg = (state.meetings||[]).find(m=>m.id===_activeMeetingId);
+  if (!mtg) return;
+  const members = _projectMembers || state.members || [];
+  _presentSlides = [];
+  // Titulní slide
+  _presentSlides.push({ title:mtg.title, sub:(mtg.date?fmtDateLong(mtg.date):'')+(mtg.location?' · '+mtg.location:''), tasks:[], type:'title' });
+  // Gantt slide
+  if ((state.phases||[]).length) _presentSlides.push({ title:'📊 Harmonogram fází stavby', sub:'', tasks:[], type:'gantt' });
+  // Agenda
+  (mtg.agenda||[]).forEach((ag,i) => {
+    if (!ag.text) return;
+    const tasks = (ag.tasks||[]).filter(t=>!t.done).map(t => {
+      const mem = members.find(x=>String(x.id)===String(t.assignee));
+      return { text:t.text, memberName:mem?mem.name.split(' ')[0]:'', color:mem?(mem.avatar_color||mem.color||'#4A5340'):'#666' };
+    });
+    _presentSlides.push({ title:`${i+1}. ${ag.text}`, sub:'', tasks, type:'agenda' });
+  });
+  _presentIdx = 0;
+  document.getElementById('presentSlide').classList.remove('hidden');
+  renderPresentSlide();
+}
+
+function exitPresentation() { document.getElementById('presentSlide').classList.add('hidden'); }
+
+function presentNav(dir) {
+  _presentIdx = Math.max(0, Math.min(_presentSlides.length-1, _presentIdx+dir));
+  renderPresentSlide();
+}
+
+function renderPresentSlide() {
+  const s = _presentSlides[_presentIdx];
+  if (!s) return;
+  document.getElementById('presentNum').textContent = `${_presentIdx+1} / ${_presentSlides.length}`;
+  document.getElementById('presentText').textContent = s.title;
+  document.getElementById('presentSub').textContent  = s.sub;
+  const tasksEl = document.getElementById('presentTasks');
+  if (s.type === 'gantt') {
+    tasksEl.innerHTML = (state.phases||[]).map(ph =>
+      `<div class="present-task-row" style="width:100%;max-width:700px">
+        <div style="width:170px;font-size:14px;font-weight:600;color:rgba(255,255,255,0.85);text-align:left">${escHtml(ph.name)}</div>
+        <div style="flex:1;background:rgba(255,255,255,0.1);border-radius:6px;height:20px;overflow:hidden;min-width:200px">
+          <div style="height:100%;width:${ph.pct}%;background:${ph.color};border-radius:6px"></div>
+        </div>
+        <div style="width:42px;text-align:right;font-size:13px;color:rgba(255,255,255,0.5)">${ph.pct}%</div>
+      </div>`
+    ).join('');
+  } else {
+    tasksEl.innerHTML = s.tasks.map(t =>
+      `<div class="present-task-row">
+        ${t.memberName?`<div class="av-sm" style="background:${t.color}">${ini(t.memberName)}</div>`:''}
+        <span>${escHtml(t.text)}</span>
+      </div>`
+    ).join('');
+  }
+  document.getElementById('presentPrev').disabled = _presentIdx === 0;
+  document.getElementById('presentNext').disabled = _presentIdx === _presentSlides.length-1;
+}
+
+// Keyboard navigation for presentation
+document.addEventListener('keydown', e => {
+  const slide = document.getElementById('presentSlide');
+  if (!slide || slide.classList.contains('hidden')) return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); presentNav(1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); presentNav(-1); }
+  if (e.key === 'Escape') exitPresentation();
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// DOVOLENÉ / ROZPIS SLUŽEB
+// ══════════════════════════════════════════════════════════════════════════
+let _vacYear = new Date().getFullYear();
+const _MONTHS_CS = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+
+function openVacView() {
+  if (!state.schedule) state.schedule = {};
+  _vacYear = new Date().getFullYear();
+  document.getElementById('vacOverlay').classList.add('open');
+  renderVacCalendar();
+}
+
+function closeVacView() {
+  document.getElementById('vacOverlay').classList.remove('open');
+}
+
+function vacNavYear(dir) {
+  _vacYear += dir;
+  renderVacCalendar();
+}
+
+function daysInMonth(yr, m) { return new Date(yr, m+1, 0).getDate(); }
+
+function renderVacCalendar() {
+  const members = (_projectMembers || state.members || []).filter(Boolean);
+  const sched   = state.schedule || {};
+  const today   = new Date().toISOString().split('T')[0];
+  const yr      = _vacYear;
+
+  document.getElementById('vacYearLabel').textContent = yr;
+
+  // ── Upcoming duties banner ──
+  const duties = [];
+  for (let i = 0; i < 45; i++) {
+    const d = new Date(); d.setDate(d.getDate()+i);
+    const ds = d.toISOString().split('T')[0];
+    const entry = sched[ds] || {};
+    Object.entries(entry).forEach(([mid, type]) => {
+      if (type === 'S') {
+        const mem = members.find(x=>String(x.id)===String(mid));
+        if (mem) duties.push({ name:mem.name.split(' ')[0], color:mem.avatar_color||mem.color||'#4A5340', date:ds });
+      }
+    });
+  }
+  const upEl = document.getElementById('upcomingDuties');
+  if (upEl) {
+    if (!duties.length) {
+      upEl.innerHTML = '<span style="font-size:12px;color:var(--text2)">Žádné nadcházející služby v příštích 45 dnech</span>';
+    } else {
+      upEl.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--gold);white-space:nowrap">Nejbližší služby:</span>
+        ${duties.map(d=>`<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(192,57,43,0.15);border:1px solid rgba(192,57,43,0.3);border-radius:6px;padding:2px 8px">
+          <div style="width:16px;height:16px;border-radius:4px;background:${d.color};display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fff;flex-shrink:0">${ini(d.name)}</div>
+          <span style="font-size:11px;font-weight:600;color:var(--text)">${escHtml(d.name)}</span>
+          <span style="font-size:10px;color:var(--text2)">${fmtDate(d.date)}</span>
+        </span>`).join('')}
+      </div>`;
+    }
+  }
+
+  // ── Build table ──
+  let html = '<table style="border-collapse:collapse;font-size:11px;table-layout:fixed">';
+
+  // Row 1: Month headers
+  html += '<thead><tr>';
+  html += `<th style="position:sticky;left:0;z-index:3;background:#1a2a0e;width:120px;min-width:120px;border:1px solid rgba(255,255,255,0.08)"></th>`;
+  for (let m = 0; m < 12; m++) {
+    const days = daysInMonth(yr, m);
+    html += `<th colspan="${days}" style="background:rgba(200,165,60,0.1);border:1px solid rgba(255,255,255,0.12);padding:4px 6px;text-align:center;font-weight:700;color:var(--gold);letter-spacing:0.04em;white-space:nowrap;font-size:11px">${_MONTHS_CS[m]}</th>`;
+  }
+  html += '</tr>';
+
+  // Row 2: Day numbers
+  html += '<tr>';
+  html += `<th style="position:sticky;left:0;z-index:3;background:#1a2a0e;border:1px solid rgba(255,255,255,0.08)"></th>`;
+  for (let m = 0; m < 12; m++) {
+    const days = daysInMonth(yr, m);
+    for (let d = 1; d <= days; d++) {
+      const dow = new Date(yr, m, d).getDay();
+      const wknd = dow===0||dow===6;
+      const ds = `${yr}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const isToday = ds===today;
+      html += `<th style="width:22px;min-width:22px;padding:1px;text-align:center;font-size:10px;font-weight:${isToday?'800':'600'};color:${isToday?'var(--gold)':wknd?'rgba(255,120,120,0.8)':'var(--text2)'};background:${wknd?'rgba(255,60,60,0.06)':'transparent'};border:1px solid rgba(255,255,255,0.06);${isToday?'outline:2px solid var(--gold);outline-offset:-2px;':''}">${d}</th>`;
+    }
+  }
+  html += '</tr>';
+
+  // Row 3: Day-of-week letters
+  const dowLetters = ['Ne','Po','Út','St','Čt','Pá','So'];
+  html += '<tr>';
+  html += `<th style="position:sticky;left:0;z-index:3;background:#1a2a0e;border:1px solid rgba(255,255,255,0.08)"></th>`;
+  for (let m = 0; m < 12; m++) {
+    const days = daysInMonth(yr, m);
+    for (let d = 1; d <= days; d++) {
+      const dow = new Date(yr, m, d).getDay();
+      const wknd = dow===0||dow===6;
+      html += `<th style="width:22px;min-width:22px;padding:0;text-align:center;font-size:9px;color:${wknd?'rgba(255,120,120,0.6)':'rgba(255,255,255,0.25)'};background:${wknd?'rgba(255,60,60,0.06)':'transparent'};border:1px solid rgba(255,255,255,0.06)">${dowLetters[dow]}</th>`;
+    }
+  }
+  html += '</tr></thead><tbody>';
+
+  // Member rows
+  members.forEach(mem => {
+    const col = mem.avatar_color||mem.color||'#4A5340';
+    html += `<tr>
+      <td style="position:sticky;left:0;z-index:2;background:#1a2a0e;padding:2px 8px;border:1px solid rgba(255,255,255,0.08);white-space:nowrap">
+        <div style="display:flex;align-items:center;gap:5px">
+          <div style="width:20px;height:20px;border-radius:5px;background:${col};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0">${ini(mem.name)}</div>
+          <span style="font-size:11px;font-weight:600;color:var(--text)">${escHtml(mem.name.split(' ')[0])}</span>
+        </div>
+      </td>`;
+    for (let m = 0; m < 12; m++) {
+      const days = daysInMonth(yr, m);
+      for (let d = 1; d <= days; d++) {
+        const ds = `${yr}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const type = (sched[ds]||{})[String(mem.id)] || '';
+        const dow  = new Date(yr, m, d).getDay();
+        const wknd = dow===0||dow===6;
+        const isToday = ds===today;
+        let bg='transparent', fg='transparent', letter='';
+        if (type==='S')      { bg='#c0392b'; fg='#fff'; letter='S'; }
+        else if (type==='D') { bg='#e6a817'; fg='#1a1a00'; letter='D'; }
+        else if (wknd)        { bg='rgba(255,60,60,0.05)'; }
+        html += `<td onclick="vacCellClick('${ds}','${mem.id}')"
+          style="width:22px;min-width:22px;height:22px;text-align:center;vertical-align:middle;cursor:pointer;background:${bg};color:${fg};font-weight:800;font-size:10px;border:1px solid rgba(255,255,255,0.06);${isToday?'outline:2px solid var(--gold);outline-offset:-2px;':''}user-select:none"
+          title="${ds}">${letter}</td>`;
+      }
+    }
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('vacCalWrap').innerHTML = html;
+}
+
+function vacCellClick(date, memberId) {
+  if (!state.schedule) state.schedule = {};
+  if (!state.schedule[date]) state.schedule[date] = {};
+  const cur = state.schedule[date][memberId]||'';
+  if      (cur==='')  state.schedule[date][memberId] = 'S';
+  else if (cur==='S') state.schedule[date][memberId] = 'D';
+  else { delete state.schedule[date][memberId]; if (!Object.keys(state.schedule[date]).length) delete state.schedule[date]; }
+  saveState();
+  renderVacCalendar();
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────
