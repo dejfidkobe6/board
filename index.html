@@ -4969,6 +4969,9 @@ function renderVacCalendar() {
   const sched   = state.schedule || {};
   const today   = new Date().toISOString().split('T')[0];
   const yr      = _vacYear;
+  const CELL    = 20; // px per day cell
+  const NAME_W  = 100;
+  const dowLetters = ['Ne','Po','Út','St','Čt','Pá','So'];
 
   document.getElementById('vacYearLabel').textContent = yr;
 
@@ -5001,78 +5004,87 @@ function renderVacCalendar() {
     }
   }
 
-  // ── Build table ──
-  let html = '<table style="border-collapse:collapse;font-size:11px;table-layout:fixed">';
+  // ── Build sections: 2 months per section ──
+  let html = '<div style="display:flex;flex-direction:column;gap:20px">';
 
-  // Row 1: Month headers
-  html += '<thead><tr>';
-  html += `<th style="position:sticky;left:0;z-index:3;background:#1a2a0e;width:120px;min-width:120px;border:1px solid rgba(255,255,255,0.08)"></th>`;
-  for (let m = 0; m < 12; m++) {
-    const days = daysInMonth(yr, m);
-    html += `<th colspan="${days}" style="background:rgba(200,165,60,0.1);border:1px solid rgba(255,255,255,0.12);padding:4px 6px;text-align:center;font-weight:700;color:var(--gold);letter-spacing:0.04em;white-space:nowrap;font-size:11px">${_MONTHS_CS[m]}</th>`;
-  }
-  html += '</tr>';
+  for (let pair = 0; pair < 6; pair++) {
+    const mA = pair * 2;
+    const mB = pair * 2 + 1;
+    const pairMonths = [mA, mB];
 
-  // Row 2: Day numbers
-  html += '<tr>';
-  html += `<th style="position:sticky;left:0;z-index:3;background:#1a2a0e;border:1px solid rgba(255,255,255,0.08)"></th>`;
-  for (let m = 0; m < 12; m++) {
-    const days = daysInMonth(yr, m);
-    for (let d = 1; d <= days; d++) {
-      const dow = new Date(yr, m, d).getDay();
-      const wknd = dow===0||dow===6;
-      const ds = `${yr}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const isToday = ds===today;
-      html += `<th style="width:22px;min-width:22px;padding:1px;text-align:center;font-size:10px;font-weight:${isToday?'800':'600'};color:${isToday?'var(--gold)':wknd?'rgba(255,120,120,0.8)':'var(--text2)'};background:${wknd?'rgba(255,60,60,0.06)':'transparent'};border:1px solid rgba(255,255,255,0.06);${isToday?'outline:2px solid var(--gold);outline-offset:-2px;':''}">${d}</th>`;
+    html += `<table style="border-collapse:collapse;font-size:11px;table-layout:fixed">`;
+
+    // ─ Month header row ─
+    html += '<thead><tr>';
+    html += `<th style="position:sticky;left:0;z-index:3;background:#1a2a0e;width:${NAME_W}px;min-width:${NAME_W}px;border:1px solid rgba(255,255,255,0.08)"></th>`;
+    for (const m of pairMonths) {
+      const days = daysInMonth(yr, m);
+      html += `<th colspan="${days}" style="background:rgba(200,165,60,0.1);border:1px solid rgba(255,255,255,0.12);padding:4px 8px;text-align:center;font-weight:700;color:var(--gold);letter-spacing:0.04em;font-size:12px">${_MONTHS_CS[m]} ${yr}</th>`;
     }
-  }
-  html += '</tr>';
+    html += '</tr>';
 
-  // Row 3: Day-of-week letters
-  const dowLetters = ['Ne','Po','Út','St','Čt','Pá','So'];
-  html += '<tr>';
-  html += `<th style="position:sticky;left:0;z-index:3;background:#1a2a0e;border:1px solid rgba(255,255,255,0.08)"></th>`;
-  for (let m = 0; m < 12; m++) {
-    const days = daysInMonth(yr, m);
-    for (let d = 1; d <= days; d++) {
-      const dow = new Date(yr, m, d).getDay();
-      const wknd = dow===0||dow===6;
-      html += `<th style="width:22px;min-width:22px;padding:0;text-align:center;font-size:9px;color:${wknd?'rgba(255,120,120,0.6)':'rgba(255,255,255,0.25)'};background:${wknd?'rgba(255,60,60,0.06)':'transparent'};border:1px solid rgba(255,255,255,0.06)">${dowLetters[dow]}</th>`;
-    }
-  }
-  html += '</tr></thead><tbody>';
-
-  // Member rows
-  members.forEach(mem => {
-    const col = mem.avatar_color||mem.color||'#4A5340';
-    html += `<tr>
-      <td style="position:sticky;left:0;z-index:2;background:#1a2a0e;padding:2px 8px;border:1px solid rgba(255,255,255,0.08);white-space:nowrap">
-        <div style="display:flex;align-items:center;gap:5px">
-          <div style="width:20px;height:20px;border-radius:5px;background:${col};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0">${ini(mem.name)}</div>
-          <span style="font-size:11px;font-weight:600;color:var(--text)">${escHtml(mem.name.split(' ')[0])}</span>
-        </div>
-      </td>`;
-    for (let m = 0; m < 12; m++) {
+    // ─ Day numbers row ─
+    html += '<tr>';
+    html += `<th style="position:sticky;left:0;z-index:3;background:#1a2a0e;border:1px solid rgba(255,255,255,0.08)"></th>`;
+    for (const m of pairMonths) {
       const days = daysInMonth(yr, m);
       for (let d = 1; d <= days; d++) {
-        const ds = `${yr}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const type = (sched[ds]||{})[String(mem.id)] || '';
-        const dow  = new Date(yr, m, d).getDay();
+        const dow = new Date(yr, m, d).getDay();
         const wknd = dow===0||dow===6;
+        const ds = `${yr}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const isToday = ds===today;
-        let bg='transparent', fg='transparent', letter='';
-        if (type==='S')      { bg='#c0392b'; fg='#fff'; letter='S'; }
-        else if (type==='D') { bg='#e6a817'; fg='#1a1a00'; letter='D'; }
-        else if (wknd)        { bg='rgba(255,60,60,0.05)'; }
-        html += `<td onclick="vacCellClick('${ds}','${mem.id}')"
-          style="width:22px;min-width:22px;height:22px;text-align:center;vertical-align:middle;cursor:pointer;background:${bg};color:${fg};font-weight:800;font-size:10px;border:1px solid rgba(255,255,255,0.06);${isToday?'outline:2px solid var(--gold);outline-offset:-2px;':''}user-select:none"
-          title="${ds}">${letter}</td>`;
+        html += `<th style="width:${CELL}px;min-width:${CELL}px;padding:1px;text-align:center;font-size:10px;font-weight:${isToday?'800':'600'};color:${isToday?'var(--gold)':wknd?'rgba(255,120,120,0.8)':'var(--text2)'};background:${wknd?'rgba(255,60,60,0.06)':'transparent'};border:1px solid rgba(255,255,255,0.06);${isToday?'outline:2px solid var(--gold);outline-offset:-2px;':''}">${d}</th>`;
       }
     }
     html += '</tr>';
-  });
 
-  html += '</tbody></table>';
+    // ─ Day-of-week row ─
+    html += '<tr>';
+    html += `<th style="position:sticky;left:0;z-index:3;background:#1a2a0e;border:1px solid rgba(255,255,255,0.08)"></th>`;
+    for (const m of pairMonths) {
+      const days = daysInMonth(yr, m);
+      for (let d = 1; d <= days; d++) {
+        const dow = new Date(yr, m, d).getDay();
+        const wknd = dow===0||dow===6;
+        html += `<th style="width:${CELL}px;min-width:${CELL}px;padding:0;text-align:center;font-size:9px;color:${wknd?'rgba(255,120,120,0.6)':'rgba(255,255,255,0.25)'};background:${wknd?'rgba(255,60,60,0.06)':'transparent'};border:1px solid rgba(255,255,255,0.06)">${dowLetters[dow]}</th>`;
+      }
+    }
+    html += '</tr></thead><tbody>';
+
+    // ─ Member rows ─
+    members.forEach(mem => {
+      const col = mem.avatar_color||mem.color||'#4A5340';
+      html += `<tr>
+        <td style="position:sticky;left:0;z-index:2;background:#1a2a0e;padding:2px 8px;border:1px solid rgba(255,255,255,0.08);white-space:nowrap">
+          <div style="display:flex;align-items:center;gap:5px">
+            <div style="width:18px;height:18px;border-radius:4px;background:${col};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0">${ini(mem.name)}</div>
+            <span style="font-size:11px;font-weight:600;color:var(--text)">${escHtml(mem.name.split(' ')[0])}</span>
+          </div>
+        </td>`;
+      for (const m of pairMonths) {
+        const days = daysInMonth(yr, m);
+        for (let d = 1; d <= days; d++) {
+          const ds = `${yr}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+          const type = (sched[ds]||{})[String(mem.id)] || '';
+          const dow  = new Date(yr, m, d).getDay();
+          const wknd = dow===0||dow===6;
+          const isToday = ds===today;
+          let bg='transparent', fg='transparent', letter='';
+          if (type==='S')      { bg='#c0392b'; fg='#fff'; letter='S'; }
+          else if (type==='D') { bg='#e6a817'; fg='#1a1a00'; letter='D'; }
+          else if (wknd)       { bg='rgba(255,60,60,0.05)'; }
+          html += `<td onclick="vacCellClick('${ds}','${mem.id}')"
+            style="width:${CELL}px;min-width:${CELL}px;height:24px;text-align:center;vertical-align:middle;cursor:pointer;background:${bg};color:${fg};font-weight:800;font-size:10px;border:1px solid rgba(255,255,255,0.06);${isToday?'outline:2px solid var(--gold);outline-offset:-2px;':''}user-select:none"
+            title="${ds}">${letter}</td>`;
+        }
+      }
+      html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+  }
+
+  html += '</div>';
   document.getElementById('vacCalWrap').innerHTML = html;
 }
 
