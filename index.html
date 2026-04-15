@@ -1352,6 +1352,50 @@ function saveState() {
   updateMobileFabBadge();
 }
 
+// ── Meeting / Phase / Schedule server sync (dedicated API) ───────────────
+let _mtgSaveTimer = null;
+
+function saveMeetingState() {
+  // Also persist to localStorage
+  try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
+  // Debounce: send to server 800ms after last change
+  clearTimeout(_mtgSaveTimer);
+  _mtgSaveTimer = setTimeout(_doSaveMeetingState, 800);
+}
+
+async function _doSaveMeetingState() {
+  const projectId = localStorage.getItem('besix_active_project_id');
+  if (!projectId) return;
+  try {
+    await fetch(`/api/meeting.php?action=save&project_id=${projectId}`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        livingMeeting:   state.livingMeeting   || {},
+        meetingVersions: state.meetingVersions || [],
+        phases:          state.phases          || [],
+        schedule:        state.schedule        || {},
+      }),
+    });
+  } catch(e) { console.error('[meeting] save error', e); }
+}
+
+async function loadMeetingState() {
+  const projectId = localStorage.getItem('besix_active_project_id');
+  if (!projectId) return;
+  try {
+    const res  = await fetch(`/api/meeting.php?action=load&project_id=${projectId}`, { credentials: 'include' });
+    const data = await res.json();
+    if (!data.success || !data.data) return;
+    const d = data.data;
+    if (d.livingMeeting   && typeof d.livingMeeting === 'object') state.livingMeeting   = d.livingMeeting;
+    if (Array.isArray(d.meetingVersions) && d.meetingVersions.length)  state.meetingVersions = d.meetingVersions;
+    if (Array.isArray(d.phases)          && d.phases.length)           state.phases          = d.phases;
+    if (d.schedule        && typeof d.schedule === 'object')            state.schedule        = d.schedule;
+    try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
+  } catch(e) { console.error('[meeting] load error', e); }
+}
+
 // ── Kanban server sync ────────────────────────────────────────────────────
 // Timestamp rule in syncKanbanFromServer:
 //   serverTs > localTs  → apply (another device saved newer data)
@@ -4130,7 +4174,7 @@ function createMeetingVersion(dateStr, auto=false) {
   state.meetingVersions.unshift(ver);
   // Keep max 52 versions (1 year)
   if (state.meetingVersions.length > 52) state.meetingVersions = state.meetingVersions.slice(0, 52);
-  saveState();
+  saveMeetingState();
 }
 
 function manualSaveVersion() {
@@ -4142,7 +4186,7 @@ function manualSaveVersion() {
     existing.title   = state.livingMeeting.title;
     existing.savedAt = new Date().toISOString();
     existing.auto    = false;
-    saveState();
+    saveMeetingState();
   } else {
     createMeetingVersion(today, false);
   }
@@ -4158,7 +4202,7 @@ function restoreVersion(verId) {
   manualSaveVersion();
   state.livingMeeting.agenda = JSON.parse(JSON.stringify(ver.agenda||[]));
   state.livingMeeting.title  = ver.title || state.livingMeeting.title;
-  saveState();
+  saveMeetingState();
   _viewingVersionId = null;
   renderPoradyList();
   renderMeetingDetail();
@@ -4179,10 +4223,14 @@ function showToast(msg) {
 }
 
 // ── View ───────────────────────────────────────────────────────────────────
-function openPoradyView() {
-  checkAutoVersion();
+async function openPoradyView() {
   document.getElementById('poradyOverlay').classList.add('open');
   _viewingVersionId = null;
+  renderPoradyList();
+  renderMeetingDetail();
+  // Load fresh from server, then re-render
+  await loadMeetingState();
+  checkAutoVersion();
   renderPoradyList();
   renderMeetingDetail();
 }
@@ -4268,7 +4316,7 @@ function renderMeetingDetail() {
       </div>
       <div class="gantt-pct">${ph.pct}%</div>
       <input type="range" min="0" max="100" value="${ph.pct}" style="width:70px;accent-color:${ph.color};cursor:pointer"
-        oninput="setPhase('${ph.id}',+this.value)" onchange="saveState()">
+        oninput="setPhase('${ph.id}',+this.value)" onchange="saveMeetingState()">
       <button onclick="deletePhase('${ph.id}')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px;padding:0 4px" title="Odebrat fázi">✕</button>
     </div>`;
   });
@@ -4326,7 +4374,7 @@ function renderMeetingDetail() {
   const titleHtml = isLive
     ? `<input style="font-size:19px;font-weight:800;color:var(--text);background:none;border:none;border-bottom:1px solid transparent;outline:none;font-family:inherit;width:100%;padding:0 0 2px"
         value="${escHtml(src.title||'Porada')}"
-        onblur="if(state.livingMeeting)state.livingMeeting.title=this.value;saveState()"
+        onblur="if(state.livingMeeting)state.livingMeeting.title=this.value;saveMeetingState()"
         title="Klikni pro úpravu názvu">`
     : `<h2 style="font-size:19px;font-weight:800;color:var(--text)">${escHtml(src.title||'Porada')} <span style="font-size:13px;font-weight:400;color:var(--text2)">— archiv ${fmtDateLong(src.date)}</span></h2>`;
 
@@ -4339,16 +4387,16 @@ function renderMeetingDetail() {
 function addAgendaItem() {
   if (!state.livingMeeting.agenda) state.livingMeeting.agenda = [];
   state.livingMeeting.agenda.push({ id:'ag_'+Date.now(), text:'', tasks:[] });
-  saveState(); renderMeetingDetail();
+  saveMeetingState(); renderMeetingDetail();
 }
 
 function deleteAgendaItem(idx) {
   state.livingMeeting.agenda.splice(idx,1);
-  saveState(); renderMeetingDetail();
+  saveMeetingState(); renderMeetingDetail();
 }
 
 function saveAgendaText(idx, text) {
-  if (state.livingMeeting?.agenda?.[idx]) { state.livingMeeting.agenda[idx].text = text; saveState(); }
+  if (state.livingMeeting?.agenda?.[idx]) { state.livingMeeting.agenda[idx].text = text; saveMeetingState(); }
 }
 
 function showAddMtgTask(agIdx) {
@@ -4375,20 +4423,20 @@ function submitMtgTask(agIdx) {
   if (dlM) { deadline = dlM[1]; text = text.replace(dlM[0],'').trim(); }
   if (!assignee && currentUser) assignee = String(currentUser.id);
   ag.tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee, deadline, createdAt:new Date().toISOString() });
-  saveState(); renderMeetingDetail(); renderTaskPanel();
+  saveMeetingState(); renderMeetingDetail(); renderTaskPanel();
 }
 
 function toggleMtgTask(agIdx, taskId, done) {
   const task = state.livingMeeting?.agenda?.[agIdx]?.tasks?.find(t=>t.id===taskId);
   if (!task) return;
-  task.done = done; saveState(); renderTaskPanel();
+  task.done = done; saveMeetingState(); renderTaskPanel();
 }
 
 function deleteMtgTask(agIdx, taskId) {
   const ag = state.livingMeeting?.agenda?.[agIdx];
   if (!ag) return;
   ag.tasks = ag.tasks.filter(t=>t.id!==taskId);
-  saveState(); renderMeetingDetail(); renderTaskPanel();
+  saveMeetingState(); renderMeetingDetail(); renderTaskPanel();
 }
 
 // ── Gantt fáze ─────────────────────────────────────────────────────────────
@@ -4400,7 +4448,7 @@ function editPhaseLabel(el, phaseId) {
   inp.style.cssText = 'width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(200,165,60,0.5);border-radius:4px;padding:2px 6px;color:var(--text);font-size:12px;font-weight:600;font-family:inherit;outline:none';
   const save = () => {
     const v = inp.value.trim();
-    if (v) { ph.name = v; saveState(); }
+    if (v) { ph.name = v; saveMeetingState(); }
     renderMeetingDetail();
   };
   inp.onblur = save;
@@ -4426,12 +4474,12 @@ function setPhaseDate(id, which, val) {
   const ph = (state.phases||[]).find(p=>p.id===id);
   if (!ph) return;
   if (which==='start') ph.startDate = val; else ph.endDate = val;
-  saveState();
+  saveMeetingState();
 }
 
 function deletePhase(id) {
   state.phases = (state.phases||[]).filter(p=>p.id!==id);
-  saveState(); renderMeetingDetail();
+  saveMeetingState(); renderMeetingDetail();
 }
 
 function addPhase() {
@@ -4441,7 +4489,7 @@ function addPhase() {
   if (!state.phases) state.phases = [];
   state.phases.push({ id:'ph_'+Date.now(), name:inp.value.trim(), pct:0, color:col?col.value:'#2196f3', startDate:'', endDate:'' });
   inp.value = '';
-  saveState(); renderMeetingDetail();
+  saveMeetingState(); renderMeetingDetail();
 }
 
 // ── Prezentační režim ──────────────────────────────────────────────────────
@@ -4516,10 +4564,13 @@ document.addEventListener('keydown', e => {
 let _vacYear = new Date().getFullYear();
 const _MONTHS_CS = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
 
-function openVacView() {
+async function openVacView() {
   if (!state.schedule) state.schedule = {};
   _vacYear = new Date().getFullYear();
   document.getElementById('vacOverlay').classList.add('open');
+  renderVacCalendar();
+  // Load fresh from server
+  await loadMeetingState();
   renderVacCalendar();
 }
 
@@ -4653,7 +4704,7 @@ function vacCellClick(date, memberId) {
   if      (cur==='')  state.schedule[date][memberId] = 'S';
   else if (cur==='S') state.schedule[date][memberId] = 'D';
   else { delete state.schedule[date][memberId]; if (!Object.keys(state.schedule[date]).length) delete state.schedule[date]; }
-  saveState();
+  saveMeetingState();
   renderVacCalendar();
 }
 
