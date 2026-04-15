@@ -73,8 +73,13 @@ if ($action === 'load') {
         $old     = json_decode($row['state_json'], true);
         $oldCols  = count($old['columns'] ?? []);
         $oldCards = count($old['cards']   ?? []);
-        // Reject: would wipe non-empty data with empty payload
-        if (($oldCols > 0 || $oldCards > 0) && $cols === 0 && $cards === 0) {
+        // Reject: would wipe non-empty kanban data with empty payload
+        // (but allow save if payload has meeting/phase/schedule data)
+        $hasExtra = !empty($newState['livingMeeting']['agenda'])
+                 || !empty($newState['meetingVersions'])
+                 || !empty($newState['phases'])
+                 || !empty($newState['schedule']);
+        if (($oldCols > 0 || $oldCards > 0) && $cols === 0 && $cards === 0 && !$hasExtra) {
             jsonResponse(['success' => true, 'skipped' => 'empty_guard']);
         }
     }

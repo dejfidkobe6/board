@@ -1389,7 +1389,16 @@ async function _syncToServer(projectId, _attempt) {
 
   try {
     const _fd = new FormData();
-    _fd.append('state', JSON.stringify({ columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() }));
+    _fd.append('state', JSON.stringify({
+      columns:         cols,
+      cards:           cards,
+      completed:       proj.completed       || [],
+      _ts:             state._ts            || Date.now(),
+      livingMeeting:   state.livingMeeting  || {},
+      meetingVersions: state.meetingVersions|| [],
+      phases:          state.phases         || [],
+      schedule:        state.schedule       || {},
+    }));
     const res = await fetch(`/api/kanban.php?action=save&project_id=${projectId}`, {
       method: 'POST', credentials: 'include', body: _fd
     });
@@ -1435,6 +1444,11 @@ async function syncKanbanFromServer(projectId) {
     proj.cards     = data.state.cards     || [];
     proj.completed = data.state.completed || [];
     state._ts = data.state._ts || 0;
+    // Sync shared project data
+    if (data.state.livingMeeting  ) state.livingMeeting   = data.state.livingMeeting;
+    if (data.state.meetingVersions) state.meetingVersions = data.state.meetingVersions;
+    if (Array.isArray(data.state.phases) && data.state.phases.length) state.phases = data.state.phases;
+    if (data.state.schedule && Object.keys(data.state.schedule).length) state.schedule = data.state.schedule;
     try { localStorage.setItem('besix_v1', JSON.stringify(state)); } catch(e) {}
     setSyncDot('ok');
     renderBoard(); updateBadge(); renderTaskPanel();
@@ -1490,7 +1504,11 @@ window.addEventListener('beforeunload', () => {
   const cols  = proj.columns || [];
   const cards = proj.cards   || [];
   if (cols.length === 0 && cards.length === 0) return;
-  const beaconState = JSON.stringify({ columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now() });
+  const beaconState = JSON.stringify({
+    columns: cols, cards: cards, completed: proj.completed || [], _ts: state._ts || Date.now(),
+    livingMeeting: state.livingMeeting||{}, meetingVersions: state.meetingVersions||[],
+    phases: state.phases||[], schedule: state.schedule||{},
+  });
   const beaconBody = 'state=' + encodeURIComponent(beaconState);
   try { navigator.sendBeacon(`/api/kanban.php?action=save&project_id=${projectId}`, new Blob([beaconBody], { type: 'application/x-www-form-urlencoded' })); } catch(e) {}
 });
