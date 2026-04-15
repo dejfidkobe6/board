@@ -2348,6 +2348,7 @@ function dzDropPhotos(e) {
 }
 
 function deleteCardPhoto(idx) {
+  if (!confirm('Smazat tuto fotografii?')) return;
   const card = gc(detailCardId); if (!card) return;
   card.photos.splice(idx, 1);
   saveState(); renderDetailPhotos(card); renderBoard();
@@ -2416,6 +2417,7 @@ function dzDropFiles(e) {
 }
 
 function deleteCardAttach(idx) {
+  if (!confirm('Smazat tuto přílohu?')) return;
   const card = gc(detailCardId); if (!card) return;
   card.attachments.splice(idx, 1);
   saveState(); renderDetailAttachments(card); renderBoard();
@@ -4566,6 +4568,7 @@ function addAgendaItem() {
 }
 
 function deleteAgendaItem(idx) {
+  if (!confirm('Odebrat tento bod porady?')) return;
   const ag = state.livingMeeting?.agenda?.[idx];
   if (ag) {
     if (!state.livingMeeting._deletedAgendaIds) state.livingMeeting._deletedAgendaIds = [];
@@ -4639,6 +4642,7 @@ function toggleMtgTask(agIdx, taskId, done) {
 }
 
 function deleteMtgTask(agIdx, taskId) {
+  if (!confirm('Odebrat tento úkol?')) return;
   const ag = state.livingMeeting?.agenda?.[agIdx];
   if (!ag) return;
   // Track deleted ID so _mergeLivingMeeting won't resurrect it from server
@@ -4781,6 +4785,7 @@ function addMtgAttachFile(e, agIdx, taskId) {
 }
 
 function deleteMtgAttach(agIdx, taskId, idx) {
+  if (!confirm('Smazat tuto přílohu?')) return;
   const task = (state.livingMeeting?.agenda?.[agIdx]?.tasks||[]).find(t=>t.id===taskId);
   if (!task) return;
   task.attachments.splice(idx, 1);
@@ -4886,6 +4891,7 @@ function calcPhasePct(ph) {
 }
 
 function deletePhase(id) {
+  if (!confirm('Odebrat tuto fázi?')) return;
   state.phases = (state.phases||[]).filter(p=>p.id!==id);
   saveMeetingState(); renderMeetingDetail();
 }
