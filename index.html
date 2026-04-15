@@ -1367,17 +1367,62 @@ async function _doSaveMeetingState() {
   const projectId = localStorage.getItem('besix_active_project_id');
   if (!projectId) return;
   try {
+    // Load server state first to merge concurrent edits from other users
+    const loadRes  = await fetch(`/api/meeting.php?action=load&project_id=${projectId}`, { credentials: 'include' });
+    const loadData = await loadRes.json();
+    let toSave = {
+      livingMeeting:   state.livingMeeting   || {},
+      meetingVersions: state.meetingVersions || [],
+      phases:          state.phases          || [],
+      schedule:        state.schedule        || {},
+    };
+    if (loadData.success && loadData.data) {
+      const d = loadData.data;
+      // Merge agenda/tasks: preserve tasks added by other users
+      if (d.livingMeeting) toSave.livingMeeting = _mergeLivingMeeting(state.livingMeeting||{}, d.livingMeeting);
+      // Merge phases: keep server-only phases, local wins for same ID
+      if (Array.isArray(d.phases) && d.phases.length) {
+        const localById = Object.fromEntries((state.phases||[]).map(p=>[p.id,p]));
+        const srvOnly   = d.phases.filter(p=>!localById[p.id]);
+        toSave.phases   = [...(state.phases||[]), ...srvOnly];
+      }
+      // Merge schedule: union of dates, local member values win
+      if (d.schedule && typeof d.schedule==='object') {
+        const merged = { ...d.schedule };
+        Object.entries(state.schedule||{}).forEach(([date,vals]) => {
+          merged[date] = { ...(merged[date]||{}), ...vals };
+        });
+        toSave.schedule = merged;
+      }
+    }
     await fetch(`/api/meeting.php?action=save&project_id=${projectId}`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        livingMeeting:   state.livingMeeting   || {},
-        meetingVersions: state.meetingVersions || [],
-        phases:          state.phases          || [],
-        schedule:        state.schedule        || {},
-      }),
+      body: JSON.stringify(toSave),
     });
   } catch(e) { console.error('[meeting] save error', e); }
+}
+
+function _mergeLivingMeeting(local, server) {
+  const result = { ...local };
+  const localAgenda  = local.agenda  || [];
+  const serverAgenda = server.agenda || [];
+  const localById  = Object.fromEntries(localAgenda.map(ag=>[ag.id, ag]));
+  const serverById = Object.fromEntries(serverAgenda.map(ag=>[ag.id, ag]));
+  // Append agenda items added on server that local doesn't have
+  const srvOnlyAgenda = serverAgenda.filter(ag=>!localById[ag.id]);
+  result.agenda = [
+    ...localAgenda.map(ag => {
+      const srv = serverById[ag.id];
+      if (!srv) return ag; // Only local → keep as-is
+      // Both have this item: merge tasks (append server-only tasks)
+      const localTaskIds = new Set((ag.tasks||[]).map(t=>t.id));
+      const srvOnlyTasks = (srv.tasks||[]).filter(t=>!localTaskIds.has(t.id));
+      return { ...ag, tasks: [...(ag.tasks||[]), ...srvOnlyTasks] };
+    }),
+    ...srvOnlyAgenda,
+  ];
+  return result;
 }
 
 async function loadMeetingState() {
@@ -3795,6 +3840,27 @@ function _calPick(dateStr) {
     return;
   }
 
+  // Meeting task calendar pick
+  if (cardId === '__mtg__') {
+    if (_mtgCalCtx) {
+      if (_mtgCalCtx.type === 'task') {
+        const ag   = state.livingMeeting?.agenda?.[_mtgCalCtx.agIdx];
+        const task = (ag?.tasks||[]).find(t=>t.id===_mtgCalCtx.taskId);
+        if (task) { task.deadline = dateStr || null; saveMeetingState(); renderMeetingDetail(); renderTaskPanel(); }
+      } else if (_mtgCalCtx.type === 'add') {
+        if (!window._mtgPendingAdd) window._mtgPendingAdd = {};
+        if (!window._mtgPendingAdd[_mtgCalCtx.agId]) window._mtgPendingAdd[_mtgCalCtx.agId] = {};
+        window._mtgPendingAdd[_mtgCalCtx.agId].deadline = dateStr || null;
+        const btn = document.getElementById(`mtg-add-dl-${_mtgCalCtx.agId}`);
+        if (btn) {
+          if (dateStr) { btn.className = 'cl-meta-btn has-date'; btn.innerHTML = `📅 ${fmtDate(dateStr)}`; }
+          else { btn.className = 'cl-meta-btn'; btn.innerHTML = '📅 Termín'; }
+        }
+      }
+    }
+    return;
+  }
+
   const card = findCardAnywhere(cardId); if (!card) return;
   const found = findClItem(card, itemId); if (!found) return;
   found.item.deadline = dateStr || null;
@@ -4338,16 +4404,26 @@ function renderMeetingDetail() {
     <div class="agenda-wrap">`;
 
   (src.agenda||[]).forEach((ag, idx) => {
+    const today = new Date().toISOString().split('T')[0];
     const tasksHtml = (ag.tasks||[]).map(t => {
-      const mem = members.find(x=>String(x.id)===String(t.assignee));
-      const col  = mem ? (mem.avatar_color||mem.color||'#4A5340') : '#666';
+      const mem  = members.find(x=>String(x.id)===String(t.assignee));
       const nm   = mem ? mem.name.split(' ')[0] : '';
-      return `<div class="agenda-task">
-        <input type="checkbox" ${t.done?'checked':''} ${readonly?'disabled':''} onchange="toggleMtgTask(${idx},'${t.id}',this.checked)">
-        <span class="agenda-task-text${t.done?' done':''}">${escHtml(t.text)}</span>
-        ${mem?`<span class="agenda-task-assignee" style="background:${col}22;color:${col};border:1px solid ${col}44">@${escHtml(nm)}</span>`:''}
-        ${t.deadline?`<span class="agenda-task-dl">📅 ${fmtDate(t.deadline)}</span>`:''}
-        ${!readonly?`<button onclick="deleteMtgTask(${idx},'${t.id}')" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px;padding:0 0 0 4px;margin-left:auto" title="Smazat">✕</button>`:''}
+      const dlCls = t.deadline ? (t.deadline < today ? 'date-overdue' : t.deadline === today ? 'date-today' : 'has-date') : '';
+      const atts = t.attachments||[];
+      const attLinks = atts.map((a,i)=>`<div class="cl-attach-link"><span class="cl-attach-link-icon">${fileIcon(a.name)}</span><span class="cl-attach-link-name">${escHtml(a.name)}</span><span class="cl-attach-link-size">${fmtSize(a.size||0)}</span><button class="cl-attach-link-del" onclick="deleteMtgAttach(${idx},'${t.id}',${i})" title="Odebrat">✕</button></div>`).join('');
+      return `<div class="cl-item" id="mtgt-${t.id}" style="margin:2px 0">
+        <div class="cl-item-main">
+          <input type="checkbox" class="cl-checkbox" ${t.done?'checked':''} ${readonly?'disabled':''} onchange="toggleMtgTask(${idx},'${t.id}',this.checked)">
+          <span class="cl-text${t.done?' agenda-task-text done':''}" title="${!readonly?'Dvojklik pro přejmenování':''}"${!readonly?` ondblclick="startRenameMtgTask(this,${idx},'${t.id}')"`:''}>${escHtml(t.text)}</span>
+          ${mem?`<span class="cl-author">${escHtml(nm)}</span>`:''}
+          ${!readonly?`<button class="cl-meta-toggle" onclick="toggleMtgTaskMeta('${t.id}')" title="Přiřadit / Termín">⋯</button><button class="cl-del" onclick="deleteMtgTask(${idx},'${t.id}')">✕</button>`:''}
+        </div>
+        ${!readonly?`<div class="cl-item-meta" id="mtgm-${t.id}" style="display:none">
+          <button class="cl-meta-btn${mem?' assigned':''}" onclick="openMtgTaskAssignee(this,${idx},'${t.id}')">${mem?`👤 ${escHtml(nm)}`:'👤 Přiřadit'}</button>
+          <button class="cl-meta-btn${dlCls?' '+dlCls:''}" onclick="openMtgTaskCal(this,${idx},'${t.id}','${t.deadline||''}')">${t.deadline?`📅 ${fmtDate(t.deadline)}`:'📅 Termín'}</button>
+          <button class="cl-attach-toggle" onclick="toggleMtgAttach('${t.id}')">📎${atts.length?` (${atts.length})`:''}</button>
+        </div>${attLinks?`<div class="cl-attach-links">${attLinks}</div>`:''}
+        <div class="cl-att-zone" id="mtgaz-${t.id}" style="display:none"><div class="cl-drop-zone"><div style="font-size:22px;margin-bottom:4px">📎</div><input type="file" multiple style="display:none" id="mcfi-${t.id}" onchange="addMtgAttachFile(event,${idx},'${t.id}')"><button onclick="document.getElementById('mcfi-${t.id}').click()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;font-family:inherit">Vybrat soubor</button></div></div>`:''}
       </div>`;
     }).join('');
     agendaHtml += `<div class="agenda-item">
@@ -4358,10 +4434,20 @@ function renderMeetingDetail() {
         ${!readonly?`<button onclick="deleteAgendaItem(${idx})" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;padding:2px 4px;line-height:1" title="Odebrat bod">✕</button>`:''}
       </div>
       <div class="agenda-tasks">${tasksHtml}</div>
-      ${!readonly?`<button class="agenda-add-task" onclick="showAddMtgTask(${idx})">+ Přidat úkol &nbsp;<span style="opacity:0.5;font-size:10px">(@Jméno pro přiřazení · RRRR-MM-DD pro termín)</span></button>
-      <input class="agenda-task-input" style="display:none" id="mtgTaskInp_${idx}"
-        placeholder="Úkol… @Pavel 2026-04-30"
-        onkeydown="if(event.key==='Enter')submitMtgTask(${idx});if(event.key==='Escape')this.style.display='none'">`:''}
+      ${!readonly?`<div style="margin-top:6px">
+        <button class="agenda-add-task" id="mtg-add-btn-${ag.id}" onclick="showMtgAddRow('${ag.id}',${idx})">+ Přidat úkol</button>
+        <div id="mtg-add-form-${ag.id}" style="display:none;flex-direction:column;gap:6px;padding:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-top:4px">
+          <input class="agenda-task-input" id="mtg-add-inp-${ag.id}" placeholder="Popis úkolu… nebo @Jméno pro přiřazení"
+            oninput="mtgTaskAtInput(this,${idx},'${ag.id}')"
+            onkeydown="if(event.key==='Enter')submitMtgTask(${idx},'${ag.id}');if(event.key==='Escape')hideMtgAddRow('${ag.id}')">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <button class="cl-meta-btn" id="mtg-add-at-${ag.id}" onclick="openMtgAddAssignee(this,${idx},'${ag.id}')">👤 Přiřadit</button>
+            <button class="cl-meta-btn" id="mtg-add-dl-${ag.id}" onclick="openMtgAddCal(this,${idx},'${ag.id}')">📅 Termín</button>
+            <button class="btn btn-ghost" style="font-size:12px;margin-left:auto" onclick="submitMtgTask(${idx},'${ag.id}')">Přidat</button>
+            <button class="btn btn-ghost" style="font-size:12px;color:var(--text2)" onclick="hideMtgAddRow('${ag.id}')">Zrušit</button>
+          </div>
+        </div>
+      </div>`:''}
     </div>`;
   });
   agendaHtml += `</div>
@@ -4399,30 +4485,56 @@ function saveAgendaText(idx, text) {
   if (state.livingMeeting?.agenda?.[idx]) { state.livingMeeting.agenda[idx].text = text; saveMeetingState(); }
 }
 
-function showAddMtgTask(agIdx) {
-  const inp = document.getElementById(`mtgTaskInp_${agIdx}`);
-  if (inp) { inp.style.display='block'; inp.focus(); }
+function showMtgAddRow(agId, agIdx) {
+  const form = document.getElementById(`mtg-add-form-${agId}`);
+  const btn  = document.getElementById(`mtg-add-btn-${agId}`);
+  if (!form) return;
+  form.style.display = 'flex';
+  if (btn) btn.style.display = 'none';
+  const inp = document.getElementById(`mtg-add-inp-${agId}`);
+  if (inp) { inp.value = ''; inp.focus(); }
+  if (!window._mtgPendingAdd) window._mtgPendingAdd = {};
+  window._mtgPendingAdd[agId] = { assignee: null, deadline: null };
 }
 
-function submitMtgTask(agIdx) {
-  const inp = document.getElementById(`mtgTaskInp_${agIdx}`);
+function hideMtgAddRow(agId) {
+  const form = document.getElementById(`mtg-add-form-${agId}`);
+  const btn  = document.getElementById(`mtg-add-btn-${agId}`);
+  if (form) form.style.display = 'none';
+  if (btn) btn.style.display = '';
+  document.getElementById('_mtgAtSuggest')?.remove();
+}
+
+function submitMtgTask(agIdx, agId) {
+  const inp = document.getElementById(agId ? `mtg-add-inp-${agId}` : `mtgTaskInp_${agIdx}`);
   if (!inp) return;
   let text = inp.value.trim();
-  if (!text) { inp.style.display='none'; return; }
+  if (!text) { if (agId) hideMtgAddRow(agId); return; }
   const ag = state.livingMeeting?.agenda?.[agIdx];
   if (!ag) return;
+  const pending = (window._mtgPendingAdd||{})[agId] || {};
+  let assignee = pending.assignee || null;
+  let deadline = pending.deadline || null;
   const members = _projectMembers || state.members || [];
-  let assignee = null, deadline = null;
-  const atM = text.match(/@(\S+)/);
-  if (atM) {
-    const q = atM[1].toLowerCase();
-    const found = members.find(m=>m.name.toLowerCase().includes(q)||(m.name.split(' ')[0]).toLowerCase().startsWith(q));
-    if (found) { assignee = String(found.id); text = text.replace(atM[0],'').trim(); }
+  // Still support @name in text as fallback
+  if (!assignee) {
+    const atM = text.match(/@(\S+)/);
+    if (atM) {
+      const q = atM[1].toLowerCase();
+      const found = members.find(m=>m.name.toLowerCase().includes(q)||(m.name.split(' ')[0]).toLowerCase().startsWith(q));
+      if (found) { assignee = String(found.id); text = text.replace(atM[0],'').trim(); }
+    }
   }
-  const dlM = text.match(/(\d{4}-\d{2}-\d{2})/);
-  if (dlM) { deadline = dlM[1]; text = text.replace(dlM[0],'').trim(); }
+  if (!deadline) {
+    const dlM = text.match(/(\d{4}-\d{2}-\d{2})/);
+    if (dlM) { deadline = dlM[1]; text = text.replace(dlM[0],'').trim(); }
+  }
   if (!assignee && currentUser) assignee = String(currentUser.id);
-  ag.tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee, deadline, createdAt:new Date().toISOString() });
+  ag.tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee, deadline, attachments:[], createdAt:new Date().toISOString() });
+  if (agId) {
+    hideMtgAddRow(agId);
+    if (window._mtgPendingAdd) delete window._mtgPendingAdd[agId];
+  }
   saveMeetingState(); renderMeetingDetail(); renderTaskPanel();
 }
 
@@ -4437,6 +4549,190 @@ function deleteMtgTask(agIdx, taskId) {
   if (!ag) return;
   ag.tasks = ag.tasks.filter(t=>t.id!==taskId);
   saveMeetingState(); renderMeetingDetail(); renderTaskPanel();
+}
+
+// ── Meeting task UI helpers ────────────────────────────────────────────────
+function toggleMtgTaskMeta(taskId) {
+  const meta = document.getElementById(`mtgm-${taskId}`);
+  if (!meta) return;
+  const opening = meta.style.display === 'none';
+  document.querySelectorAll('.cl-item-meta').forEach(m => { m.style.display = 'none'; });
+  meta.style.display = opening ? 'flex' : 'none';
+}
+
+function startRenameMtgTask(spanEl, agIdx, taskId) {
+  const task = (state.livingMeeting?.agenda?.[agIdx]?.tasks||[]).find(t=>t.id===taskId);
+  if (!task) return;
+  const cur = task.text;
+  const inp = document.createElement('input');
+  inp.className = 'cl-text';
+  inp.value = cur;
+  inp.style.cssText = 'background:rgba(255,255,255,0.08);border:1px solid rgba(200,165,60,0.5);border-radius:4px;padding:2px 6px;min-width:80px;font-family:inherit;font-size:inherit;color:var(--text)';
+  const commit = () => {
+    const v = inp.value.trim();
+    if (v && v !== cur) { task.text = v; saveMeetingState(); }
+    renderMeetingDetail();
+  };
+  inp.onblur = commit;
+  inp.onkeydown = e => { if (e.key==='Enter') inp.blur(); if (e.key==='Escape') { inp.value=cur; inp.blur(); } };
+  spanEl.replaceWith(inp);
+  inp.focus(); inp.select();
+}
+
+// Assignee picker for existing meeting task
+function openMtgTaskAssignee(anchorEl, agIdx, taskId) {
+  document.getElementById('_mtgAssigneePicker')?.remove();
+  const members = _projectMembers || state.members || [];
+  if (!members.length) return;
+  const task = (state.livingMeeting?.agenda?.[agIdx]?.tasks||[]).find(t=>t.id===taskId);
+  const cur = String(task?.assignee||'');
+  const wrap = document.createElement('div');
+  wrap.className = 'at-suggest'; wrap.id = '_mtgAssigneePicker';
+  const rect = anchorEl.getBoundingClientRect();
+  wrap.style.cssText = `top:${Math.min(rect.bottom+4, window.innerHeight-200)}px;left:${Math.min(rect.left, window.innerWidth-185)}px`;
+  wrap.innerHTML = members.map(m =>
+    `<div class="at-suggest-item${String(m.id)===cur?' at-active':''}" onclick="setMtgTaskAssignee(${agIdx},'${taskId}','${m.id}')">
+       <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
+       ${escHtml(m.name)}
+     </div>`
+  ).join('') + `<div class="at-suggest-item" style="color:rgba(255,100,80,0.7)" onclick="setMtgTaskAssignee(${agIdx},'${taskId}',null)">✕ Odebrat přiřazení</div>`;
+  document.body.appendChild(wrap);
+  setTimeout(() => {
+    document.addEventListener('click', function h(e) {
+      if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', h, true); }
+    }, { capture: true });
+  }, 0);
+}
+
+function setMtgTaskAssignee(agIdx, taskId, memberId) {
+  document.getElementById('_mtgAssigneePicker')?.remove();
+  const task = (state.livingMeeting?.agenda?.[agIdx]?.tasks||[]).find(t=>t.id===taskId);
+  if (!task) return;
+  task.assignee = memberId || null;
+  saveMeetingState(); renderMeetingDetail(); renderTaskPanel();
+}
+
+// Assignee picker for new task add-row
+function openMtgAddAssignee(anchorEl, agIdx, agId) {
+  document.getElementById('_mtgAddAssigneePicker')?.remove();
+  const members = _projectMembers || state.members || [];
+  if (!members.length) return;
+  const cur = String((window._mtgPendingAdd||{})[agId]?.assignee||'');
+  const wrap = document.createElement('div');
+  wrap.className = 'at-suggest'; wrap.id = '_mtgAddAssigneePicker';
+  const rect = anchorEl.getBoundingClientRect();
+  wrap.style.cssText = `top:${Math.min(rect.bottom+4, window.innerHeight-200)}px;left:${Math.min(rect.left, window.innerWidth-185)}px`;
+  wrap.innerHTML = members.map(m =>
+    `<div class="at-suggest-item${String(m.id)===cur?' at-active':''}" onclick="setMtgAddAssignee('${agId}','${m.id}','${m.name.replace(/'/g,"\\'")}')">
+       <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
+       ${escHtml(m.name)}
+     </div>`
+  ).join('') + `<div class="at-suggest-item" style="color:rgba(255,100,80,0.7)" onclick="setMtgAddAssignee('${agId}',null,'')">✕ Žádný</div>`;
+  document.body.appendChild(wrap);
+  setTimeout(() => {
+    document.addEventListener('click', function h(e) {
+      if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', h, true); }
+    }, { capture: true });
+  }, 0);
+}
+
+function setMtgAddAssignee(agId, memberId, memberName) {
+  document.getElementById('_mtgAddAssigneePicker')?.remove();
+  if (!window._mtgPendingAdd) window._mtgPendingAdd = {};
+  if (!window._mtgPendingAdd[agId]) window._mtgPendingAdd[agId] = {};
+  window._mtgPendingAdd[agId].assignee = memberId || null;
+  const btn = document.getElementById(`mtg-add-at-${agId}`);
+  if (btn) {
+    if (memberId && memberName) { btn.classList.add('assigned'); btn.innerHTML = `👤 ${escHtml(memberName.split(' ')[0])}`; }
+    else { btn.classList.remove('assigned'); btn.innerHTML = '👤 Přiřadit'; }
+  }
+}
+
+// Mini calendar for meeting tasks — piggybacks on existing _calPick via special cardId='__mtg__'
+let _mtgCalCtx = null;
+
+function openMtgTaskCal(anchorEl, agIdx, taskId, current) {
+  _mtgCalCtx = { type:'task', agIdx, taskId };
+  openMiniCal(anchorEl, '__mtg_task__', '__mtg__', current || null);
+}
+
+function openMtgAddCal(anchorEl, agIdx, agId) {
+  _mtgCalCtx = { type:'add', agId };
+  const pending = (window._mtgPendingAdd||{})[agId]?.deadline || null;
+  openMiniCal(anchorEl, '__mtg_add__', '__mtg__', pending);
+}
+
+// Attachment helpers
+function toggleMtgAttach(taskId) {
+  const zone = document.getElementById(`mtgaz-${taskId}`);
+  if (!zone) return;
+  const isOpen = zone.style.display !== 'none';
+  document.querySelectorAll('[id^="mtgaz-"]').forEach(z => { z.style.display='none'; });
+  if (!isOpen) zone.style.display = 'block';
+}
+
+function addMtgAttachFile(e, agIdx, taskId) {
+  const files = Array.from(e.target.files); if (!files.length) return;
+  const task = (state.livingMeeting?.agenda?.[agIdx]?.tasks||[]).find(t=>t.id===taskId);
+  if (!task) { e.target.value=''; return; }
+  if (!task.attachments) task.attachments = [];
+  readFiles(files, 'file', results => {
+    task.attachments.push(...results);
+    saveMeetingState(); renderMeetingDetail();
+  });
+  e.target.value = '';
+}
+
+function deleteMtgAttach(agIdx, taskId, idx) {
+  const task = (state.livingMeeting?.agenda?.[agIdx]?.tasks||[]).find(t=>t.id===taskId);
+  if (!task) return;
+  task.attachments.splice(idx, 1);
+  saveMeetingState(); renderMeetingDetail();
+}
+
+// @mention autocomplete in add-task input
+function mtgTaskAtInput(inputEl, agIdx, agId) {
+  const val   = inputEl.value;
+  const atPos = val.lastIndexOf('@');
+  if (atPos === -1) { document.getElementById('_mtgAtSuggest')?.remove(); return; }
+  const query = val.slice(atPos + 1).toLowerCase();
+  const members = (_projectMembers || state.members || []).filter(m =>
+    !query || m.name.toLowerCase().split(' ').some(p => p.startsWith(query))
+  );
+  if (!members.length) { document.getElementById('_mtgAtSuggest')?.remove(); return; }
+  document.getElementById('_mtgAtSuggest')?.remove();
+  const wrap = document.createElement('div');
+  wrap.className = 'at-suggest'; wrap.id = '_mtgAtSuggest';
+  const rect = inputEl.getBoundingClientRect();
+  wrap.style.cssText = `top:${rect.bottom+4}px;left:${rect.left}px;min-width:${rect.width}px`;
+  wrap.innerHTML = members.map(m =>
+    `<div class="at-suggest-item" onclick="selectMtgAtMember('${agId}','${m.id}','${m.name.replace(/'/g,"\\'")}')">
+       <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
+       ${escHtml(m.name)}
+     </div>`
+  ).join('');
+  document.body.appendChild(wrap);
+  setTimeout(() => {
+    document.addEventListener('click', function h(e) {
+      if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', h, true); }
+    }, { capture: true });
+  }, 0);
+}
+
+function selectMtgAtMember(agId, memberId, memberName) {
+  document.getElementById('_mtgAtSuggest')?.remove();
+  const inp = document.getElementById(`mtg-add-inp-${agId}`);
+  if (inp) {
+    const val   = inp.value;
+    const atPos = val.lastIndexOf('@');
+    inp.value   = atPos >= 0 ? val.slice(0, atPos).trimEnd() + ' ' : val;
+    inp.focus();
+  }
+  if (!window._mtgPendingAdd) window._mtgPendingAdd = {};
+  if (!window._mtgPendingAdd[agId]) window._mtgPendingAdd[agId] = {};
+  window._mtgPendingAdd[agId].assignee = memberId;
+  const btn = document.getElementById(`mtg-add-at-${agId}`);
+  if (btn) { btn.classList.add('assigned'); btn.innerHTML = `👤 ${escHtml(memberName.split(' ')[0])}`; }
 }
 
 // ── Gantt fáze ─────────────────────────────────────────────────────────────
