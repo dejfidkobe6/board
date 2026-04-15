@@ -1405,15 +1405,20 @@ function _mergeLivingMeeting(local, server) {
   const serverAgenda = server.agenda || [];
   const localById  = Object.fromEntries(localAgenda.map(ag=>[ag.id, ag]));
   const serverById = Object.fromEntries(serverAgenda.map(ag=>[ag.id, ag]));
-  // Append agenda items added on server that local doesn't have
-  const srvOnlyAgenda = serverAgenda.filter(ag=>!localById[ag.id]);
+
+  // Respect locally-deleted IDs — never resurrect them from server
+  const deletedAgendaIds = new Set(local._deletedAgendaIds || []);
+  const deletedTaskIds   = new Set(local._deletedTaskIds   || []);
+
+  // Append agenda items added on server that local doesn't have and local hasn't deleted
+  const srvOnlyAgenda = serverAgenda.filter(ag => !localById[ag.id] && !deletedAgendaIds.has(ag.id));
   result.agenda = [
     ...localAgenda.map(ag => {
       const srv = serverById[ag.id];
       if (!srv) return ag; // Only local → keep as-is
-      // Both have this item: merge tasks (append server-only tasks)
+      // Both have this item: append server-only tasks (skip deleted)
       const localTaskIds = new Set((ag.tasks||[]).map(t=>t.id));
-      const srvOnlyTasks = (srv.tasks||[]).filter(t=>!localTaskIds.has(t.id));
+      const srvOnlyTasks = (srv.tasks||[]).filter(t => !localTaskIds.has(t.id) && !deletedTaskIds.has(t.id));
       return { ...ag, tasks: [...(ag.tasks||[]), ...srvOnlyTasks] };
     }),
     ...srvOnlyAgenda,
@@ -4561,6 +4566,11 @@ function addAgendaItem() {
 }
 
 function deleteAgendaItem(idx) {
+  const ag = state.livingMeeting?.agenda?.[idx];
+  if (ag) {
+    if (!state.livingMeeting._deletedAgendaIds) state.livingMeeting._deletedAgendaIds = [];
+    if (!state.livingMeeting._deletedAgendaIds.includes(ag.id)) state.livingMeeting._deletedAgendaIds.push(ag.id);
+  }
   state.livingMeeting.agenda.splice(idx,1);
   saveMeetingState(); renderMeetingDetail();
 }
@@ -4631,6 +4641,9 @@ function toggleMtgTask(agIdx, taskId, done) {
 function deleteMtgTask(agIdx, taskId) {
   const ag = state.livingMeeting?.agenda?.[agIdx];
   if (!ag) return;
+  // Track deleted ID so _mergeLivingMeeting won't resurrect it from server
+  if (!state.livingMeeting._deletedTaskIds) state.livingMeeting._deletedTaskIds = [];
+  if (!state.livingMeeting._deletedTaskIds.includes(taskId)) state.livingMeeting._deletedTaskIds.push(taskId);
   ag.tasks = ag.tasks.filter(t=>t.id!==taskId);
   saveMeetingState(); renderMeetingDetail(); renderTaskPanel();
 }
