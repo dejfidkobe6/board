@@ -1695,6 +1695,7 @@ state.phases.forEach(ph => { if (ph.startDate===undefined) ph.startDate=''; if (
 if (!state.vacations) state.vacations = [];
 if (!state.livingMeeting) state.livingMeeting = { title: 'Týdenní porada', agenda: [] };
 if (!state.meetingVersions) state.meetingVersions = [];
+if (!state.autoVersionConfig) state.autoVersionConfig = { dayOfWeek: 1, hour: 23, minute: 59 }; // Monday 23:59
 
 // Migrate old state without projects
 if (!state.projects) {
@@ -4212,19 +4213,50 @@ let _presentSlides    = [];
 let _presentIdx       = 0;
 
 // ── Verzování ──────────────────────────────────────────────────────────────
-function getLastMonday() {
-  const d = new Date();
-  const day = d.getDay(); // 0=Ne,1=Po,...
-  const diff = day === 0 ? 6 : day - 1;
-  d.setDate(d.getDate() - diff);
-  return d.toISOString().split('T')[0];
+const _DAYS_CS = ['Neděle','Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota'];
+
+function getAutoVersionConfig() {
+  if (!state.autoVersionConfig) state.autoVersionConfig = { dayOfWeek: 1, hour: 23, minute: 59 };
+  return state.autoVersionConfig;
+}
+
+// Returns YYYY-MM-DD of the configured backup day within the current ISO week (Mon–Sun)
+function getWeekVersionDate() {
+  const c = getAutoVersionConfig();
+  const now = new Date();
+  const curDow = now.getDay(); // 0=Sun,1=Mon,...6=Sat
+  // Days from Monday to reach current day (Mon=0, ..., Sun=6)
+  const daysFromMon = curDow === 0 ? 6 : curDow - 1;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - daysFromMon);
+  monday.setHours(0,0,0,0);
+  // Target day offset from Monday (Mon=1→0, Tue=2→1, ..., Sun=0→6)
+  const targetDow = c.dayOfWeek; // 0=Sun,1=Mon,...6=Sat
+  const targetOffset = targetDow === 0 ? 6 : targetDow - 1;
+  const target = new Date(monday);
+  target.setDate(monday.getDate() + targetOffset);
+  return target.toISOString().split('T')[0];
+}
+
+// Returns true if the auto-backup time has already passed today
+function _autoVersionDue() {
+  const c  = getAutoVersionConfig();
+  const now = new Date();
+  if (now.getDay() !== c.dayOfWeek) return false;
+  if (now.getHours()  < c.hour) return false;
+  if (now.getHours() === c.hour && now.getMinutes() < c.minute) return false;
+  return true;
 }
 
 function checkAutoVersion() {
   if (!(state.livingMeeting?.agenda?.length)) return;
-  const monday = getLastMonday();
-  const already = (state.meetingVersions||[]).some(v => v.date === monday);
-  if (!already) createMeetingVersion(monday, true);
+  if (!_autoVersionDue()) return;
+  const versionDate = getWeekVersionDate();
+  const already = (state.meetingVersions||[]).some(v => v.date === versionDate);
+  if (!already) {
+    createMeetingVersion(versionDate, true);
+    showToast('Automatická záloha uložena: ' + fmtDateLong(versionDate));
+  }
 }
 
 function createMeetingVersion(dateStr, auto=false) {
@@ -4237,27 +4269,40 @@ function createMeetingVersion(dateStr, auto=false) {
     savedAt: new Date().toISOString(),
     auto,
   };
-  state.meetingVersions.unshift(ver);
+  // Overwrite existing version for same date if present
+  const idx = state.meetingVersions.findIndex(v => v.date === dateStr);
+  if (idx >= 0) state.meetingVersions.splice(idx, 1, ver);
+  else          state.meetingVersions.unshift(ver);
   // Keep max 52 versions (1 year)
   if (state.meetingVersions.length > 52) state.meetingVersions = state.meetingVersions.slice(0, 52);
   saveMeetingState();
 }
 
+// Manual save always targets the current week's slot (one backup per week)
 function manualSaveVersion() {
-  const today = new Date().toISOString().split('T')[0];
-  const existing = (state.meetingVersions||[]).find(v => v.date === today);
+  const versionDate = getWeekVersionDate();
+  const existing = (state.meetingVersions||[]).find(v => v.date === versionDate);
   if (existing) {
-    // Overwrite today's version
     existing.agenda  = JSON.parse(JSON.stringify(state.livingMeeting.agenda||[]));
     existing.title   = state.livingMeeting.title;
     existing.savedAt = new Date().toISOString();
     existing.auto    = false;
     saveMeetingState();
   } else {
-    createMeetingVersion(today, false);
+    createMeetingVersion(versionDate, false);
   }
   renderPoradyList();
-  showToast('Verze uložena: ' + fmtDateLong(today));
+  showToast('Verze uložena: ' + fmtDateLong(versionDate));
+}
+
+function saveAutoVersionConfig() {
+  const dayEl  = document.getElementById('avDay');
+  const timeEl = document.getElementById('avTime');
+  if (!dayEl || !timeEl) return;
+  const [h, m] = timeEl.value.split(':').map(Number);
+  state.autoVersionConfig = { dayOfWeek: parseInt(dayEl.value), hour: h||23, minute: m||59 };
+  saveMeetingState();
+  showToast('Nastavení záloh uloženo.');
 }
 
 function restoreVersion(verId) {
@@ -4289,6 +4334,8 @@ function showToast(msg) {
 }
 
 // ── View ───────────────────────────────────────────────────────────────────
+let _autoVersionTimer = null;
+
 async function openPoradyView() {
   document.getElementById('poradyOverlay').classList.add('open');
   _viewingVersionId = null;
@@ -4299,9 +4346,17 @@ async function openPoradyView() {
   checkAutoVersion();
   renderPoradyList();
   renderMeetingDetail();
+  // Check every minute while view is open (catches the 23:59 boundary)
+  clearInterval(_autoVersionTimer);
+  _autoVersionTimer = setInterval(() => {
+    checkAutoVersion();
+    renderPoradyList(); // refresh badge if auto-version just fired
+  }, 60000);
 }
 
 function closePoradyView() {
+  clearInterval(_autoVersionTimer);
+  _autoVersionTimer = null;
   document.getElementById('poradyOverlay').classList.remove('open');
 }
 
@@ -4317,6 +4372,13 @@ function renderPoradyList() {
   const lm   = state.livingMeeting || {};
   const vers  = (state.meetingVersions||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
   const openTasks = (lm.agenda||[]).reduce((s,a)=>s+(a.tasks||[]).filter(t=>!t.done).length, 0);
+  const c    = getAutoVersionConfig();
+  const timeStr = `${String(c.hour).padStart(2,'0')}:${String(c.minute).padStart(2,'0')}`;
+  const nextDate = getWeekVersionDate();
+  const nextDue  = _autoVersionDue();
+  const nextLabel = nextDue
+    ? `příště za ` + (() => { const d=new Date(); d.setDate(d.getDate()+7); return fmtDateLong(d.toISOString().split('T')[0]); })()
+    : `příště ${fmtDateLong(nextDate)} v ${timeStr}`;
 
   let html = `<div class="porady-item${!_viewingVersionId?' active':''}" onclick="selectMeetingView(null)"
     style="border-left:3px solid var(--accent);margin-bottom:6px">
@@ -4331,12 +4393,33 @@ function renderPoradyList() {
       const ag = v.agenda||[];
       const cnt = ag.reduce((s,a)=>s+(a.tasks||[]).filter(t=>!t.done).length,0);
       return `<div class="porady-item${_viewingVersionId===v.id?' active':''}" onclick="selectMeetingView('${v.id}')">
-        <div class="porady-item-date">${fmtDateLong(v.date)}${v.auto?' · auto':''}</div>
+        <div class="porady-item-date">${fmtDateLong(v.date)}${v.auto?' · auto':' · ruční'}</div>
         <div class="porady-item-title" style="font-size:12px">${escHtml(v.title||'Porada')}</div>
         ${cnt?`<div class="porady-item-cnt">${cnt} úkolů</div>`:''}
       </div>`;
     }).join('');
   }
+
+  // Auto-version settings panel
+  html += `<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2);margin-bottom:8px">⚙ Automatická záloha</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px">${nextLabel}</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <label style="font-size:11px;color:var(--text2);flex-shrink:0;width:40px">Den:</label>
+        <select id="avDay" onchange="saveAutoVersionConfig()"
+          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;padding:3px 6px;font-family:inherit;outline:none">
+          ${[0,1,2,3,4,5,6].map(d=>`<option value="${d}"${c.dayOfWeek===d?' selected':''}>${_DAYS_CS[d]}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <label style="font-size:11px;color:var(--text2);flex-shrink:0;width:40px">Čas:</label>
+        <input id="avTime" type="time" value="${timeStr}" onchange="saveAutoVersionConfig()"
+          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;padding:3px 6px;font-family:inherit;outline:none">
+      </div>
+    </div>
+  </div>`;
+
   list.innerHTML = html;
 }
 
