@@ -3937,6 +3937,21 @@ document.addEventListener('keydown', e => {
   if (regVisible) doRegister();
 });
 
+// ── Ctrl+S: manual save everything to server ──────────────────────────────
+document.addEventListener('keydown', async e => {
+  if (!(e.ctrlKey || e.metaKey) || e.key !== 's') return;
+  e.preventDefault();
+  const projectId = localStorage.getItem('besix_active_project_id');
+  if (!projectId) return;
+  showToast('Ukládám na server…');
+  // Force-flush kanban state
+  saveState();
+  // Force-flush meeting/schedule state (bypass debounce)
+  clearTimeout(_mtgSaveTimer);
+  await _doSaveMeetingState();
+  showToast('✓ Uloženo');
+});
+
 
 // Toggle checklist item attachment zone
 function toggleClAttach(itemId) {
