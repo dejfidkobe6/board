@@ -2953,8 +2953,6 @@ function addClItem(clId) {
   }
 
   const deadline = (window._pendingClDeadline||{})[clId] || null;
-  // Auto-assign to creator if no assignee specified
-  if (!assignee && currentUser) assignee = String(currentUser.id);
   if (!cl.items) cl.items = [];
   cl.items.push({ id: 'i'+Date.now(), text, done: false, author: currentUser.id, created: new Date().toISOString(), attachments: [], assignee: assignee||null, deadline: deadline||null });
   input.value = '';
@@ -4632,8 +4630,7 @@ function submitMtgTask(agIdx, agId) {
     const dlM = text.match(/(\d{4}-\d{2}-\d{2})/);
     if (dlM) { deadline = dlM[1]; text = text.replace(dlM[0],'').trim(); }
   }
-  if (!assignee && currentUser) assignee = String(currentUser.id);
-  ag.tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee, deadline, attachments:[], createdAt:new Date().toISOString() });
+  ag.tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee: assignee||null, deadline, attachments:[], createdAt:new Date().toISOString() });
   if (agId) {
     hideMtgAddRow(agId);
     if (window._mtgPendingAdd) delete window._mtgPendingAdd[agId];
