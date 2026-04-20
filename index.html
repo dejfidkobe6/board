@@ -900,6 +900,27 @@
   }
   .agenda-task-input:focus { border-color: rgba(200,165,60,0.4); }
 
+  /* ─── MTG SUBGROUPS ─── */
+  .mtg-section { min-height: 10px; border-radius: 6px; transition: background 0.12s, outline 0.12s; }
+  .mtg-section.drag-over { background: rgba(200,165,60,0.07); outline: 2px dashed rgba(200,165,60,0.35); outline-offset: -1px; }
+  .mtg-group-wrap { margin: 8px 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .mtg-group-hdr { display: flex; align-items: center; gap: 6px; padding: 7px 12px; background: rgba(255,255,255,0.04); border-bottom: 1px solid transparent; }
+  .mtg-group-hdr.open { border-bottom-color: var(--border); }
+  .mtg-group-toggle { cursor: pointer; font-size: 9px; color: var(--text2); width: 14px; user-select: none; flex-shrink: 0; transition: color 0.12s; }
+  .mtg-group-toggle:hover { color: var(--text); }
+  .mtg-group-name { font-size: 12px; font-weight: 700; color: var(--text); flex: 1; min-width: 0; cursor: default; border-radius: 4px; padding: 1px 4px; }
+  .mtg-group-name:hover { background: rgba(255,255,255,0.05); cursor: text; }
+  .mtg-group-cnt { font-size: 10px; color: var(--text2); flex-shrink: 0; }
+  .mtg-group-del { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 13px; padding: 0 2px; line-height: 1; flex-shrink: 0; transition: color 0.12s; }
+  .mtg-group-del:hover { color: var(--danger); }
+  .mtg-group-body { padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .mtg-group-empty { text-align: center; padding: 10px 0; color: var(--text2); font-size: 11px; font-style: italic; border: 1px dashed rgba(255,255,255,0.08); border-radius: 6px; }
+  .mtg-drag-handle { cursor: grab; color: var(--text2); font-size: 13px; padding: 0 3px; opacity: 0; transition: opacity 0.1s; flex-shrink: 0; line-height: 1; }
+  .cl-item:hover .mtg-drag-handle { opacity: 1; }
+  .cl-item.mtg-dragging { opacity: 0.4; }
+  .mtg-add-group-btn { font-size: 11px; color: var(--text2); background: none; border: 1px dashed rgba(255,255,255,0.14); border-radius: 6px; padding: 3px 12px; cursor: pointer; font-family: inherit; transition: all 0.15s; margin-top: 6px; }
+  .mtg-add-group-btn:hover { border-color: var(--accent); color: var(--accent); }
+
   /* Presentation mode */
   .present-slide {
     position: fixed; inset: 0; z-index: 2000; background: #0e1408;
@@ -4498,29 +4519,79 @@ function renderMeetingDetail() {
     </div>
     <div class="agenda-wrap">`;
 
+  const today2 = new Date().toISOString().split('T')[0];
+  function _mtgTaskRow(t, agIdx, members, readonly) {
+    const mem = members.find(x=>String(x.id)===String(t.assignee));
+    const nm  = mem ? mem.name.split(' ')[0] : '';
+    const dlCls = t.deadline ? (t.deadline < today2 ? 'date-overdue' : t.deadline === today2 ? 'date-today' : 'has-date') : '';
+    const atts = t.attachments||[];
+    const attLinks = atts.map((a,i)=>`<div class="cl-attach-link"><span class="cl-attach-link-icon">${fileIcon(a.name)}</span><span class="cl-attach-link-name">${escHtml(a.name)}</span><span class="cl-attach-link-size">${fmtSize(a.size||0)}</span><button class="cl-attach-link-del" onclick="deleteMtgAttach(${agIdx},'${t.id}',${i})" title="Odebrat">✕</button></div>`).join('');
+    return `<div class="cl-item" id="mtgt-${t.id}" data-task-id="${t.id}" style="margin:2px 0"
+      ${!readonly?`draggable="true" ondragstart="_mtgDragStart(event,'${t.id}',${agIdx})" ondragend="_mtgDragEnd('${t.id}')"`:''}}>
+      <div class="cl-item-main">
+        ${!readonly?`<span class="mtg-drag-handle" title="Přetáhnout">⠿</span>`:''}
+        <input type="checkbox" class="cl-checkbox" ${t.done?'checked':''} ${readonly?'disabled':''} onchange="toggleMtgTask(${agIdx},'${t.id}',this.checked)">
+        <span class="cl-text${t.done?' agenda-task-text done':''}" title="${!readonly?'Dvojklik pro přejmenování':''}"${!readonly?` ondblclick="startRenameMtgTask(this,${agIdx},'${t.id}')"`:''}>${escHtml(t.text)}</span>
+        ${mem?`<span class="cl-author">${escHtml(nm)}</span>`:''}
+        ${!readonly?`<button class="cl-meta-toggle" onclick="toggleMtgTaskMeta('${t.id}')" title="Přiřadit / Termín">⋯</button><button class="cl-del" onclick="deleteMtgTask(${agIdx},'${t.id}')">✕</button>`:''}
+      </div>
+      ${!readonly?`<div class="cl-item-meta" id="mtgm-${t.id}" style="display:none">
+        <button class="cl-meta-btn${mem?' assigned':''}" onclick="openMtgTaskAssignee(this,${agIdx},'${t.id}')">${mem?`👤 ${escHtml(nm)}`:'👤 Přiřadit'}</button>
+        <button class="cl-meta-btn${dlCls?' '+dlCls:''}" onclick="openMtgTaskCal(this,${agIdx},'${t.id}','${t.deadline||''}')">${t.deadline?`📅 ${fmtDate(t.deadline)}`:'📅 Termín'}</button>
+        <button class="cl-attach-toggle" onclick="toggleMtgAttach('${t.id}')">📎${atts.length?` (${atts.length})`:''}</button>
+      </div>${attLinks?`<div class="cl-attach-links">${attLinks}</div>`:''}
+      <div class="cl-att-zone" id="mtgaz-${t.id}" style="display:none"><div class="cl-drop-zone"><div style="font-size:22px;margin-bottom:4px">📎</div><input type="file" multiple style="display:none" id="mcfi-${t.id}" onchange="addMtgAttachFile(event,${agIdx},'${t.id}')"><button onclick="document.getElementById('mcfi-${t.id}').click()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;font-family:inherit">Vybrat soubor</button></div></div>`:''}
+    </div>`;
+  }
+
+  function _mtgSection(tasks, agIdx, groupId, members, readonly) {
+    const rows = tasks.map(t => _mtgTaskRow(t, agIdx, members, readonly)).join('');
+    if (readonly) return `<div class="mtg-section" style="display:flex;flex-direction:column;gap:4px">${rows}</div>`;
+    const gid = groupId || '';
+    return `<div class="mtg-section" style="display:flex;flex-direction:column;gap:4px"
+      data-ag-idx="${agIdx}" data-group-id="${gid}"
+      ondragover="_mtgDragOver(event)" ondrop="_mtgDrop(event,${agIdx},'${gid}')"
+      ondragleave="_mtgDragLeave(event)">
+      ${rows}
+    </div>`;
+  }
+
   (src.agenda||[]).forEach((ag, idx) => {
-    const today = new Date().toISOString().split('T')[0];
-    const tasksHtml = (ag.tasks||[]).map(t => {
-      const mem  = members.find(x=>String(x.id)===String(t.assignee));
-      const nm   = mem ? mem.name.split(' ')[0] : '';
-      const dlCls = t.deadline ? (t.deadline < today ? 'date-overdue' : t.deadline === today ? 'date-today' : 'has-date') : '';
-      const atts = t.attachments||[];
-      const attLinks = atts.map((a,i)=>`<div class="cl-attach-link"><span class="cl-attach-link-icon">${fileIcon(a.name)}</span><span class="cl-attach-link-name">${escHtml(a.name)}</span><span class="cl-attach-link-size">${fmtSize(a.size||0)}</span><button class="cl-attach-link-del" onclick="deleteMtgAttach(${idx},'${t.id}',${i})" title="Odebrat">✕</button></div>`).join('');
-      return `<div class="cl-item" id="mtgt-${t.id}" style="margin:2px 0">
-        <div class="cl-item-main">
-          <input type="checkbox" class="cl-checkbox" ${t.done?'checked':''} ${readonly?'disabled':''} onchange="toggleMtgTask(${idx},'${t.id}',this.checked)">
-          <span class="cl-text${t.done?' agenda-task-text done':''}" title="${!readonly?'Dvojklik pro přejmenování':''}"${!readonly?` ondblclick="startRenameMtgTask(this,${idx},'${t.id}')"`:''}>${escHtml(t.text)}</span>
-          ${mem?`<span class="cl-author">${escHtml(nm)}</span>`:''}
-          ${!readonly?`<button class="cl-meta-toggle" onclick="toggleMtgTaskMeta('${t.id}')" title="Přiřadit / Termín">⋯</button><button class="cl-del" onclick="deleteMtgTask(${idx},'${t.id}')">✕</button>`:''}
+    const ungrouped = (ag.tasks||[]).filter(t => !t.groupId);
+    const groups = ag.groups || [];
+    let tasksSectionHtml = _mtgSection(ungrouped, idx, null, members, readonly);
+
+    groups.forEach(grp => {
+      const grpTasks = (ag.tasks||[]).filter(t => t.groupId === grp.id);
+      const collapsed = !!grp.collapsed;
+      tasksSectionHtml += `<div class="mtg-group-wrap">
+        <div class="mtg-group-hdr${collapsed?'':' open'}">
+          <span class="mtg-group-toggle" onclick="toggleMtgGroup(${idx},'${grp.id}')">${collapsed?'▶':'▼'}</span>
+          <span class="mtg-group-name" ondblclick="renameMtgGroup(${idx},'${grp.id}',this)">${escHtml(grp.name)}</span>
+          <span class="mtg-group-cnt">${grpTasks.length} úkolů</span>
+          ${!readonly?`<button class="mtg-group-del" onclick="deleteMtgGroup(${idx},'${grp.id}')" title="Odebrat podbod">✕</button>`:''}
         </div>
-        ${!readonly?`<div class="cl-item-meta" id="mtgm-${t.id}" style="display:none">
-          <button class="cl-meta-btn${mem?' assigned':''}" onclick="openMtgTaskAssignee(this,${idx},'${t.id}')">${mem?`👤 ${escHtml(nm)}`:'👤 Přiřadit'}</button>
-          <button class="cl-meta-btn${dlCls?' '+dlCls:''}" onclick="openMtgTaskCal(this,${idx},'${t.id}','${t.deadline||''}')">${t.deadline?`📅 ${fmtDate(t.deadline)}`:'📅 Termín'}</button>
-          <button class="cl-attach-toggle" onclick="toggleMtgAttach('${t.id}')">📎${atts.length?` (${atts.length})`:''}</button>
-        </div>${attLinks?`<div class="cl-attach-links">${attLinks}</div>`:''}
-        <div class="cl-att-zone" id="mtgaz-${t.id}" style="display:none"><div class="cl-drop-zone"><div style="font-size:22px;margin-bottom:4px">📎</div><input type="file" multiple style="display:none" id="mcfi-${t.id}" onchange="addMtgAttachFile(event,${idx},'${t.id}')"><button onclick="document.getElementById('mcfi-${t.id}').click()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;font-family:inherit">Vybrat soubor</button></div></div>`:''}
+        ${collapsed?'':`<div class="mtg-group-body">
+          ${_mtgSection(grpTasks, idx, grp.id, members, readonly)}
+          ${grpTasks.length===0?`<div class="mtg-group-empty">Sem přetáhni úkol nebo přidej nový</div>`:''}
+          ${!readonly?`<div style="padding:2px 0">
+            <button class="agenda-add-task" id="mtg-add-btn-${ag.id}-${grp.id}" onclick="showMtgAddRow('${ag.id}',${idx},'${grp.id}')">+ Přidat úkol do podbodu</button>
+            <div id="mtg-add-form-${ag.id}-${grp.id}" style="display:none;flex-direction:column;gap:6px;padding:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-top:4px">
+              <input class="agenda-task-input" id="mtg-add-inp-${ag.id}-${grp.id}" placeholder="Popis úkolu…"
+                oninput="mtgTaskAtInput(this,${idx},'${ag.id}-${grp.id}')"
+                onkeydown="if(event.key==='Enter')submitMtgTask(${idx},'${ag.id}-${grp.id}','${grp.id}');if(event.key==='Escape')hideMtgAddRow('${ag.id}-${grp.id}')">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <button class="cl-meta-btn" id="mtg-add-at-${ag.id}-${grp.id}" onclick="openMtgAddAssignee(this,${idx},'${ag.id}-${grp.id}')">👤 Přiřadit</button>
+                <button class="cl-meta-btn" id="mtg-add-dl-${ag.id}-${grp.id}" onclick="openMtgAddCal(this,${idx},'${ag.id}-${grp.id}')">📅 Termín</button>
+                <button class="btn btn-ghost" style="font-size:12px;margin-left:auto" onclick="submitMtgTask(${idx},'${ag.id}-${grp.id}','${grp.id}')">Přidat</button>
+                <button class="btn btn-ghost" style="font-size:12px;color:var(--text2)" onclick="hideMtgAddRow('${ag.id}-${grp.id}')">Zrušit</button>
+              </div>
+            </div>
+          </div>`:''}
+        </div>`}
       </div>`;
-    }).join('');
+    });
+
     agendaHtml += `<div class="agenda-item">
       <div class="agenda-item-header">
         <div class="agenda-item-num">${idx+1}</div>
@@ -4528,17 +4599,18 @@ function renderMeetingDetail() {
           ${readonly?'disabled':''} onblur="saveAgendaText(${idx},this.value)">
         ${!readonly?`<button onclick="deleteAgendaItem(${idx})" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;padding:2px 4px;line-height:1" title="Odebrat bod">✕</button>`:''}
       </div>
-      <div class="agenda-tasks">${tasksHtml}</div>
-      ${!readonly?`<div style="margin-top:6px">
-        <button class="agenda-add-task" id="mtg-add-btn-${ag.id}" onclick="showMtgAddRow('${ag.id}',${idx})">+ Přidat úkol</button>
-        <div id="mtg-add-form-${ag.id}" style="display:none;flex-direction:column;gap:6px;padding:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-top:4px">
+      <div class="agenda-tasks">${tasksSectionHtml}</div>
+      ${!readonly?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+        <button class="agenda-add-task" id="mtg-add-btn-${ag.id}" onclick="showMtgAddRow('${ag.id}',${idx},null)">+ Přidat úkol</button>
+        <button class="mtg-add-group-btn" onclick="addMtgGroup(${idx})">+ Přidat podbod</button>
+        <div id="mtg-add-form-${ag.id}" style="display:none;flex-direction:column;gap:6px;padding:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-top:4px;width:100%">
           <input class="agenda-task-input" id="mtg-add-inp-${ag.id}" placeholder="Popis úkolu… nebo @Jméno pro přiřazení"
             oninput="mtgTaskAtInput(this,${idx},'${ag.id}')"
-            onkeydown="if(event.key==='Enter')submitMtgTask(${idx},'${ag.id}');if(event.key==='Escape')hideMtgAddRow('${ag.id}')">
+            onkeydown="if(event.key==='Enter')submitMtgTask(${idx},'${ag.id}',null);if(event.key==='Escape')hideMtgAddRow('${ag.id}')">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <button class="cl-meta-btn" id="mtg-add-at-${ag.id}" onclick="openMtgAddAssignee(this,${idx},'${ag.id}')">👤 Přiřadit</button>
             <button class="cl-meta-btn" id="mtg-add-dl-${ag.id}" onclick="openMtgAddCal(this,${idx},'${ag.id}')">📅 Termín</button>
-            <button class="btn btn-ghost" style="font-size:12px;margin-left:auto" onclick="submitMtgTask(${idx},'${ag.id}')">Přidat</button>
+            <button class="btn btn-ghost" style="font-size:12px;margin-left:auto" onclick="submitMtgTask(${idx},'${ag.id}',null)">Přidat</button>
             <button class="btn btn-ghost" style="font-size:12px;color:var(--text2)" onclick="hideMtgAddRow('${ag.id}')">Zrušit</button>
           </div>
         </div>
@@ -4582,6 +4654,114 @@ function deleteAgendaItem(idx) {
   saveMeetingState(); renderMeetingDetail();
 }
 
+// ── Subgroup (podbod) operations ─────────────────────────────────────────────
+function addMtgGroup(agIdx) {
+  const ag = state.livingMeeting?.agenda?.[agIdx]; if (!ag) return;
+  if (!ag.groups) ag.groups = [];
+  const name = prompt('Název podbodu:'); if (!name?.trim()) return;
+  ag.groups.push({ id: 'grp_' + Date.now(), name: name.trim(), collapsed: false });
+  saveMeetingState(); renderMeetingDetail();
+}
+
+function deleteMtgGroup(agIdx, grpId) {
+  const ag = state.livingMeeting?.agenda?.[agIdx]; if (!ag) return;
+  if (!confirm('Odebrat podbod? Úkoly v něm zůstanou (přesunou se do nezařazených).')) return;
+  ag.groups = (ag.groups||[]).filter(g => g.id !== grpId);
+  (ag.tasks||[]).forEach(t => { if (t.groupId === grpId) t.groupId = null; });
+  saveMeetingState(); renderMeetingDetail();
+}
+
+function toggleMtgGroup(agIdx, grpId) {
+  const ag = state.livingMeeting?.agenda?.[agIdx]; if (!ag) return;
+  const grp = (ag.groups||[]).find(g => g.id === grpId); if (!grp) return;
+  grp.collapsed = !grp.collapsed;
+  saveMeetingState(); renderMeetingDetail();
+}
+
+function renameMtgGroup(agIdx, grpId, spanEl) {
+  const ag = state.livingMeeting?.agenda?.[agIdx]; if (!ag) return;
+  const grp = (ag.groups||[]).find(g => g.id === grpId); if (!grp) return;
+  const inp = document.createElement('input');
+  inp.value = grp.name;
+  inp.style.cssText = 'font-size:12px;font-weight:700;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;outline:none;font-family:inherit;width:100%';
+  spanEl.replaceWith(inp); inp.focus(); inp.select();
+  const done = () => {
+    const v = inp.value.trim() || grp.name;
+    grp.name = v; saveMeetingState(); renderMeetingDetail();
+  };
+  inp.onblur = done;
+  inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } if (e.key === 'Escape') { inp.value = grp.name; inp.blur(); } };
+}
+
+// ── Drag and drop ─────────────────────────────────────────────────────────────
+window._mtgDrag = null;
+
+function _mtgDragStart(event, taskId, agIdx) {
+  window._mtgDrag = { taskId, agIdx };
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', taskId);
+  setTimeout(() => { document.getElementById('mtgt-' + taskId)?.classList.add('mtg-dragging'); }, 0);
+}
+
+function _mtgDragEnd(taskId) {
+  document.getElementById('mtgt-' + taskId)?.classList.remove('mtg-dragging');
+  document.querySelectorAll('.mtg-section.drag-over').forEach(el => el.classList.remove('drag-over'));
+  window._mtgDrag = null;
+}
+
+function _mtgDragOver(event) {
+  if (!window._mtgDrag) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  const section = event.currentTarget;
+  document.querySelectorAll('.mtg-section.drag-over').forEach(el => { if (el !== section) el.classList.remove('drag-over'); });
+  section.classList.add('drag-over');
+}
+
+function _mtgDragLeave(event) {
+  const section = event.currentTarget;
+  if (!section.contains(event.relatedTarget)) section.classList.remove('drag-over');
+}
+
+function _mtgDrop(event, destAgIdx, destGroupId) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('drag-over');
+  if (!window._mtgDrag) return;
+  const { taskId, agIdx: srcAgIdx } = window._mtgDrag;
+  const srcAg  = state.livingMeeting?.agenda?.[srcAgIdx];
+  const destAg = state.livingMeeting?.agenda?.[destAgIdx];
+  if (!srcAg || !destAg) return;
+  const task = srcAg.tasks?.find(t => t.id === taskId);
+  if (!task) return;
+
+  // Determine insert-before position from mouse Y vs task elements in section
+  const section  = event.currentTarget;
+  const taskEls  = [...section.querySelectorAll(':scope > [data-task-id]')];
+  let insertBeforeId = null;
+  for (const el of taskEls) {
+    if (el.dataset.taskId === taskId) continue;
+    const r = el.getBoundingClientRect();
+    if (event.clientY < r.top + r.height / 2) { insertBeforeId = el.dataset.taskId; break; }
+  }
+
+  // Remove from source
+  srcAg.tasks = srcAg.tasks.filter(t => t.id !== taskId);
+  task.groupId = destGroupId || null;
+
+  // Insert into dest
+  if (insertBeforeId) {
+    const i = destAg.tasks.findIndex(t => t.id === insertBeforeId);
+    destAg.tasks.splice(i >= 0 ? i : destAg.tasks.length, 0, task);
+  } else {
+    // Append after last task of same groupId
+    const gid = destGroupId || null;
+    const matches = destAg.tasks.map((t,i)=>({t,i})).filter(({t})=>(t.groupId||null)===gid);
+    const pos = matches.length ? matches[matches.length-1].i + 1 : destAg.tasks.length;
+    destAg.tasks.splice(pos, 0, task);
+  }
+  saveMeetingState(); renderMeetingDetail();
+}
+
 function saveAgendaText(idx, text) {
   if (state.livingMeeting?.agenda?.[idx]) { state.livingMeeting.agenda[idx].text = text; saveMeetingState(); }
 }
@@ -4606,7 +4786,7 @@ function hideMtgAddRow(agId) {
   document.getElementById('_mtgAtSuggest')?.remove();
 }
 
-function submitMtgTask(agIdx, agId) {
+function submitMtgTask(agIdx, agId, groupId) {
   const inp = document.getElementById(agId ? `mtg-add-inp-${agId}` : `mtgTaskInp_${agIdx}`);
   if (!inp) return;
   let text = inp.value.trim();
@@ -4630,7 +4810,7 @@ function submitMtgTask(agIdx, agId) {
     const dlM = text.match(/(\d{4}-\d{2}-\d{2})/);
     if (dlM) { deadline = dlM[1]; text = text.replace(dlM[0],'').trim(); }
   }
-  ag.tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee: assignee||null, deadline, attachments:[], createdAt:new Date().toISOString() });
+  ag.tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee: assignee||null, deadline, attachments:[], createdAt:new Date().toISOString(), groupId: groupId||null });
   if (agId) {
     hideMtgAddRow(agId);
     if (window._mtgPendingAdd) delete window._mtgPendingAdd[agId];
