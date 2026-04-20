@@ -931,8 +931,15 @@
   .present-num { font-size: 13px; color: rgba(200,165,60,0.5); margin-bottom: 16px; }
   .present-text { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; max-width: 800px; }
   .present-sub { font-size: 16px; color: rgba(200,165,60,0.7); margin-top: 16px; }
-  .present-tasks { margin-top: 24px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; max-width: 600px; }
-  .present-task-row { font-size: 15px; color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 10px; }
+  .present-tasks { margin-top: 24px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; max-width: 720px; width: 100%; max-height: 62vh; overflow-y: auto; padding-right: 8px; }
+  .present-tasks::-webkit-scrollbar { width: 4px; } .present-tasks::-webkit-scrollbar-track { background: transparent; } .present-tasks::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+  .present-group-hdr { display: flex; align-items: center; gap: 8px; width: 100%; margin: 10px 0 2px; padding: 6px 14px; background: rgba(200,165,60,0.1); border-left: 3px solid rgba(200,165,60,0.55); border-radius: 0 6px 6px 0; }
+  .present-group-hdr-name { font-size: 12px; font-weight: 700; color: rgba(200,165,60,0.9); letter-spacing: 0.05em; text-transform: uppercase; flex: 1; }
+  .present-group-cnt { font-size: 11px; color: rgba(255,255,255,0.3); }
+  .present-ungrouped-sep { width: 100%; border-bottom: 1px solid rgba(255,255,255,0.08); margin: 6px 0 10px; }
+  .present-task-row { font-size: 15px; color: rgba(255,255,255,0.75); display: flex; align-items: center; gap: 10px; width: 100%; padding: 2px 0; }
+  .present-task-row.indented { padding-left: 22px; font-size: 14px; color: rgba(255,255,255,0.65); }
+  .present-task-done { text-decoration: line-through; opacity: 0.35; }
   .present-task-row .av-sm { width: 22px; height: 22px; border-radius: 6px; font-size: 9px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; flex-shrink: 0; }
   .present-nav { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); display: flex; gap: 16px; }
   .present-nav button { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
@@ -5104,15 +5111,23 @@ function startPresentation() {
   const lm = state.livingMeeting||{};
   const members = _projectMembers || state.members || [];
   _presentSlides = [];
-  _presentSlides.push({ title:lm.title||'Porada', sub:fmtDateLong(new Date().toISOString().split('T')[0]), tasks:[], type:'title' });
-  if ((state.phases||[]).length) _presentSlides.push({ title:'📊 Harmonogram fází stavby', sub:'', tasks:[], type:'gantt' });
+  _presentSlides.push({ title:lm.title||'Porada', sub:fmtDateLong(new Date().toISOString().split('T')[0]), sections:[], type:'title' });
+  if ((state.phases||[]).length) _presentSlides.push({ title:'📊 Harmonogram fází stavby', sub:'', sections:[], type:'gantt' });
   (lm.agenda||[]).forEach((ag,i) => {
     if (!ag.text) return;
-    const tasks = (ag.tasks||[]).filter(t=>!t.done).map(t => {
+    const toRow = t => {
       const mem = members.find(x=>String(x.id)===String(t.assignee));
-      return { text:t.text, memberName:mem?mem.name.split(' ')[0]:'', color:mem?(mem.avatar_color||mem.color||'#4A5340'):'#666' };
+      return { text:t.text, done:t.done, memberName:mem?mem.name.split(' ')[0]:'', color:mem?(mem.avatar_color||mem.color||'#4A5340'):'#666' };
+    };
+    const sections = [];
+    const ungrouped = (ag.tasks||[]).filter(t=>!t.groupId);
+    if (ungrouped.length) sections.push({ groupName:null, tasks:ungrouped.map(toRow) });
+    (ag.groups||[]).forEach(grp => {
+      const gtasks = (ag.tasks||[]).filter(t=>t.groupId===grp.id);
+      if (gtasks.length) sections.push({ groupName:grp.name, tasks:gtasks.map(toRow) });
     });
-    _presentSlides.push({ title:`${i+1}. ${ag.text}`, sub:'', tasks, type:'agenda' });
+    const totalOpen = (ag.tasks||[]).filter(t=>!t.done).length;
+    _presentSlides.push({ title:`${i+1}. ${ag.text}`, sub: totalOpen ? `${totalOpen} otevřených úkolů` : '', sections, type:'agenda' });
   });
   _presentIdx = 0;
   document.getElementById('presentSlide').classList.remove('hidden');
@@ -5146,12 +5161,30 @@ function renderPresentSlide() {
       </div>`;
     }).join('');
   } else {
-    tasksEl.innerHTML = s.tasks.map(t =>
-      `<div class="present-task-row">
-        ${t.memberName?`<div class="av-sm" style="background:${t.color}">${ini(t.memberName)}</div>`:''}
-        <span>${escHtml(t.text)}</span>
-      </div>`
-    ).join('');
+    const sections = s.sections || [];
+    const hasGroups = sections.some(sec => sec.groupName);
+    let html = '';
+    sections.forEach((sec, si) => {
+      if (sec.groupName) {
+        const open = sec.tasks.filter(t=>!t.done).length;
+        html += `<div class="present-group-hdr">
+          <span class="present-group-hdr-name">▸ ${escHtml(sec.groupName)}</span>
+          <span class="present-group-cnt">${open} / ${sec.tasks.length}</span>
+        </div>`;
+      } else if (hasGroups && sec.tasks.length) {
+        html += `<div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.05em;padding:2px 0 4px">Ostatní</div>`;
+      }
+      const indent = sec.groupName ? ' indented' : '';
+      html += sec.tasks.map(t =>
+        `<div class="present-task-row${indent}">
+          <span style="font-size:${sec.groupName?'13px':'16px'};color:rgba(200,165,60,0.5);flex-shrink:0">${t.done?'✓':'○'}</span>
+          ${t.memberName?`<div class="av-sm" style="background:${t.color}">${ini(t.memberName)}</div>`:''}
+          <span class="${t.done?'present-task-done':''}">${escHtml(t.text)}</span>
+        </div>`
+      ).join('');
+      if (!sec.groupName && hasGroups && sec.tasks.length) html += `<div class="present-ungrouped-sep"></div>`;
+    });
+    tasksEl.innerHTML = html || `<div style="color:rgba(255,255,255,0.25);font-size:14px;font-style:italic">Žádné úkoly</div>`;
   }
   document.getElementById('presentPrev').disabled = _presentIdx === 0;
   document.getElementById('presentNext').disabled = _presentIdx === _presentSlides.length-1;
