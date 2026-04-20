@@ -4579,7 +4579,7 @@ function renderMeetingDetail() {
             <div id="mtg-add-form-${ag.id}-${grp.id}" style="display:none;flex-direction:column;gap:6px;padding:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-top:4px">
               <input class="agenda-task-input" id="mtg-add-inp-${ag.id}-${grp.id}" placeholder="Popis úkolu…"
                 oninput="mtgTaskAtInput(this,${idx},'${ag.id}-${grp.id}')"
-                onkeydown="if(event.key==='Enter')submitMtgTask(${idx},'${ag.id}-${grp.id}','${grp.id}');if(event.key==='Escape')hideMtgAddRow('${ag.id}-${grp.id}')">
+                onkeydown="_mtgKD(event,${idx},'${ag.id}-${grp.id}','${grp.id}')">
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
                 <button class="cl-meta-btn" id="mtg-add-at-${ag.id}-${grp.id}" onclick="openMtgAddAssignee(this,${idx},'${ag.id}-${grp.id}')">👤 Přiřadit</button>
                 <button class="cl-meta-btn" id="mtg-add-dl-${ag.id}-${grp.id}" onclick="openMtgAddCal(this,${idx},'${ag.id}-${grp.id}')">📅 Termín</button>
@@ -4606,7 +4606,7 @@ function renderMeetingDetail() {
         <div id="mtg-add-form-${ag.id}" style="display:none;flex-direction:column;gap:6px;padding:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-top:4px;width:100%">
           <input class="agenda-task-input" id="mtg-add-inp-${ag.id}" placeholder="Popis úkolu… nebo @Jméno pro přiřazení"
             oninput="mtgTaskAtInput(this,${idx},'${ag.id}')"
-            onkeydown="if(event.key==='Enter')submitMtgTask(${idx},'${ag.id}',null);if(event.key==='Escape')hideMtgAddRow('${ag.id}')">
+            onkeydown="_mtgKD(event,${idx},'${ag.id}',null)">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <button class="cl-meta-btn" id="mtg-add-at-${ag.id}" onclick="openMtgAddAssignee(this,${idx},'${ag.id}')">👤 Přiřadit</button>
             <button class="cl-meta-btn" id="mtg-add-dl-${ag.id}" onclick="openMtgAddCal(this,${idx},'${ag.id}')">📅 Termín</button>
@@ -4784,6 +4784,16 @@ function hideMtgAddRow(agId) {
   if (form) form.style.display = 'none';
   if (btn) btn.style.display = '';
   document.getElementById('_mtgAtSuggest')?.remove();
+}
+
+function _mtgKD(event, agIdx, agId, groupId) {
+  if (event.key === 'Escape') { hideMtgAddRow(agId); return; }
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    const keepOpen = event.ctrlKey || event.metaKey;
+    submitMtgTask(agIdx, agId, groupId);
+    if (keepOpen) setTimeout(() => showMtgAddRow(agId, agIdx, groupId), 10);
+  }
 }
 
 function submitMtgTask(agIdx, agId, groupId) {
