@@ -51,22 +51,12 @@ if ($action === 'send') {
              VALUES (?,?,?,?,?,"accepted", NOW())'
         )->execute([$projectId, $email, $actor['id'], bin2hex(random_bytes(16)), $role]);
 
-        // Notify existing user by email
-        $inviterEsc = htmlspecialchars($actor['name']);
-        $projectEsc = htmlspecialchars($project['name']);
-        $dashUrl    = APP_URL . '/dashboard.php';
-        $emailBody  = emailTemplate('Byl/a jsi přidán/a do projektu',
-            emailP("<strong style='color:#e8e8e8'>$inviterEsc</strong> tě přidal/a do projektu <strong style='color:#d4a830'>$projectEsc</strong> na BeSix Board.") .
-            emailBtn($dashUrl, 'Přejít na BeSix Board')
-        );
-        $sent = sendMail($email, 'Přidán/a do projektu ' . $project['name'] . ' – BeSix Board', $emailBody);
-
-        jsonResponse(['success' => true, 'message' => 'Uživatel přidán přímo do projektu.' . ($sent ? '' : ' (Email se nepodařilo odeslat)')]);
+        jsonResponse(['success' => true, 'message' => 'Uživatel přidán do projektu.']);
     }
 
-    // Create invitation for non-existing user
+    // Non-existing user: create pending invitation record (no email sent)
     $token   = bin2hex(random_bytes(32));
-    $expires = date('Y-m-d H:i:s', time() + 7 * 86400);
+    $expires = date('Y-m-d H:i:s', time() + 365 * 86400); // 1 year
 
     $db->prepare(
         'INSERT INTO invitations (project_id, invited_email, invited_by, token, role, expires_at)
@@ -74,21 +64,7 @@ if ($action === 'send') {
          ON DUPLICATE KEY UPDATE token=VALUES(token), expires_at=VALUES(expires_at), status="pending"'
     )->execute([$projectId, $email, $actor['id'], $token, $role, $expires]);
 
-    $acceptUrl  = APP_URL . '/invite.php?token=' . urlencode($token);
-    $inviterEsc = htmlspecialchars($actor['name']);
-    $projectEsc = htmlspecialchars($project['name']);
-    $emailBody  = emailTemplate('Pozvánka do projektu',
-        emailP("<strong style='color:#e8e8e8'>$inviterEsc</strong> tě zve do projektu <strong style='color:#d4a830'>$projectEsc</strong> na BeSix Board.") .
-        emailP('Klikni na tlačítko níže pro přijetí pozvánky:') .
-        emailBtn($acceptUrl, 'Přijmout pozvánku') .
-        emailP("<span style='font-size:12px;color:#666'>Pozvánka je platná 7 dní.</span>")
-    );
-    $sent = sendMail($email, 'Pozvánka do projektu ' . $project['name'] . ' – BeSix Board', $emailBody);
-
-    if (!$sent) {
-        jsonResponse(['success' => true, 'message' => 'Pozvánka uložena, ale email se nepodařilo odeslat. Zkontroluj SMTP nastavení.', 'mail_error' => true]);
-    }
-    jsonResponse(['success' => true, 'message' => 'Pozvánka odeslána na ' . htmlspecialchars($email)]);
+    jsonResponse(['success' => true, 'message' => 'Pozvánka vytvořena pro ' . htmlspecialchars($email) . '. Uživatel ji uvidí po registraci.']);
 })();
 } elseif ($action === 'accept') {
 (function () {

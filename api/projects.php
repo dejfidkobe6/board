@@ -109,6 +109,7 @@ if ($action === 'list') {
     $members = $stmt->fetchAll();
 
     // Invitations history (pending + accepted, visible to admin/owner only)
+    // Also synthesizes retroactive history from project_members.invited_by
     $invitations = [];
     $roles = ['viewer' => 0, 'member' => 1, 'admin' => 2, 'owner' => 3];
     if (($roles[$actor['role']] ?? 0) >= $roles['admin']) {
@@ -116,9 +117,22 @@ if ($action === 'list') {
             'SELECT i.id, i.invited_email, i.role, i.status, i.created_at, i.expires_at, u.name AS invited_by_name
              FROM invitations i JOIN users u ON u.id = i.invited_by
              WHERE i.project_id = ? AND i.status IN ("pending","accepted")
-             ORDER BY i.created_at DESC'
+             UNION ALL
+             SELECT -(pm.user_id) AS id, u2.email AS invited_email, pm.role,
+                    "accepted" AS status, pm.joined_at AS created_at, pm.joined_at AS expires_at,
+                    u_inv.name AS invited_by_name
+             FROM project_members pm
+             JOIN users u2    ON u2.id    = pm.user_id
+             JOIN users u_inv ON u_inv.id = pm.invited_by
+             WHERE pm.project_id = ? AND pm.invited_by IS NOT NULL
+               AND NOT EXISTS (
+                   SELECT 1 FROM invitations i2
+                   WHERE i2.project_id = pm.project_id AND i2.invited_email = u2.email
+                     AND i2.status IN ("pending","accepted")
+               )
+             ORDER BY created_at DESC'
         );
-        $si->execute([$projectId]);
+        $si->execute([$projectId, $projectId]);
         $invitations = $si->fetchAll();
     }
 
