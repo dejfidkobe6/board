@@ -45,6 +45,12 @@ if ($action === 'send') {
             'INSERT INTO project_members (project_id, user_id, role, invited_by) VALUES (?,?,?,?)'
         )->execute([$projectId, $existingUser['id'], $role, $actor['id']]);
 
+        // Record in invitations history so it appears in the panel
+        $db->prepare(
+            'INSERT INTO invitations (project_id, invited_email, invited_by, token, role, status, expires_at)
+             VALUES (?,?,?,?,?,"accepted", NOW())'
+        )->execute([$projectId, $email, $actor['id'], bin2hex(random_bytes(16)), $role]);
+
         // Notify existing user by email
         $inviterEsc = htmlspecialchars($actor['name']);
         $projectEsc = htmlspecialchars($project['name']);
