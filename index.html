@@ -1378,6 +1378,7 @@ function saveState() {
 
 // ── Meeting / Phase / Schedule server sync (dedicated API) ───────────────
 let _mtgSaveTimer = null;
+let _schedLocalChanges = new Set(); // "date|memberId" pairs changed locally (for merge tombstones)
 
 function saveMeetingState() {
   // Also persist to localStorage
@@ -1411,11 +1412,24 @@ async function _doSaveMeetingState() {
         const srvOnly   = d.phases.filter(p=>!localById[p.id]);
         toSave.phases   = [...(state.phases||[]), ...srvOnly];
       }
-      // Merge schedule: union of dates, local member values win
+      // Merge schedule: union of dates/members, local wins including deletions
       if (d.schedule && typeof d.schedule==='object') {
         const merged = { ...d.schedule };
+        // Apply regular local additions/overwrites
         Object.entries(state.schedule||{}).forEach(([date,vals]) => {
           merged[date] = { ...(merged[date]||{}), ...vals };
+        });
+        // Apply locally-deleted cells (tombstones) — prevents resurrection
+        const localChanges = new Set(_schedLocalChanges);
+        localChanges.forEach(key => {
+          const sep  = key.indexOf('|');
+          const date = key.slice(0, sep);
+          const mid  = key.slice(sep + 1);
+          const localVal = (state.schedule?.[date] || {})[mid] || null;
+          if (!localVal && merged[date]) {
+            delete merged[date][mid];
+            if (!Object.keys(merged[date]).length) delete merged[date];
+          }
         });
         toSave.schedule = merged;
       }
@@ -1429,6 +1443,7 @@ async function _doSaveMeetingState() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(toSave),
     });
+    _schedLocalChanges.clear();
   } catch(e) { console.error('[meeting] save error', e); }
 }
 
@@ -5358,6 +5373,7 @@ function vacCellClick(event, date, memberId) {
   if (!state.schedule[date]) state.schedule[date] = {};
   const legend = getVacLegend();
   const cur = state.schedule[date][memberId] || '';
+  _schedLocalChanges.add(date + '|' + memberId);
   if (event.button === 2 || event.type === 'contextmenu') {
     // Right-click → clear cell
     if (cur) {
