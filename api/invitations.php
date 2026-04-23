@@ -51,20 +51,24 @@ if ($action === 'send') {
              VALUES (?,?,?,?,?,"accepted", NOW())'
         )->execute([$projectId, $email, $actor['id'], bin2hex(random_bytes(16)), $role]);
 
-        jsonResponse(['success' => true, 'message' => 'Uživatel přidán do projektu.']);
+        // Send notification email to the added user
+        $appUrl = defined('APP_URL') ? APP_URL : 'https://board.besix.cz';
+        $subject = 'Byli jste přidáni do projektu ' . $project['name'];
+        $body = emailTemplate(
+            'Přidání do projektu',
+            emailP('Dobrý den,') .
+            emailP('byli jste přidáni do projektu <strong>' . htmlspecialchars($project['name']) . '</strong> na platformě <strong>BeSix Board</strong> s rolí <strong>' . htmlspecialchars($role) . '</strong>.') .
+            emailP('Přihlaste se a začněte spolupracovat:') .
+            emailBtn($appUrl . '/dashboard.php', 'Otevřít BeSix Board') .
+            emailP('Pokud se vám tlačítko nezobrazuje, zkopírujte tento odkaz do prohlížeče: ' . htmlspecialchars($appUrl . '/dashboard.php'))
+        );
+        sendMail($email, $subject, $body);
+
+        jsonResponse(['success' => true, 'message' => 'Uživatel přidán do projektu a byl mu odeslán e-mail s oznámením.']);
     }
 
-    // Non-existing user: create pending invitation record (no email sent)
-    $token   = bin2hex(random_bytes(32));
-    $expires = date('Y-m-d H:i:s', time() + 365 * 86400); // 1 year
-
-    $db->prepare(
-        'INSERT INTO invitations (project_id, invited_email, invited_by, token, role, expires_at)
-         VALUES (?,?,?,?,?,?)
-         ON DUPLICATE KEY UPDATE token=VALUES(token), expires_at=VALUES(expires_at), status="pending"'
-    )->execute([$projectId, $email, $actor['id'], $token, $role, $expires]);
-
-    jsonResponse(['success' => true, 'message' => 'Pozvánka vytvořena pro ' . htmlspecialchars($email) . '. Uživatel ji uvidí po registraci.']);
+    // Non-existing user: they must first register on besix.cz
+    jsonResponse(['success' => false, 'not_registered' => true, 'email' => $email], 200);
 })();
 } elseif ($action === 'accept') {
 (function () {

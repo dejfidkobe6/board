@@ -2118,7 +2118,10 @@ async function sendTeamInvite() {
     body: JSON.stringify({ project_id: parseInt(projectId), email, role })
   });
   const data = await res.json();
-  if (data.success) {
+  if (data.not_registered) {
+    const besixUrl = 'https://besix.cz';
+    if (msgEl) msgEl.innerHTML = `<span style="color:#ff9800">Uživatel <strong>${escHtml(data.email||email)}</strong> není registrován do platformy BESIX. Pozvěte ho nejprve na platformu besix.cz: <a href="${besixUrl}" target="_blank" rel="noopener" style="color:#2196f3;text-decoration:underline">Přejít na besix.cz →</a></span>`;
+  } else if (data.success) {
     if (msgEl) msgEl.innerHTML = `<span style="color:rgba(210,185,70,0.9)">✓ ${escHtml(data.message || 'Odesláno')}</span>`;
     if (emailEl) emailEl.value = '';
     setTimeout(() => renderTeamBar(), 1500);
