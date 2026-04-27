@@ -778,7 +778,7 @@
   .cl-meta-btn.date-today { background: rgba(200,165,60,0.12); border-color: rgba(200,165,60,0.3); color: rgba(200,165,60,0.9); }
 
   /* ─── @MENTION DROPDOWN ─── */
-  .at-suggest { position: fixed; z-index: 9999; background: #1e2d10; border: 1px solid rgba(200,165,60,0.35); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); min-width: 170px; overflow: hidden; }
+  .at-suggest { position: fixed; z-index: 9999; background: #1e2d10; border: 1px solid rgba(200,165,60,0.35); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); min-width: 170px; overflow-y: auto; overflow-x: hidden; max-height: 52vh; }
   .at-suggest-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; font-size: 13px; color: rgba(255,255,255,0.82); transition: background 0.1s; }
   .at-suggest-item:hover, .at-suggest-item.at-active { background: rgba(200,165,60,0.15); }
   .at-suggest-item .avatar { width: 22px; height: 22px; font-size: 9px; border-radius: 5px; display:flex;align-items:center;justify-content:center; flex-shrink: 0; }
@@ -3722,22 +3722,58 @@ function showTaskNotification() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// POPUP / DROPDOWN UTILITIES
+// ══════════════════════════════════════════════════════════════════════════
+
+const _POPUP_IDS = ['_assigneePicker','_addRowSuggest','_atSuggest',
+                    '_mtgAssigneePicker','_mtgAddAssigneePicker','_mtgAtSuggest',
+                    '_miniCal','_mtgStylePop'];
+
+function _closeAllPopups() {
+  _POPUP_IDS.forEach(id => document.getElementById(id)?.remove());
+}
+
+// Position a fixed popup near anchorRect, fully inside the viewport.
+// Prefers below-anchor; flips above when not enough room.
+function _popPosition(el, anchorRect, { margin = 6, gap = 4 } = {}) {
+  el.style.visibility = 'hidden';
+  el.style.left = '0px'; el.style.top = '0px';
+  const pw = el.offsetWidth  || 200;
+  const ph = el.offsetHeight || 100;
+  const vw = window.innerWidth, vh = window.innerHeight;
+
+  let top = anchorRect.bottom + gap;
+  if (top + ph > vh - margin) {
+    const aboveTop = anchorRect.top - ph - gap;
+    top = aboveTop >= margin ? aboveTop : Math.max(margin, vh - ph - margin);
+  }
+
+  let left = anchorRect.left;
+  if (left + pw > vw - margin) left = vw - pw - margin;
+  left = Math.max(margin, left);
+
+  el.style.top  = top  + 'px';
+  el.style.left = left + 'px';
+  el.style.visibility = '';
+}
+
+// Close all popups whenever any container scrolls
+document.addEventListener('scroll', _closeAllPopups, { capture: true, passive: true });
+
+// ══════════════════════════════════════════════════════════════════════════
 // ASSIGNEE PICKER
 // ══════════════════════════════════════════════════════════════════════════
 function openAssigneePicker(anchorEl, itemId, cardId) {
-  document.getElementById('_assigneePicker')?.remove();
+  _closeAllPopups();
   const members = _projectMembers || state.members;
   if (!members || !members.length) return;
-
-  const wrap = document.createElement('div');
-  wrap.className = 'at-suggest'; wrap.id = '_assigneePicker';
-  const rect = anchorEl.getBoundingClientRect();
-  wrap.style.cssText = `top:${Math.min(rect.bottom+4, window.innerHeight-200)}px;left:${Math.min(rect.left, window.innerWidth-185)}px`;
 
   const card = findCardAnywhere(cardId);
   const found = card ? findClItem(card, itemId) : null;
   const cur = found ? String(found.item.assignee||'') : '';
 
+  const wrap = document.createElement('div');
+  wrap.className = 'at-suggest'; wrap.id = '_assigneePicker';
   wrap.innerHTML = members.map(m =>
     `<div class="at-suggest-item${String(m.id)===cur?' at-active':''}" onclick="setClItemAssignee('${itemId}','${m.id}','${cardId}')">
        <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
@@ -3746,6 +3782,7 @@ function openAssigneePicker(anchorEl, itemId, cardId) {
   ).join('') + `<div class="at-suggest-item" style="color:rgba(255,100,80,0.7)" onclick="setClItemAssignee('${itemId}',null,'${cardId}')">✕ Odebrat přiřazení</div>`;
 
   document.body.appendChild(wrap);
+  _popPosition(wrap, anchorEl.getBoundingClientRect());
   setTimeout(() => {
     document.addEventListener('click', function handler(e) {
       if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', handler, true); }
@@ -3769,14 +3806,11 @@ function openAddRowAssignee(clId) {
   const btn = document.getElementById('cl-at-btn-' + clId);
   const members = _projectMembers || state.members;
   if (!members || !members.length || !btn) return;
-  document.getElementById('_addRowSuggest')?.remove();
-
-  const wrap = document.createElement('div');
-  wrap.className = 'at-suggest'; wrap.id = '_addRowSuggest';
-  const rect = btn.getBoundingClientRect();
-  wrap.style.cssText = `top:${Math.min(rect.bottom+4, window.innerHeight-200)}px;left:${Math.min(rect.left, window.innerWidth-185)}px`;
+  _closeAllPopups();
 
   const cur = String((window._pendingClAssignee||{})[clId]||'');
+  const wrap = document.createElement('div');
+  wrap.className = 'at-suggest'; wrap.id = '_addRowSuggest';
   wrap.innerHTML = members.map(m =>
     `<div class="at-suggest-item${String(m.id)===cur?' at-active':''}" onclick="setPendingAssignee('${clId}','${m.id}')">
        <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
@@ -3785,6 +3819,7 @@ function openAddRowAssignee(clId) {
   ).join('') + `<div class="at-suggest-item" style="color:rgba(255,100,80,0.7)" onclick="setPendingAssignee('${clId}',null)">✕ Žádný</div>`;
 
   document.body.appendChild(wrap);
+  _popPosition(wrap, btn.getBoundingClientRect());
   setTimeout(() => {
     document.addEventListener('click', function handler(e) {
       if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', handler, true); }
@@ -3836,9 +3871,7 @@ function handleAtInput(inputEl, clId) {
 
   const wrap = document.createElement('div');
   wrap.className = 'at-suggest'; wrap.id = '_atSuggest';
-  const rect = inputEl.getBoundingClientRect();
-  wrap.style.cssText = `top:${rect.bottom+4}px;left:${rect.left}px;min-width:${rect.width}px`;
-
+  wrap.style.minWidth = inputEl.getBoundingClientRect().width + 'px';
   wrap.innerHTML = matches.map(m =>
     `<div class="at-suggest-item" onclick="selectAtMember('${clId}','${m.id}','${m.name.replace(/'/g,"\\'")}')">
        <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
@@ -3847,6 +3880,7 @@ function handleAtInput(inputEl, clId) {
   ).join('');
 
   document.body.appendChild(wrap);
+  _popPosition(wrap, inputEl.getBoundingClientRect());
 }
 
 function selectAtMember(clId, memberId, name) {
@@ -3871,7 +3905,7 @@ let _calCtx = null; // { itemId, cardId, clId(for add-row) }
 let _calYear = 0, _calMonth = 0, _calSelected = null;
 
 function openMiniCal(anchorEl, itemId, cardId, currentDate) {
-  document.getElementById('_miniCal')?.remove();
+  _closeAllPopups();
   document.removeEventListener('click', _calOutsideHandler, true);
 
   const d = currentDate ? new Date(currentDate + 'T00:00:00') : new Date();
@@ -3880,12 +3914,9 @@ function openMiniCal(anchorEl, itemId, cardId, currentDate) {
 
   const wrap = document.createElement('div');
   wrap.className = 'mini-cal-wrap'; wrap.id = '_miniCal';
-  const rect = anchorEl.getBoundingClientRect();
-  const top = rect.bottom + 4;
-  const left = Math.min(rect.left, window.innerWidth - 240);
-  wrap.style.cssText = `top:${Math.min(top, window.innerHeight - 280)}px;left:${left}px`;
   document.body.appendChild(wrap);
   _renderMiniCal();
+  _popPosition(wrap, anchorEl.getBoundingClientRect());
 
   setTimeout(() => {
     document.addEventListener('click', _calOutsideHandler, true);
@@ -4806,7 +4837,7 @@ const _MTG_PALETTE_GLOBAL = [null,'#c8a53c','#2196f3','#4caf50','#f44336','#9c27
 
 function openMtgStylePicker(event, type, agIdx, grpId) {
   event.stopPropagation();
-  document.getElementById('_mtgStylePop')?.remove();
+  _closeAllPopups();
 
   const ag  = state.livingMeeting?.agenda?.[agIdx]; if (!ag) return;
   const grp = grpId ? (ag.groups||[]).find(g=>g.id===grpId) : null;
@@ -5071,15 +5102,13 @@ function startRenameMtgTask(spanEl, agIdx, taskId) {
 
 // Assignee picker for existing meeting task
 function openMtgTaskAssignee(anchorEl, agIdx, taskId) {
-  document.getElementById('_mtgAssigneePicker')?.remove();
+  _closeAllPopups();
   const members = _projectMembers || state.members || [];
   if (!members.length) return;
   const task = (state.livingMeeting?.agenda?.[agIdx]?.tasks||[]).find(t=>t.id===taskId);
   const cur = String(task?.assignee||'');
   const wrap = document.createElement('div');
   wrap.className = 'at-suggest'; wrap.id = '_mtgAssigneePicker';
-  const rect = anchorEl.getBoundingClientRect();
-  wrap.style.cssText = `top:${Math.min(rect.bottom+4, window.innerHeight-200)}px;left:${Math.min(rect.left, window.innerWidth-185)}px`;
   wrap.innerHTML = members.map(m =>
     `<div class="at-suggest-item${String(m.id)===cur?' at-active':''}" onclick="setMtgTaskAssignee(${agIdx},'${taskId}','${m.id}')">
        <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
@@ -5087,6 +5116,7 @@ function openMtgTaskAssignee(anchorEl, agIdx, taskId) {
      </div>`
   ).join('') + `<div class="at-suggest-item" style="color:rgba(255,100,80,0.7)" onclick="setMtgTaskAssignee(${agIdx},'${taskId}',null)">✕ Odebrat přiřazení</div>`;
   document.body.appendChild(wrap);
+  _popPosition(wrap, anchorEl.getBoundingClientRect());
   setTimeout(() => {
     document.addEventListener('click', function h(e) {
       if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', h, true); }
@@ -5104,14 +5134,12 @@ function setMtgTaskAssignee(agIdx, taskId, memberId) {
 
 // Assignee picker for new task add-row
 function openMtgAddAssignee(anchorEl, agIdx, agId) {
-  document.getElementById('_mtgAddAssigneePicker')?.remove();
+  _closeAllPopups();
   const members = _projectMembers || state.members || [];
   if (!members.length) return;
   const cur = String((window._mtgPendingAdd||{})[agId]?.assignee||'');
   const wrap = document.createElement('div');
   wrap.className = 'at-suggest'; wrap.id = '_mtgAddAssigneePicker';
-  const rect = anchorEl.getBoundingClientRect();
-  wrap.style.cssText = `top:${Math.min(rect.bottom+4, window.innerHeight-200)}px;left:${Math.min(rect.left, window.innerWidth-185)}px`;
   wrap.innerHTML = members.map(m =>
     `<div class="at-suggest-item${String(m.id)===cur?' at-active':''}" onclick="setMtgAddAssignee('${agId}','${m.id}','${m.name.replace(/'/g,"\\'")}')">
        <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
@@ -5119,6 +5147,7 @@ function openMtgAddAssignee(anchorEl, agIdx, agId) {
      </div>`
   ).join('') + `<div class="at-suggest-item" style="color:rgba(255,100,80,0.7)" onclick="setMtgAddAssignee('${agId}',null,'')">✕ Žádný</div>`;
   document.body.appendChild(wrap);
+  _popPosition(wrap, anchorEl.getBoundingClientRect());
   setTimeout(() => {
     document.addEventListener('click', function h(e) {
       if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', h, true); }
@@ -5191,11 +5220,11 @@ function mtgTaskAtInput(inputEl, agIdx, agId) {
     !query || m.name.toLowerCase().split(' ').some(p => p.startsWith(query))
   );
   if (!members.length) { document.getElementById('_mtgAtSuggest')?.remove(); return; }
-  document.getElementById('_mtgAtSuggest')?.remove();
+  _closeAllPopups();
   const wrap = document.createElement('div');
   wrap.className = 'at-suggest'; wrap.id = '_mtgAtSuggest';
-  const rect = inputEl.getBoundingClientRect();
-  wrap.style.cssText = `top:${rect.bottom+4}px;left:${rect.left}px;min-width:${rect.width}px`;
+  const inputRect = inputEl.getBoundingClientRect();
+  wrap.style.minWidth = inputRect.width + 'px';
   wrap.innerHTML = members.map(m =>
     `<div class="at-suggest-item" onclick="selectMtgAtMember('${agId}','${m.id}','${m.name.replace(/'/g,"\\'")}')">
        <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
@@ -5203,6 +5232,7 @@ function mtgTaskAtInput(inputEl, agIdx, agId) {
      </div>`
   ).join('');
   document.body.appendChild(wrap);
+  _popPosition(wrap, inputRect);
   setTimeout(() => {
     document.addEventListener('click', function h(e) {
       if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', h, true); }
