@@ -701,6 +701,13 @@
   .cl-attach-link-size { font-size: 10px; color: var(--muted); flex-shrink: 0; }
   .cl-attach-link-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 0 2px; flex-shrink: 0; }
   .cl-attach-link-del:hover { color: var(--danger); }
+  /* Image thumbnail grid for attachments */
+  .cl-attach-img-row { display: flex; gap: 6px; flex-wrap: wrap; padding: 4px 10px 6px 38px; }
+  .cl-attach-img-thumb { position: relative; border-radius: 7px; overflow: hidden; cursor: zoom-in; border: 1px solid var(--border); flex-shrink: 0; background: var(--surface); transition: border-color 0.15s; }
+  .cl-attach-img-thumb:hover { border-color: var(--accent); }
+  .cl-attach-img-thumb img { display: block; height: 80px; width: auto; max-width: 130px; object-fit: contain; }
+  .cl-attach-img-del { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.6); border: none; color: #fff; border-radius: 4px; font-size: 10px; padding: 1px 5px; cursor: pointer; opacity: 0; transition: opacity 0.12s; line-height: 1.5; }
+  .cl-attach-img-thumb:hover .cl-attach-img-del { opacity: 1; }
 
   /* ─── BG PICKER ─── */
   .bg-picker-wrap { position: relative; }
@@ -778,7 +785,7 @@
   .cl-meta-btn.date-today { background: rgba(200,165,60,0.12); border-color: rgba(200,165,60,0.3); color: rgba(200,165,60,0.9); }
 
   /* ─── @MENTION DROPDOWN ─── */
-  .at-suggest { position: fixed; z-index: 9999; background: #1e2d10; border: 1px solid rgba(200,165,60,0.35); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); min-width: 170px; overflow: hidden; }
+  .at-suggest { position: fixed; z-index: 9999; background: #1e2d10; border: 1px solid rgba(200,165,60,0.35); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); min-width: 170px; overflow-y: auto; overflow-x: hidden; max-height: 52vh; }
   .at-suggest-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; font-size: 13px; color: rgba(255,255,255,0.82); transition: background 0.1s; }
   .at-suggest-item:hover, .at-suggest-item.at-active { background: rgba(200,165,60,0.15); }
   .at-suggest-item .avatar { width: 22px; height: 22px; font-size: 9px; border-radius: 5px; display:flex;align-items:center;justify-content:center; flex-shrink: 0; }
@@ -1204,6 +1211,7 @@
     <div class="fullview-header">
       <span class="fullview-title">📋 Porady</span>
       <button class="btn btn-ghost" onclick="startPresentation()" id="presentBtn">▶ Prezentovat</button>
+      <button class="btn btn-ghost" onclick="exportMeetingTasks()" title="Exportovat úkoly porady do Excelu">📊 Export úkolů</button>
       <button class="btn btn-ghost" onclick="manualSaveVersion()" title="Uložit aktuální verzi ručně">💾 Uložit verzi</button>
       <button class="btn btn-ghost" onclick="closePoradyView()">✕ Zavřít</button>
     </div>
@@ -2473,6 +2481,26 @@ function fileIcon(name) {
   if (['mp4','mov','avi'].includes(ext)) return '🎬';
   return '📎';
 }
+
+function _isImgAtt(a) {
+  if (a.type && a.type.startsWith('image/')) return true;
+  const ext = (a.name.split('.').pop()||'').toLowerCase();
+  return ['jpg','jpeg','png','gif','webp','svg','bmp','ico'].includes(ext);
+}
+
+function openClItemImg(itemId, idx) {
+  const card = gc(detailCardId); if (!card) return;
+  const found = findClItem(card, itemId); if (!found) return;
+  const att = (found.item.attachments||[])[idx]; if (!att) return;
+  openLightbox(att.data, att.name);
+}
+
+function openMtgTaskImg(agIdx, taskId, idx) {
+  const ag = state.livingMeeting?.agenda?.[agIdx]; if (!ag) return;
+  const task = (ag.tasks||[]).find(t=>t.id===taskId); if (!task) return;
+  const att = (task.attachments||[])[idx]; if (!att) return;
+  openLightbox(att.data, att.name);
+}
 function fmtSize(bytes) {
   if (bytes < 1024) return bytes+'B';
   if (bytes < 1048576) return (bytes/1024).toFixed(1)+'KB';
@@ -2822,25 +2850,39 @@ function mkClItemEl(item) {
   });
   div.appendChild(row);
   if (atts.length) {
-    const linkRow = document.createElement('div');
-    linkRow.className = 'cl-attach-links';
-    linkRow.innerHTML = atts.map((a,i) => `
-      <div class="cl-attach-link" data-itemid="${item.id}" data-idx="${i}">
-        <span class="cl-attach-link-icon">${fileIcon(a.name)}</span>
-        <span class="cl-attach-link-name">${a.name}</span>
-        <span class="cl-attach-link-size">${fmtSize(a.size||0)}</span>
-        <button class="cl-attach-link-del" data-delitem="${item.id}" data-delidx="${i}" title="Odebrat">✕</button>
-      </div>`).join('');
-    linkRow.querySelectorAll('.cl-attach-link').forEach(link => {
-      link.addEventListener('click', e => {
-        if (e.target.classList.contains('cl-attach-link-del')) {
-          delClItemAttach(e.target.dataset.delitem, parseInt(e.target.dataset.delidx));
-        } else {
-          downloadClAttach(link.dataset.itemid, parseInt(link.dataset.idx));
-        }
+    const imgAtts  = atts.map((a,i) => ({a,i})).filter(({a}) => _isImgAtt(a));
+    const fileAtts = atts.map((a,i) => ({a,i})).filter(({a}) => !_isImgAtt(a));
+    if (imgAtts.length) {
+      const imgRow = document.createElement('div');
+      imgRow.className = 'cl-attach-img-row';
+      imgRow.innerHTML = imgAtts.map(({a,i}) =>
+        `<div class="cl-attach-img-thumb" onclick="openClItemImg('${item.id}',${i})" title="${escHtml(a.name)}">
+           <img src="${a.data}" alt="${escHtml(a.name)}">
+           <button class="cl-attach-img-del" onclick="event.stopPropagation();delClItemAttach('${item.id}',${i})" title="Odebrat">✕</button>
+         </div>`).join('');
+      div.appendChild(imgRow);
+    }
+    if (fileAtts.length) {
+      const linkRow = document.createElement('div');
+      linkRow.className = 'cl-attach-links';
+      linkRow.innerHTML = fileAtts.map(({a,i}) => `
+        <div class="cl-attach-link" data-itemid="${item.id}" data-idx="${i}">
+          <span class="cl-attach-link-icon">${fileIcon(a.name)}</span>
+          <span class="cl-attach-link-name">${a.name}</span>
+          <span class="cl-attach-link-size">${fmtSize(a.size||0)}</span>
+          <button class="cl-attach-link-del" data-delitem="${item.id}" data-delidx="${i}" title="Odebrat">✕</button>
+        </div>`).join('');
+      linkRow.querySelectorAll('.cl-attach-link').forEach(link => {
+        link.addEventListener('click', e => {
+          if (e.target.classList.contains('cl-attach-link-del')) {
+            delClItemAttach(e.target.dataset.delitem, parseInt(e.target.dataset.delidx));
+          } else {
+            downloadClAttach(link.dataset.itemid, parseInt(link.dataset.idx));
+          }
+        });
       });
-    });
-    div.appendChild(linkRow);
+      div.appendChild(linkRow);
+    }
   }
   const attZone = document.createElement('div');
   attZone.className = 'cl-att-zone'; attZone.id = 'az-'+item.id;
@@ -3722,22 +3764,58 @@ function showTaskNotification() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// POPUP / DROPDOWN UTILITIES
+// ══════════════════════════════════════════════════════════════════════════
+
+const _POPUP_IDS = ['_assigneePicker','_addRowSuggest','_atSuggest',
+                    '_mtgAssigneePicker','_mtgAddAssigneePicker','_mtgAtSuggest',
+                    '_miniCal','_mtgStylePop'];
+
+function _closeAllPopups() {
+  _POPUP_IDS.forEach(id => document.getElementById(id)?.remove());
+}
+
+// Position a fixed popup near anchorRect, fully inside the viewport.
+// Prefers below-anchor; flips above when not enough room.
+function _popPosition(el, anchorRect, { margin = 6, gap = 4 } = {}) {
+  el.style.visibility = 'hidden';
+  el.style.left = '0px'; el.style.top = '0px';
+  const pw = el.offsetWidth  || 200;
+  const ph = el.offsetHeight || 100;
+  const vw = window.innerWidth, vh = window.innerHeight;
+
+  let top = anchorRect.bottom + gap;
+  if (top + ph > vh - margin) {
+    const aboveTop = anchorRect.top - ph - gap;
+    top = aboveTop >= margin ? aboveTop : Math.max(margin, vh - ph - margin);
+  }
+
+  let left = anchorRect.left;
+  if (left + pw > vw - margin) left = vw - pw - margin;
+  left = Math.max(margin, left);
+
+  el.style.top  = top  + 'px';
+  el.style.left = left + 'px';
+  el.style.visibility = '';
+}
+
+// Close all popups whenever any container scrolls
+document.addEventListener('scroll', _closeAllPopups, { capture: true, passive: true });
+
+// ══════════════════════════════════════════════════════════════════════════
 // ASSIGNEE PICKER
 // ══════════════════════════════════════════════════════════════════════════
 function openAssigneePicker(anchorEl, itemId, cardId) {
-  document.getElementById('_assigneePicker')?.remove();
+  _closeAllPopups();
   const members = _projectMembers || state.members;
   if (!members || !members.length) return;
-
-  const wrap = document.createElement('div');
-  wrap.className = 'at-suggest'; wrap.id = '_assigneePicker';
-  const rect = anchorEl.getBoundingClientRect();
-  wrap.style.cssText = `top:${Math.min(rect.bottom+4, window.innerHeight-200)}px;left:${Math.min(rect.left, window.innerWidth-185)}px`;
 
   const card = findCardAnywhere(cardId);
   const found = card ? findClItem(card, itemId) : null;
   const cur = found ? String(found.item.assignee||'') : '';
 
+  const wrap = document.createElement('div');
+  wrap.className = 'at-suggest'; wrap.id = '_assigneePicker';
   wrap.innerHTML = members.map(m =>
     `<div class="at-suggest-item${String(m.id)===cur?' at-active':''}" onclick="setClItemAssignee('${itemId}','${m.id}','${cardId}')">
        <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
@@ -3746,6 +3824,7 @@ function openAssigneePicker(anchorEl, itemId, cardId) {
   ).join('') + `<div class="at-suggest-item" style="color:rgba(255,100,80,0.7)" onclick="setClItemAssignee('${itemId}',null,'${cardId}')">✕ Odebrat přiřazení</div>`;
 
   document.body.appendChild(wrap);
+  _popPosition(wrap, anchorEl.getBoundingClientRect());
   setTimeout(() => {
     document.addEventListener('click', function handler(e) {
       if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', handler, true); }
@@ -3769,14 +3848,11 @@ function openAddRowAssignee(clId) {
   const btn = document.getElementById('cl-at-btn-' + clId);
   const members = _projectMembers || state.members;
   if (!members || !members.length || !btn) return;
-  document.getElementById('_addRowSuggest')?.remove();
-
-  const wrap = document.createElement('div');
-  wrap.className = 'at-suggest'; wrap.id = '_addRowSuggest';
-  const rect = btn.getBoundingClientRect();
-  wrap.style.cssText = `top:${Math.min(rect.bottom+4, window.innerHeight-200)}px;left:${Math.min(rect.left, window.innerWidth-185)}px`;
+  _closeAllPopups();
 
   const cur = String((window._pendingClAssignee||{})[clId]||'');
+  const wrap = document.createElement('div');
+  wrap.className = 'at-suggest'; wrap.id = '_addRowSuggest';
   wrap.innerHTML = members.map(m =>
     `<div class="at-suggest-item${String(m.id)===cur?' at-active':''}" onclick="setPendingAssignee('${clId}','${m.id}')">
        <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
@@ -3785,6 +3861,7 @@ function openAddRowAssignee(clId) {
   ).join('') + `<div class="at-suggest-item" style="color:rgba(255,100,80,0.7)" onclick="setPendingAssignee('${clId}',null)">✕ Žádný</div>`;
 
   document.body.appendChild(wrap);
+  _popPosition(wrap, btn.getBoundingClientRect());
   setTimeout(() => {
     document.addEventListener('click', function handler(e) {
       if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', handler, true); }
@@ -3836,9 +3913,7 @@ function handleAtInput(inputEl, clId) {
 
   const wrap = document.createElement('div');
   wrap.className = 'at-suggest'; wrap.id = '_atSuggest';
-  const rect = inputEl.getBoundingClientRect();
-  wrap.style.cssText = `top:${rect.bottom+4}px;left:${rect.left}px;min-width:${rect.width}px`;
-
+  wrap.style.minWidth = inputEl.getBoundingClientRect().width + 'px';
   wrap.innerHTML = matches.map(m =>
     `<div class="at-suggest-item" onclick="selectAtMember('${clId}','${m.id}','${m.name.replace(/'/g,"\\'")}')">
        <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
@@ -3847,6 +3922,7 @@ function handleAtInput(inputEl, clId) {
   ).join('');
 
   document.body.appendChild(wrap);
+  _popPosition(wrap, inputEl.getBoundingClientRect());
 }
 
 function selectAtMember(clId, memberId, name) {
@@ -3871,7 +3947,7 @@ let _calCtx = null; // { itemId, cardId, clId(for add-row) }
 let _calYear = 0, _calMonth = 0, _calSelected = null;
 
 function openMiniCal(anchorEl, itemId, cardId, currentDate) {
-  document.getElementById('_miniCal')?.remove();
+  _closeAllPopups();
   document.removeEventListener('click', _calOutsideHandler, true);
 
   const d = currentDate ? new Date(currentDate + 'T00:00:00') : new Date();
@@ -3880,12 +3956,9 @@ function openMiniCal(anchorEl, itemId, cardId, currentDate) {
 
   const wrap = document.createElement('div');
   wrap.className = 'mini-cal-wrap'; wrap.id = '_miniCal';
-  const rect = anchorEl.getBoundingClientRect();
-  const top = rect.bottom + 4;
-  const left = Math.min(rect.left, window.innerWidth - 240);
-  wrap.style.cssText = `top:${Math.min(top, window.innerHeight - 280)}px;left:${left}px`;
   document.body.appendChild(wrap);
   _renderMiniCal();
+  _popPosition(wrap, anchorEl.getBoundingClientRect());
 
   setTimeout(() => {
     document.addEventListener('click', _calOutsideHandler, true);
@@ -4028,22 +4101,38 @@ function toggleClAttach(itemId) {
   }
 }
 
-// Clipboard paste for checklist items
+// Clipboard paste for checklist items and meeting tasks
 document.addEventListener('paste', e => {
-  if (!window._pasteItemId) return;
-  const items = Array.from(e.clipboardData.items);
-  const files = items.filter(i=>i.kind==='file').map(i=>i.getAsFile()).filter(Boolean);
+  const files = Array.from(e.clipboardData.items).filter(i=>i.kind==='file').map(i=>i.getAsFile()).filter(Boolean);
   if (!files.length) return;
-  e.preventDefault();
-  readFiles(files, 'file', results => {
-    const card = gc(detailCardId); if (!card) return;
-    const found = findClItem(card, window._pasteItemId); if (!found) return;
-    if (!found.item.attachments) found.item.attachments = [];
-    found.item.attachments.push(...results);
-    saveState(); renderAllChecklists(card);
-    const dz = document.getElementById('cdz-'+window._pasteItemId);
-    if (dz) { dz.style.borderColor='var(--accent)'; setTimeout(()=>{ dz.style.borderColor=''; },600); }
-  });
+
+  if (window._pasteItemId) {
+    e.preventDefault();
+    readFiles(files, 'file', results => {
+      const card = gc(detailCardId); if (!card) return;
+      const found = findClItem(card, window._pasteItemId); if (!found) return;
+      if (!found.item.attachments) found.item.attachments = [];
+      found.item.attachments.push(...results);
+      saveState(); renderAllChecklists(card);
+      const dz = document.getElementById('cdz-'+window._pasteItemId);
+      if (dz) { dz.style.borderColor='var(--accent)'; setTimeout(()=>{ dz.style.borderColor=''; },600); }
+    });
+    return;
+  }
+
+  if (window._pasteMtgTask) {
+    e.preventDefault();
+    const { agIdx, taskId } = window._pasteMtgTask;
+    readFiles(files, 'file', results => {
+      const task = (state.livingMeeting?.agenda?.[agIdx]?.tasks||[]).find(t=>t.id===taskId);
+      if (!task) return;
+      if (!task.attachments) task.attachments = [];
+      task.attachments.push(...results);
+      saveMeetingState(); renderMeetingDetail();
+      const dz = document.getElementById('mtgdz-'+taskId);
+      if (dz) { dz.style.borderColor='var(--accent)'; setTimeout(()=>{ dz.style.borderColor=''; },600); }
+    });
+  }
 });
 
 function dzDropClItem(e, itemId) {
@@ -4488,6 +4577,57 @@ function closePoradyView() {
   document.getElementById('poradyOverlay').classList.remove('open');
 }
 
+function exportMeetingTasks() {
+  const lm = state.livingMeeting;
+  if (!lm) { alert('Žádná aktivní porada.'); return; }
+  const members = _projectMembers || state.members || [];
+  const rows = [];
+
+  (lm.agenda||[]).forEach((ag, idx) => {
+    if (!ag.text) return;
+    const chapter = `${idx+1}. ${ag.text}`;
+
+    // Ungrouped tasks first (in document order)
+    (ag.tasks||[]).filter(t => !t.groupId).forEach(t => {
+      const mem = members.find(m => String(m.id) === String(t.assignee));
+      rows.push({
+        'Bod porady': chapter,
+        'Skupina':    '',
+        'Úkol':       t.text,
+        'Přiřazeno':  mem ? mem.name : '',
+        'Termín':     t.deadline || '',
+        'Splněno':    t.done ? 'Ano' : 'Ne',
+      });
+    });
+
+    // Groups in document order
+    (ag.groups||[]).forEach(grp => {
+      (ag.tasks||[]).filter(t => t.groupId === grp.id).forEach(t => {
+        const mem = members.find(m => String(m.id) === String(t.assignee));
+        rows.push({
+          'Bod porady': chapter,
+          'Skupina':    grp.name,
+          'Úkol':       t.text,
+          'Přiřazeno':  mem ? mem.name : '',
+          'Termín':     t.deadline || '',
+          'Splněno':    t.done ? 'Ano' : 'Ne',
+        });
+      });
+    });
+  });
+
+  if (!rows.length) { alert('Žádné úkoly v poradě.'); return; }
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [42, 22, 52, 20, 12, 8].map(w => ({wch: w}));
+  XLSX.utils.book_append_sheet(wb, ws, 'Úkoly porady');
+
+  const date  = new Date().toLocaleDateString('cs-CZ').replace(/\s/g,'').replace(/\./g,'_');
+  const title = (lm.title||'Porada').replace(/[^\wÀ-ž\s]/g,'').trim().substring(0,20);
+  XLSX.writeFile(wb, `Porada_${title}_${date}.xlsx`);
+}
+
 function fmtDateLong(d) {
   if (!d) return '';
   const [y,mo,day] = d.split('-');
@@ -4621,7 +4761,15 @@ function renderMeetingDetail() {
     const nm  = mem ? mem.name.split(' ')[0] : '';
     const dlCls = t.deadline ? (t.deadline < today2 ? 'date-overdue' : t.deadline === today2 ? 'date-today' : 'has-date') : '';
     const atts = t.attachments||[];
-    const attLinks = atts.map((a,i)=>`<div class="cl-attach-link"><span class="cl-attach-link-icon">${fileIcon(a.name)}</span><span class="cl-attach-link-name">${escHtml(a.name)}</span><span class="cl-attach-link-size">${fmtSize(a.size||0)}</span><button class="cl-attach-link-del" onclick="deleteMtgAttach(${agIdx},'${t.id}',${i})" title="Odebrat">✕</button></div>`).join('');
+    const imgAtts  = atts.map((a,i)=>({a,i})).filter(({a})=>_isImgAtt(a));
+    const fileAtts = atts.map((a,i)=>({a,i})).filter(({a})=>!_isImgAtt(a));
+    const imgHtml  = imgAtts.length ? `<div class="cl-attach-img-row">${imgAtts.map(({a,i})=>
+      `<div class="cl-attach-img-thumb" onclick="openMtgTaskImg(${agIdx},'${t.id}',${i})" title="${escHtml(a.name)}">
+         <img src="${a.data}" alt="${escHtml(a.name)}">
+         <button class="cl-attach-img-del" onclick="event.stopPropagation();deleteMtgAttach(${agIdx},'${t.id}',${i})" title="Odebrat">✕</button>
+       </div>`).join('')}</div>` : '';
+    const fileHtml = fileAtts.length ? `<div class="cl-attach-links">${fileAtts.map(({a,i})=>
+      `<div class="cl-attach-link"><span class="cl-attach-link-icon">${fileIcon(a.name)}</span><span class="cl-attach-link-name">${escHtml(a.name)}</span><span class="cl-attach-link-size">${fmtSize(a.size||0)}</span><button class="cl-attach-link-del" onclick="deleteMtgAttach(${agIdx},'${t.id}',${i})" title="Odebrat">✕</button></div>`).join('')}</div>` : '';
     const fs = fontSize || 13;
     return `<div class="cl-item" id="mtgt-${t.id}" data-task-id="${t.id}" style="margin:2px 0"
       ${!readonly?`draggable="true" ondragstart="_mtgDragStart(event,'${t.id}',${agIdx})" ondragend="_mtgDragEnd('${t.id}')"`:''}}>
@@ -4635,9 +4783,18 @@ function renderMeetingDetail() {
       ${!readonly?`<div class="cl-item-meta" id="mtgm-${t.id}" style="display:none">
         <button class="cl-meta-btn${mem?' assigned':''}" onclick="openMtgTaskAssignee(this,${agIdx},'${t.id}')">${mem?`👤 ${escHtml(nm)}`:'👤 Přiřadit'}</button>
         <button class="cl-meta-btn${dlCls?' '+dlCls:''}" onclick="openMtgTaskCal(this,${agIdx},'${t.id}','${t.deadline||''}')">${t.deadline?`📅 ${fmtDate(t.deadline)}`:'📅 Termín'}</button>
-        <button class="cl-attach-toggle" onclick="toggleMtgAttach('${t.id}')">📎${atts.length?` (${atts.length})`:''}</button>
-      </div>${attLinks?`<div class="cl-attach-links">${attLinks}</div>`:''}
-      <div class="cl-att-zone" id="mtgaz-${t.id}" style="display:none"><div class="cl-drop-zone"><div style="font-size:22px;margin-bottom:4px">📎</div><input type="file" multiple style="display:none" id="mcfi-${t.id}" onchange="addMtgAttachFile(event,${agIdx},'${t.id}')"><button onclick="document.getElementById('mcfi-${t.id}').click()" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;font-family:inherit">Vybrat soubor</button></div></div>`:''}
+        <button class="cl-attach-toggle" onclick="toggleMtgAttach('${t.id}',${agIdx})">📎${atts.length?` (${atts.length})`:''}</button>
+      </div>${imgHtml}${fileHtml}
+      <div class="cl-att-zone" id="mtgaz-${t.id}" style="display:none">
+        <div class="cl-drop-zone" id="mtgdz-${t.id}"
+          ondragover="dzOver(event,'mtgdz-${t.id}')" ondragleave="dzLeave('mtgdz-${t.id}')"
+          ondrop="dzDropMtgAttach(event,${agIdx},'${t.id}')">
+          <div style="font-size:22px;margin-bottom:4px">📎</div>
+          <div style="font-size:12px;color:var(--muted)">Přetáhni obrázek/soubor nebo <strong style="color:var(--accent)">vlož Ctrl+V</strong></div>
+          <input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip" style="display:none" id="mcfi-${t.id}" onchange="addMtgAttachFile(event,${agIdx},'${t.id}')">
+          <button onclick="document.getElementById('mcfi-${t.id}').click()" style="margin-top:8px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;font-family:inherit">Vybrat soubor / obrázek</button>
+        </div>
+      </div>`:''}
     </div>`;
   }
 
@@ -4806,7 +4963,7 @@ const _MTG_PALETTE_GLOBAL = [null,'#c8a53c','#2196f3','#4caf50','#f44336','#9c27
 
 function openMtgStylePicker(event, type, agIdx, grpId) {
   event.stopPropagation();
-  document.getElementById('_mtgStylePop')?.remove();
+  _closeAllPopups();
 
   const ag  = state.livingMeeting?.agenda?.[agIdx]; if (!ag) return;
   const grp = grpId ? (ag.groups||[]).find(g=>g.id===grpId) : null;
@@ -5071,15 +5228,13 @@ function startRenameMtgTask(spanEl, agIdx, taskId) {
 
 // Assignee picker for existing meeting task
 function openMtgTaskAssignee(anchorEl, agIdx, taskId) {
-  document.getElementById('_mtgAssigneePicker')?.remove();
+  _closeAllPopups();
   const members = _projectMembers || state.members || [];
   if (!members.length) return;
   const task = (state.livingMeeting?.agenda?.[agIdx]?.tasks||[]).find(t=>t.id===taskId);
   const cur = String(task?.assignee||'');
   const wrap = document.createElement('div');
   wrap.className = 'at-suggest'; wrap.id = '_mtgAssigneePicker';
-  const rect = anchorEl.getBoundingClientRect();
-  wrap.style.cssText = `top:${Math.min(rect.bottom+4, window.innerHeight-200)}px;left:${Math.min(rect.left, window.innerWidth-185)}px`;
   wrap.innerHTML = members.map(m =>
     `<div class="at-suggest-item${String(m.id)===cur?' at-active':''}" onclick="setMtgTaskAssignee(${agIdx},'${taskId}','${m.id}')">
        <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
@@ -5087,6 +5242,7 @@ function openMtgTaskAssignee(anchorEl, agIdx, taskId) {
      </div>`
   ).join('') + `<div class="at-suggest-item" style="color:rgba(255,100,80,0.7)" onclick="setMtgTaskAssignee(${agIdx},'${taskId}',null)">✕ Odebrat přiřazení</div>`;
   document.body.appendChild(wrap);
+  _popPosition(wrap, anchorEl.getBoundingClientRect());
   setTimeout(() => {
     document.addEventListener('click', function h(e) {
       if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', h, true); }
@@ -5104,14 +5260,12 @@ function setMtgTaskAssignee(agIdx, taskId, memberId) {
 
 // Assignee picker for new task add-row
 function openMtgAddAssignee(anchorEl, agIdx, agId) {
-  document.getElementById('_mtgAddAssigneePicker')?.remove();
+  _closeAllPopups();
   const members = _projectMembers || state.members || [];
   if (!members.length) return;
   const cur = String((window._mtgPendingAdd||{})[agId]?.assignee||'');
   const wrap = document.createElement('div');
   wrap.className = 'at-suggest'; wrap.id = '_mtgAddAssigneePicker';
-  const rect = anchorEl.getBoundingClientRect();
-  wrap.style.cssText = `top:${Math.min(rect.bottom+4, window.innerHeight-200)}px;left:${Math.min(rect.left, window.innerWidth-185)}px`;
   wrap.innerHTML = members.map(m =>
     `<div class="at-suggest-item${String(m.id)===cur?' at-active':''}" onclick="setMtgAddAssignee('${agId}','${m.id}','${m.name.replace(/'/g,"\\'")}')">
        <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
@@ -5119,6 +5273,7 @@ function openMtgAddAssignee(anchorEl, agIdx, agId) {
      </div>`
   ).join('') + `<div class="at-suggest-item" style="color:rgba(255,100,80,0.7)" onclick="setMtgAddAssignee('${agId}',null,'')">✕ Žádný</div>`;
   document.body.appendChild(wrap);
+  _popPosition(wrap, anchorEl.getBoundingClientRect());
   setTimeout(() => {
     document.addEventListener('click', function h(e) {
       if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', h, true); }
@@ -5153,12 +5308,27 @@ function openMtgAddCal(anchorEl, agIdx, agId) {
 }
 
 // Attachment helpers
-function toggleMtgAttach(taskId) {
+function toggleMtgAttach(taskId, agIdx) {
   const zone = document.getElementById(`mtgaz-${taskId}`);
   if (!zone) return;
   const isOpen = zone.style.display !== 'none';
   document.querySelectorAll('[id^="mtgaz-"]').forEach(z => { z.style.display='none'; });
-  if (!isOpen) zone.style.display = 'block';
+  window._pasteMtgTask = null;
+  if (!isOpen) {
+    zone.style.display = 'block';
+    window._pasteMtgTask = { agIdx, taskId };
+  }
+}
+
+function dzDropMtgAttach(e, agIdx, taskId) {
+  e.preventDefault(); dzLeave('mtgdz-'+taskId);
+  readFiles(Array.from(e.dataTransfer.files), 'file', results => {
+    const task = (state.livingMeeting?.agenda?.[agIdx]?.tasks||[]).find(t=>t.id===taskId);
+    if (!task) return;
+    if (!task.attachments) task.attachments = [];
+    task.attachments.push(...results);
+    saveMeetingState(); renderMeetingDetail();
+  });
 }
 
 function addMtgAttachFile(e, agIdx, taskId) {
@@ -5174,7 +5344,6 @@ function addMtgAttachFile(e, agIdx, taskId) {
 }
 
 function deleteMtgAttach(agIdx, taskId, idx) {
-  if (!confirm('Smazat tuto přílohu?')) return;
   const task = (state.livingMeeting?.agenda?.[agIdx]?.tasks||[]).find(t=>t.id===taskId);
   if (!task) return;
   task.attachments.splice(idx, 1);
@@ -5191,11 +5360,11 @@ function mtgTaskAtInput(inputEl, agIdx, agId) {
     !query || m.name.toLowerCase().split(' ').some(p => p.startsWith(query))
   );
   if (!members.length) { document.getElementById('_mtgAtSuggest')?.remove(); return; }
-  document.getElementById('_mtgAtSuggest')?.remove();
+  _closeAllPopups();
   const wrap = document.createElement('div');
   wrap.className = 'at-suggest'; wrap.id = '_mtgAtSuggest';
-  const rect = inputEl.getBoundingClientRect();
-  wrap.style.cssText = `top:${rect.bottom+4}px;left:${rect.left}px;min-width:${rect.width}px`;
+  const inputRect = inputEl.getBoundingClientRect();
+  wrap.style.minWidth = inputRect.width + 'px';
   wrap.innerHTML = members.map(m =>
     `<div class="at-suggest-item" onclick="selectMtgAtMember('${agId}','${m.id}','${m.name.replace(/'/g,"\\'")}')">
        <div class="avatar" style="background:${m.avatar_color||m.color||'#4A5340'};width:22px;height:22px;font-size:9px;display:flex;align-items:center;justify-content:center;border-radius:5px">${ini(m.name)}</div>
@@ -5203,6 +5372,7 @@ function mtgTaskAtInput(inputEl, agIdx, agId) {
      </div>`
   ).join('');
   document.body.appendChild(wrap);
+  _popPosition(wrap, inputRect);
   setTimeout(() => {
     document.addEventListener('click', function h(e) {
       if (!wrap.contains(e.target)) { wrap.remove(); document.removeEventListener('click', h, true); }
