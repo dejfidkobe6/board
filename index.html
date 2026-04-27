@@ -975,6 +975,28 @@
   .present-exit { position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.07); border: 1px solid rgba(0,0,0,0.14); color: rgba(0,0,0,0.45); border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
   .present-exit:hover { background: rgba(0,0,0,0.12); color: #1a1a1a; }
   .present-edit-hint { position: fixed; bottom: 28px; left: 28px; font-size: 11px; color: rgba(0,0,0,0.25); }
+  /* Presentation action buttons */
+  .present-action-bar { position: fixed; bottom: 74px; right: 28px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+  .present-action-btn { border: none; font-family: inherit; border-radius: 8px; padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .present-action-btn-pri { background: #1a1a1a; color: #fff; }
+  .present-action-btn-pri:hover { background: #333; }
+  .present-action-btn-sec { background: rgba(0,0,0,0.07); color: rgba(0,0,0,0.55); border: 1px solid rgba(0,0,0,0.12); }
+  .present-action-btn-sec:hover { background: rgba(0,0,0,0.12); color: #1a1a1a; }
+  /* Add task form popup */
+  .present-add-form { position: fixed; bottom: 150px; right: 28px; width: 340px; background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08); z-index: 2100; border: 1px solid rgba(0,0,0,0.1); }
+  .present-add-form h4 { margin: 0 0 12px; font-size: 14px; font-weight: 700; color: #1a1a1a; }
+  .present-add-form input, .present-add-form select { display: block; width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 13px; font-family: inherit; border: 1.5px solid rgba(0,0,0,0.15); border-radius: 7px; outline: none; color: #1a1a1a; margin-bottom: 8px; background: #fff; }
+  .present-add-form input:focus, .present-add-form select:focus { border-color: #2563eb; }
+  .present-add-form-btns { display: flex; gap: 8px; margin-top: 6px; }
+  .present-add-form-btns button { flex: 1; padding: 8px; font-size: 13px; font-weight: 600; font-family: inherit; border-radius: 7px; cursor: pointer; border: none; transition: opacity 0.1s; }
+  /* Deadline badge clickable + add-deadline button */
+  .present-deadline { cursor: pointer; }
+  .present-deadline:hover { opacity: 0.78; }
+  .present-add-dl { font-size: 11px; color: rgba(0,0,0,0.22); cursor: pointer; margin-left: auto; flex-shrink: 0; white-space: nowrap; padding: 1px 6px; border-radius: 4px; background: rgba(0,0,0,0.03); border: 1px dashed rgba(0,0,0,0.13); }
+  .present-add-dl:hover { color: rgba(0,0,0,0.5); background: rgba(0,0,0,0.07); }
+  /* Done circle */
+  .present-done-circle { font-size: 14px; cursor: pointer; flex-shrink: 0; padding: 2px 4px; border-radius: 4px; line-height: 1; transition: background 0.1s; }
+  .present-done-circle:hover { background: rgba(0,0,0,0.07); }
 
   /* ─── DOVOLENÉ ─── */
   .vac-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -1209,6 +1231,10 @@
       <button id="presentPrev" onclick="presentNav(-1)">◀ Předchozí</button>
       <span class="present-nav-idx" id="presentNavIdx"></span>
       <button id="presentNext" onclick="presentNav(1)">Další ▶</button>
+    </div>
+    <div class="present-action-bar" id="presentActionBar">
+      <button class="present-action-btn present-action-btn-sec" id="presentAddAgBtn" onclick="presentAddAgendaItem()">+ Nový bod</button>
+      <button class="present-action-btn present-action-btn-pri" id="presentAddTaskBtn" onclick="presentShowAddTask()">+ Přidat úkol</button>
     </div>
     <div class="present-edit-hint" id="presentEditHint"></div>
   </div>
@@ -2120,7 +2146,7 @@ async function sendTeamInvite() {
   const data = await res.json();
   if (data.not_registered) {
     const besixUrl = 'https://besix.cz';
-    if (msgEl) msgEl.innerHTML = `<span style="color:#ff9800">Uživatel <strong>${escHtml(data.email||email)}</strong> není registrován do platformy BESIX. Pozvěte ho nejprve na platformu besix.cz: <a href="${besixUrl}" target="_blank" rel="noopener" style="color:#2196f3;text-decoration:underline">Přejít na besix.cz →</a></span>`;
+    if (msgEl) msgEl.innerHTML = `<span style="color:#ff9800">Uživatel <strong>${escHtml(data.email||email)}</strong> není registrován do platformy BESIX. Pozvěte ho nejprve na platformu besix.cz <a href="${besixUrl}" target="_blank" rel="noopener" style="color:#2196f3;text-decoration:underline">Přejít na besix.cz →</a></span>`;
   } else if (data.success) {
     if (msgEl) msgEl.innerHTML = `<span style="color:rgba(210,185,70,0.9)">✓ ${escHtml(data.message || 'Odesláno')}</span>`;
     if (emailEl) emailEl.value = '';
@@ -5270,7 +5296,7 @@ function addPhase() {
 }
 
 // ── Prezentační režim ──────────────────────────────────────────────────────
-function startPresentation() {
+function _buildPresentSlides() {
   const lm = state.livingMeeting||{};
   const members = _projectMembers || state.members || [];
   _presentSlides = [];
@@ -5278,21 +5304,14 @@ function startPresentation() {
   if ((state.phases||[]).length) _presentSlides.push({ title:'📊 Harmonogram fází stavby', sub:'', sections:[], type:'gantt' });
   (lm.agenda||[]).forEach((ag,i) => {
     if (!ag.text) return;
-    const toRow = t => {
-      const mem = members.find(x=>String(x.id)===String(t.assignee));
-      return { id:t.id, text:t.text, done:t.done, deadline:t.deadline||null,
-               memberName:mem?mem.name.split(' ')[0]:'', color:mem?(mem.avatar_color||mem.color||'#4A5340'):'#666' };
-    };
-    const sections = [];
-    const ungrouped = (ag.tasks||[]).filter(t=>!t.groupId);
-    if (ungrouped.length) sections.push({ groupName:null, tasks:ungrouped.map(toRow) });
-    (ag.groups||[]).forEach(grp => {
-      const gtasks = (ag.tasks||[]).filter(t=>t.groupId===grp.id);
-      sections.push({ groupName:grp.name, grpColor:grp.color||null, tasks:gtasks.map(toRow) });
-    });
-    const totalOpen = (ag.tasks||[]).filter(t=>!t.done).length;
-    _presentSlides.push({ title:`${i+1}. ${ag.text}`, sub: totalOpen ? `${totalOpen} otevřených úkolů` : '', sections, type:'agenda', agIdx:i, agColor:ag.color||null });
+    const slide = { title:`${i+1}. ${ag.text}`, sub:'', sections:[], type:'agenda', agIdx:i, agColor:ag.color||null };
+    _rebuildPresentSections(slide, ag);
+    _presentSlides.push(slide);
   });
+}
+
+function startPresentation() {
+  _buildPresentSlides();
   _presentIdx = 0;
   document.getElementById('presentSlide').classList.remove('hidden');
   renderPresentSlide();
@@ -5360,13 +5379,16 @@ function renderPresentSlide() {
       const indent = sec.groupName ? ' indented' : '';
       html += sec.tasks.map(t => {
         const dlCls = t.deadline ? (t.deadline < today2 ? ' overdue' : t.deadline === today2 ? ' today' : '') : '';
-        const dlBadge = t.deadline ? `<span class="present-deadline${dlCls}">📅 ${fmtDate(t.deadline)}</span>` : '';
+        const dlBadge = t.deadline
+          ? `<span class="present-deadline${dlCls}" onclick="presentEditDeadline(${s.agIdx??-1},'${t.id}',event)" title="Kliknutím změnit termín">📅 ${fmtDate(t.deadline)}</span>`
+          : `<span class="present-add-dl" onclick="presentEditDeadline(${s.agIdx??-1},'${t.id}',event)" title="Přidat termín">+ termín</span>`;
         const memberBadge = t.memberName
           ? `<div class="av-sm" style="background:${t.color}">${ini(t.memberName)}</div><span class="present-assignee">${escHtml(t.memberName)}</span>`
           : '';
         const agIdx = s.agIdx ?? -1;
-        return `<div class="present-task-row${indent}" ondblclick="presentEditTask(${agIdx},'${t.id}')" title="Dvojklik pro úpravu">
-          <span style="font-size:14px;color:${t.done?'rgba(0,0,0,0.25)':'rgba(0,0,0,0.35)'};flex-shrink:0">${t.done?'✓':'○'}</span>
+        const circleColor = t.done ? 'rgba(0,0,0,0.22)' : 'rgba(0,0,0,0.32)';
+        return `<div class="present-task-row${indent}" ondblclick="presentEditTask(${agIdx},'${t.id}')" title="Dvojklik pro úpravu textu">
+          <span class="present-done-circle" onclick="presentToggleDone(${agIdx},'${t.id}');event.stopPropagation()" style="color:${circleColor}" title="${t.done?'Označit jako otevřený':'Označit jako hotový'}">${t.done?'✓':'○'}</span>
           ${memberBadge}
           <span class="${t.done?'present-task-done':''}" style="flex:1">${escHtml(t.text)}</span>
           ${dlBadge}
@@ -5376,6 +5398,12 @@ function renderPresentSlide() {
     });
     tasksEl.innerHTML = html || `<div style="color:rgba(0,0,0,0.25);font-size:14px;font-style:italic;padding:8px">Žádné úkoly v tomto bodě</div>`;
   }
+
+  // Show/hide action buttons
+  const addTaskBtn = document.getElementById('presentAddTaskBtn');
+  const addAgBtn   = document.getElementById('presentAddAgBtn');
+  if (addTaskBtn) addTaskBtn.style.display = s.type === 'agenda' ? '' : 'none';
+  if (addAgBtn)   addAgBtn.style.display   = '';
 
   document.getElementById('presentPrev').disabled = _presentIdx === 0;
   document.getElementById('presentNext').disabled = _presentIdx === _presentSlides.length-1;
@@ -5425,27 +5453,8 @@ function presentEditTask(agIdx, taskId) {
     const v = inp.value.trim() || task.text;
     task.text = v;
     saveMeetingState();
-    // Rebuild slide data and re-render
-    const lm = state.livingMeeting||{};
-    const members = _projectMembers || state.members || [];
-    const toRow = t => {
-      const mem = members.find(x=>String(x.id)===String(t.assignee));
-      return { id:t.id, text:t.text, done:t.done, deadline:t.deadline||null,
-               memberName:mem?mem.name.split(' ')[0]:'', color:mem?(mem.avatar_color||mem.color||'#4A5340'):'#666' };
-    };
-    if (lm.agenda?.[agIdx]) {
-      const a = lm.agenda[agIdx];
-      const s = _presentSlides[_presentIdx];
-      if (s) {
-        s.sections = [];
-        const ungrouped = (a.tasks||[]).filter(t=>!t.groupId);
-        if (ungrouped.length) s.sections.push({ groupName:null, tasks:ungrouped.map(toRow) });
-        (a.groups||[]).forEach(grp => {
-          const gtasks = (a.tasks||[]).filter(t=>t.groupId===grp.id);
-          s.sections.push({ groupName:grp.name, grpColor:grp.color||null, tasks:gtasks.map(toRow) });
-        });
-      }
-    }
+    const s = _presentSlides[_presentIdx];
+    if (s) _rebuildPresentSections(s, ag);
     renderPresentSlide();
     renderMeetingDetail();
   };
@@ -5455,6 +5464,135 @@ function presentEditTask(agIdx, taskId) {
     if (e.key === 'Escape') { inp.value = task.text; inp.blur(); }
     e.stopPropagation();
   };
+}
+
+// ── Presentation helpers ──────────────────────────────────────────────────
+
+function _rebuildPresentSections(slide, ag) {
+  const members = _projectMembers || state.members || [];
+  const toRow = t => {
+    const mem = members.find(x=>String(x.id)===String(t.assignee));
+    return { id:t.id, text:t.text, done:t.done, deadline:t.deadline||null,
+             memberName:mem?mem.name.split(' ')[0]:'', color:mem?(mem.avatar_color||mem.color||'#4A5340'):'#666' };
+  };
+  slide.sections = [];
+  const ungrouped = (ag.tasks||[]).filter(t=>!t.groupId);
+  if (ungrouped.length) slide.sections.push({ groupName:null, tasks:ungrouped.map(toRow) });
+  (ag.groups||[]).forEach(grp => {
+    const gtasks = (ag.tasks||[]).filter(t=>t.groupId===grp.id);
+    slide.sections.push({ groupName:grp.name, grpColor:grp.color||null, tasks:gtasks.map(toRow) });
+  });
+  const openCount = (ag.tasks||[]).filter(t=>!t.done).length;
+  slide.sub = openCount ? `${openCount} otevřených úkolů` : '';
+}
+
+function presentToggleDone(agIdx, taskId) {
+  if (agIdx < 0) return;
+  const ag = state.livingMeeting?.agenda?.[agIdx]; if (!ag) return;
+  const task = (ag.tasks||[]).find(t=>t.id===taskId); if (!task) return;
+  task.done = !task.done;
+  saveMeetingState();
+  const s = _presentSlides[_presentIdx];
+  if (s) _rebuildPresentSections(s, ag);
+  renderPresentSlide();
+  if (typeof renderTaskPanel === 'function') renderTaskPanel();
+}
+
+function presentEditDeadline(agIdx, taskId, event) {
+  event.stopPropagation();
+  if (agIdx < 0) return;
+  const ag = state.livingMeeting?.agenda?.[agIdx]; if (!ag) return;
+  const task = (ag.tasks||[]).find(t=>t.id===taskId); if (!task) return;
+  const badge = event.currentTarget;
+  const inp = document.createElement('input');
+  inp.type = 'date';
+  inp.value = task.deadline || '';
+  inp.style.cssText = 'font-size:11px;font-family:inherit;border:1.5px solid #2563eb;border-radius:4px;padding:1px 6px;outline:none;color:#1a1a1a;background:#fff;cursor:pointer;margin-left:auto;flex-shrink:0';
+  badge.replaceWith(inp);
+  inp.focus();
+  const commit = () => {
+    task.deadline = inp.value || null;
+    saveMeetingState();
+    const s = _presentSlides[_presentIdx];
+    if (s) _rebuildPresentSections(s, ag);
+    renderPresentSlide();
+    renderMeetingDetail();
+  };
+  inp.onblur = commit;
+  inp.onchange = () => inp.blur();
+  inp.onkeydown = e => {
+    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+    if (e.key === 'Escape') { task.deadline = task.deadline; inp.replaceWith(badge); }
+    e.stopPropagation();
+  };
+}
+
+function presentShowAddTask() {
+  const s = _presentSlides[_presentIdx];
+  if (!s || s.type !== 'agenda') return;
+  const ag = state.livingMeeting?.agenda?.[s.agIdx]; if (!ag) return;
+  const members = _projectMembers || state.members || [];
+
+  document.getElementById('presentAddForm')?.remove();
+  const form = document.createElement('div');
+  form.className = 'present-add-form';
+  form.id = 'presentAddForm';
+
+  const groups = ag.groups || [];
+  const groupSel = groups.length
+    ? `<select id="paGrp"><option value="">— bez skupiny —</option>${groups.map(g=>`<option value="${escHtml(g.id)}">${escHtml(g.name)}</option>`).join('')}</select>`
+    : '';
+  const memberOpts = members.map(m=>`<option value="${m.id}">${escHtml(m.name)}</option>`).join('');
+
+  form.innerHTML = `
+    <h4>Přidat úkol</h4>
+    <input id="paText" type="text" placeholder="Název úkolu…">
+    <select id="paAssignee"><option value="">— nepřiřazeno —</option>${memberOpts}</select>
+    <input id="paDeadline" type="date" placeholder="Termín (nepovinný)">
+    ${groupSel}
+    <div class="present-add-form-btns">
+      <button style="background:#f1f5f9;color:#64748b" onclick="document.getElementById('presentAddForm').remove()">Zrušit</button>
+      <button style="background:#1a1a1a;color:#fff" onclick="presentSaveNewTask(${s.agIdx})">Přidat</button>
+    </div>`;
+
+  document.getElementById('presentSlide').appendChild(form);
+  form.addEventListener('keydown', e => {
+    e.stopPropagation();
+    if (e.key === 'Enter' && e.target.tagName !== 'SELECT') { e.preventDefault(); presentSaveNewTask(s.agIdx); }
+    if (e.key === 'Escape') form.remove();
+  });
+  setTimeout(() => document.getElementById('paText')?.focus(), 30);
+}
+
+function presentSaveNewTask(agIdx) {
+  const ag = state.livingMeeting?.agenda?.[agIdx]; if (!ag) return;
+  const text = document.getElementById('paText')?.value.trim();
+  if (!text) { document.getElementById('paText')?.focus(); return; }
+  const assignee  = document.getElementById('paAssignee')?.value  || null;
+  const deadline  = document.getElementById('paDeadline')?.value  || null;
+  const groupId   = document.getElementById('paGrp')?.value       || null;
+  if (!ag.tasks) ag.tasks = [];
+  ag.tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee, deadline, attachments:[], createdAt:new Date().toISOString(), groupId });
+  saveMeetingState();
+  document.getElementById('presentAddForm')?.remove();
+  const s = _presentSlides[_presentIdx];
+  if (s) _rebuildPresentSections(s, ag);
+  renderPresentSlide();
+  renderMeetingDetail();
+}
+
+function presentAddAgendaItem() {
+  const lm = state.livingMeeting; if (!lm) return;
+  if (!lm.agenda) lm.agenda = [];
+  const newAg = { id:'ag_'+Date.now(), text:'Nový bod', tasks:[], groups:[] };
+  lm.agenda.push(newAg);
+  const newAgIdx = lm.agenda.length - 1;
+  saveMeetingState();
+  _buildPresentSlides();
+  _presentIdx = _presentSlides.length - 1;
+  renderPresentSlide();
+  renderMeetingDetail();
+  setTimeout(() => presentEditTitle(newAgIdx), 60);
 }
 
 // Keyboard navigation for presentation
