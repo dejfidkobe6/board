@@ -2743,6 +2743,10 @@ function mkClItemEl(item) {
   div.className = 'cl-item-wrap';
   div.draggable = true;
   div.addEventListener('dragstart', e => {
+    const tgt = e.target;
+    if (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable) {
+      e.preventDefault(); return;
+    }
     _clDragType = 'item'; _clDragId = item.id;
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', item.id);
@@ -5051,6 +5055,12 @@ function _mtgPickFs(agIdx, size) {
 window._mtgDrag = null;
 
 function _mtgDragStart(event, taskId, agIdx) {
+  // If the drag started inside a text input (user is selecting text), cancel it
+  const tgt = event.target;
+  if (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable) {
+    event.preventDefault();
+    return;
+  }
   window._mtgDrag = { taskId, agIdx };
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', taskId);
