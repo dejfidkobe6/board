@@ -2684,8 +2684,16 @@ function toggleClDone(cardId, clId) {
 function addChecklist() {
   const card = gc(detailCardId); if (!card) return;
   ensureChecklists(card);
-  card.checklists.push({ id: 'cl' + Date.now(), name: 'Checklist ' + (card.checklists.length + 1), items: [] });
+  const newId = 'cl' + Date.now();
+  card.checklists.push({ id: newId, name: 'Checklist ' + (card.checklists.length + 1), items: [] });
   saveState(); renderAllChecklists(card);
+  // Scroll to new checklist and enter rename mode
+  const block = document.querySelector(`[data-cl-id="${newId}"]`);
+  if (block) {
+    block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const nameEl = block.querySelector('.cl-block-name');
+    if (nameEl) setTimeout(() => startRenameChecklist(nameEl, newId), 120);
+  }
 }
 
 function delChecklist(clId) {
