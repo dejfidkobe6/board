@@ -2684,8 +2684,16 @@ function toggleClDone(cardId, clId) {
 function addChecklist() {
   const card = gc(detailCardId); if (!card) return;
   ensureChecklists(card);
-  card.checklists.push({ id: 'cl' + Date.now(), name: 'Checklist ' + (card.checklists.length + 1), items: [] });
+  const newId = 'cl' + Date.now();
+  card.checklists.push({ id: newId, name: 'Checklist ' + (card.checklists.length + 1), items: [] });
   saveState(); renderAllChecklists(card);
+  // Scroll to new checklist and enter rename mode
+  const block = document.querySelector(`[data-cl-id="${newId}"]`);
+  if (block) {
+    block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const nameEl = block.querySelector('.cl-block-name');
+    if (nameEl) setTimeout(() => startRenameChecklist(nameEl, newId), 120);
+  }
 }
 
 function delChecklist(clId) {
@@ -2790,11 +2798,6 @@ function mkClItemEl(item) {
   txtSpan.className = 'cl-text'; txtSpan.title = 'Dvojklik pro přejmenování';
   txtSpan.textContent = item.text;
   mainRow.appendChild(txtSpan);
-  if (author) {
-    const authSpan = document.createElement('span');
-    authSpan.className = 'cl-author'; authSpan.textContent = author.name.split(' ')[0];
-    mainRow.appendChild(authSpan);
-  }
   const toggleBtn = document.createElement('button');
   toggleBtn.className = 'cl-meta-toggle'; toggleBtn.title = 'Přiřadit / Termín'; toggleBtn.textContent = '⋯';
   mainRow.appendChild(toggleBtn);
