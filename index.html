@@ -783,6 +783,7 @@
   .cl-meta-btn.has-date { background: rgba(80,180,100,0.1); border-color: rgba(80,180,100,0.25); color: rgba(120,210,130,0.85); }
   .cl-meta-btn.date-overdue { background: rgba(255,60,40,0.12); border-color: rgba(255,60,40,0.3); color: #ff7060; }
   .cl-meta-btn.date-today { background: rgba(200,165,60,0.12); border-color: rgba(200,165,60,0.3); color: rgba(200,165,60,0.9); }
+  .cl-meta-author { font-size: 11px; color: rgba(255,255,255,0.32); padding: 2px 4px; white-space: nowrap; flex-shrink: 0; }
 
   /* ─── @MENTION DROPDOWN ─── */
   .at-suggest { position: fixed; z-index: 9999; background: #1e2d10; border: 1px solid rgba(200,165,60,0.35); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); min-width: 170px; overflow-y: auto; overflow-x: hidden; max-height: 52vh; }
@@ -2838,6 +2839,13 @@ function mkClItemEl(item) {
   attToggle.onclick = () => toggleClAttach(item.id);
   metaRow.appendChild(attToggle);
 
+  if (author) {
+    const authorSpan = document.createElement('span');
+    authorSpan.className = 'cl-meta-author';
+    authorSpan.textContent = '✏ ' + author.name.split(' ')[0];
+    metaRow.appendChild(authorSpan);
+  }
+
   row.appendChild(metaRow);
 
   // Always collapsed by default — expand only on ⋯ click
@@ -3641,7 +3649,7 @@ function renderTaskPanel() {
     (ag.tasks||[]).forEach(task => {
       if (!task.done && String(task.assignee) === userId) {
         tasks.push({
-          item: { id:task.id, text:task.text, done:task.done, assignee:task.assignee, deadline:task.deadline||null },
+          item: { id:task.id, text:task.text, done:task.done, assignee:task.assignee, deadline:task.deadline||null, createdBy:task.createdBy||null },
           card: { id:'live_ag_'+agIdx, title:'📋 Porada: '+(lm.title||'Porada') },
           source: 'meeting', meetingId: 'live', agIdx, taskId: task.id,
         });
@@ -3704,6 +3712,15 @@ function renderTaskPanel() {
       dBtn.innerHTML = dl ? `📅 ${fmtDate(dl)}` : '📅 Termín';
       dBtn.onclick = e => { e.stopPropagation(); if (source!=='meeting') openMiniCal(dBtn, item.id, card.id, dl||null); };
       actions.appendChild(dBtn);
+      // Author span
+      const authorId = source === 'meeting' ? item.createdBy : item.author;
+      const authorMember = authorId ? ((_projectMembers||state.members).find(m=>String(m.id)===String(authorId))||null) : null;
+      if (authorMember) {
+        const aSpan = document.createElement('span');
+        aSpan.className = 'cl-meta-author';
+        aSpan.textContent = '✏ ' + authorMember.name.split(' ')[0];
+        actions.appendChild(aSpan);
+      }
       body.appendChild(el);
     });
   }
@@ -4789,6 +4806,7 @@ function renderMeetingDetail() {
         <button class="cl-meta-btn${mem?' assigned':''}" onclick="openMtgTaskAssignee(this,${agIdx},'${t.id}')">${mem?`👤 ${escHtml(nm)}`:'👤 Přiřadit'}</button>
         <button class="cl-meta-btn${dlCls?' '+dlCls:''}" onclick="openMtgTaskCal(this,${agIdx},'${t.id}','${t.deadline||''}')">${t.deadline?`📅 ${fmtDate(t.deadline)}`:'📅 Termín'}</button>
         <button class="cl-attach-toggle" onclick="toggleMtgAttach('${t.id}',${agIdx})">📎${atts.length?` (${atts.length})`:''}</button>
+        ${(()=>{ const cr=members.find(x=>String(x.id)===String(t.createdBy)); return cr?`<span class="cl-meta-author">✏ ${escHtml(cr.name.split(' ')[0])}</span>`:''; })()}
       </div>${imgHtml}${fileHtml}
       <div class="cl-att-zone" id="mtgaz-${t.id}" style="display:none">
         <div class="cl-drop-zone" id="mtgdz-${t.id}"
@@ -5184,7 +5202,7 @@ function submitMtgTask(agIdx, agId, groupId) {
     const dlM = text.match(/(\d{4}-\d{2}-\d{2})/);
     if (dlM) { deadline = dlM[1]; text = text.replace(dlM[0],'').trim(); }
   }
-  ag.tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee: assignee||null, deadline, attachments:[], createdAt:new Date().toISOString(), groupId: groupId||null });
+  ag.tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee: assignee||null, deadline, attachments:[], createdAt:new Date().toISOString(), createdBy: currentUser?.id||null, groupId: groupId||null });
   if (agId) {
     hideMtgAddRow(agId);
     if (window._mtgPendingAdd) delete window._mtgPendingAdd[agId];
@@ -5753,7 +5771,7 @@ function presentSaveNewTask(agIdx) {
   const deadline  = document.getElementById('paDeadline')?.value  || null;
   const groupId   = document.getElementById('paGrp')?.value       || null;
   if (!ag.tasks) ag.tasks = [];
-  ag.tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee, deadline, attachments:[], createdAt:new Date().toISOString(), groupId });
+  ag.tasks.push({ id:'mt_'+Date.now(), text, done:false, assignee, deadline, attachments:[], createdAt:new Date().toISOString(), createdBy: currentUser?.id||null, groupId });
   saveMeetingState();
   document.getElementById('presentAddForm')?.remove();
   const s = _presentSlides[_presentIdx];
