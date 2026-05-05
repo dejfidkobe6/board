@@ -2737,7 +2737,7 @@ function startRenameChecklist(nameEl, clId) {
 }
 
 function mkClItemEl(item) {
-  const author = gm(item.author);
+  const author = item.author ? ((_projectMembers||state.members).find(m=>String(m.id)===String(item.author))||null) : null;
   const atts = item.attachments||[];
   const cardId = detailCardId; // capture for closures
   const div = document.createElement('div');
