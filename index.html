@@ -2798,11 +2798,6 @@ function mkClItemEl(item) {
   txtSpan.className = 'cl-text'; txtSpan.title = 'Dvojklik pro přejmenování';
   txtSpan.textContent = item.text;
   mainRow.appendChild(txtSpan);
-  if (author) {
-    const authSpan = document.createElement('span');
-    authSpan.className = 'cl-author'; authSpan.textContent = author.name.split(' ')[0];
-    mainRow.appendChild(authSpan);
-  }
   const toggleBtn = document.createElement('button');
   toggleBtn.className = 'cl-meta-toggle'; toggleBtn.title = 'Přiřadit / Termín'; toggleBtn.textContent = '⋯';
   mainRow.appendChild(toggleBtn);
