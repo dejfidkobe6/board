@@ -2842,6 +2842,7 @@ function mkClItemEl(item) {
   if (author) {
     const authorSpan = document.createElement('span');
     authorSpan.className = 'cl-meta-author';
+    authorSpan.title = 'Zapsal/a: ' + author.name;
     authorSpan.textContent = '✏ ' + author.name.split(' ')[0];
     metaRow.appendChild(authorSpan);
   }
@@ -3718,6 +3719,7 @@ function renderTaskPanel() {
       if (authorMember) {
         const aSpan = document.createElement('span');
         aSpan.className = 'cl-meta-author';
+        aSpan.title = 'Zapsal/a: ' + authorMember.name;
         aSpan.textContent = '✏ ' + authorMember.name.split(' ')[0];
         actions.appendChild(aSpan);
       }
@@ -4807,7 +4809,7 @@ function renderMeetingDetail() {
         <button class="cl-meta-btn${mem?' assigned':''}" onclick="openMtgTaskAssignee(this,${agIdx},'${t.id}')">${mem?`👤 ${escHtml(nm)}`:'👤 Přiřadit'}</button>
         <button class="cl-meta-btn${dlCls?' '+dlCls:''}" onclick="openMtgTaskCal(this,${agIdx},'${t.id}','${t.deadline||''}')">${t.deadline?`📅 ${fmtDate(t.deadline)}`:'📅 Termín'}</button>
         <button class="cl-attach-toggle" onclick="toggleMtgAttach('${t.id}',${agIdx})">📎${atts.length?` (${atts.length})`:''}</button>
-        ${(()=>{ const cr=members.find(x=>String(x.id)===String(t.createdBy)); return cr?`<span class="cl-meta-author">✏ ${escHtml(cr.name.split(' ')[0])}</span>`:''; })()}
+        ${(()=>{ const cr=members.find(x=>String(x.id)===String(t.createdBy)); return cr?`<span class="cl-meta-author" title="Zapsal/a: ${escHtml(cr.name)}">✏ ${escHtml(cr.name.split(' ')[0])}</span>`:''; })()}
       </div>${imgHtml}${fileHtml}
       <div class="cl-att-zone" id="mtgaz-${t.id}" style="display:none">
         <div class="cl-drop-zone" id="mtgdz-${t.id}"
