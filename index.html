@@ -3064,12 +3064,12 @@ function renderAllChecklists(card) {
       block.appendChild(doneHeader);
       if (isVisible) {
         doneItems.forEach(item => {
-          const completer = gm(item.completedBy);
-          const byName = completer ? completer.name.split(' ')[0] : (item.completedBy||'');
+          const completer = (_projectMembers||state.members).find(m=>String(m.id)===String(item.completedBy));
+          const byName = completer ? completer.name.split(' ')[0] : '';
           const at = item.completedAt ? fmtDT(item.completedAt) : '';
           const d = document.createElement('div');
           d.className = 'cl-done-item';
-          d.innerHTML = `<span style="font-size:14px;color:var(--green);flex-shrink:0">✓</span><span class="cl-done-text">${escHtml(item.text)}</span><span class="cl-done-meta">${escHtml(byName)}<br>${at}</span>`;
+          d.innerHTML = `<span style="font-size:14px;color:var(--green);flex-shrink:0">✓</span><span class="cl-done-text">${escHtml(item.text)}</span><span class="cl-done-meta">${byName?`Splnil/a: ${escHtml(byName)}<br>`:''}${at}</span>`;
           const undoBtn = document.createElement('button');
           undoBtn.className = 'cl-done-undo'; undoBtn.title = 'Obnovit jako nesplněný'; undoBtn.textContent = '↩';
           undoBtn.onclick = () => uncheckItem(item.id);
@@ -4800,6 +4800,7 @@ function renderMeetingDetail() {
         <input type="checkbox" class="cl-checkbox" ${t.done?'checked':''} ${readonly?'disabled':''} onchange="toggleMtgTask(${agIdx},'${t.id}',this.checked)">
         <span class="cl-text${t.done?' agenda-task-text done':''}" style="font-size:${fs}px" title="${!readonly?'Dvojklik pro přejmenování':''}"${!readonly?` ondblclick="startRenameMtgTask(this,${agIdx},'${t.id}')"`:''}>${escHtml(t.text)}</span>
         ${mem?`<span class="cl-author">${escHtml(nm)}</span>`:''}
+        ${(()=>{ if (!t.done || !t.completedBy) return ''; const cm=members.find(x=>String(x.id)===String(t.completedBy)); return cm?`<span class="cl-meta-author" title="Splnil/a ${fmtDT(t.completedAt)||''}">✓ ${escHtml(cm.name.split(' ')[0])}</span>`:''; })()}
         ${!readonly?`<button class="cl-meta-toggle" onclick="toggleMtgTaskMeta('${t.id}')" title="Přiřadit / Termín">⋯</button><button class="cl-del" onclick="deleteMtgTask(${agIdx},'${t.id}')">✕</button>`:''}
       </div>
       ${!readonly?`<div class="cl-item-meta" id="mtgm-${t.id}" style="display:none">
@@ -5213,7 +5214,15 @@ function submitMtgTask(agIdx, agId, groupId) {
 function toggleMtgTask(agIdx, taskId, done) {
   const task = state.livingMeeting?.agenda?.[agIdx]?.tasks?.find(t=>t.id===taskId);
   if (!task) return;
-  task.done = done; saveMeetingState(); renderTaskPanel();
+  task.done = done;
+  if (done) {
+    task.completedBy = currentUser?.id || null;
+    task.completedAt = new Date().toISOString();
+  } else {
+    delete task.completedBy;
+    delete task.completedAt;
+  }
+  saveMeetingState(); renderMeetingDetail(); renderTaskPanel();
 }
 
 function deleteMtgTask(agIdx, taskId) {
@@ -5690,6 +5699,13 @@ function presentToggleDone(agIdx, taskId) {
   const ag = state.livingMeeting?.agenda?.[agIdx]; if (!ag) return;
   const task = (ag.tasks||[]).find(t=>t.id===taskId); if (!task) return;
   task.done = !task.done;
+  if (task.done) {
+    task.completedBy = currentUser?.id || null;
+    task.completedAt = new Date().toISOString();
+  } else {
+    delete task.completedBy;
+    delete task.completedAt;
+  }
   saveMeetingState();
   const s = _presentSlides[_presentIdx];
   if (s) _rebuildPresentSections(s, ag);
