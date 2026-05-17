@@ -2,18 +2,18 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/functions.php';
 
-// Auto-create tables on first use
+// Auto-create tables on first use (after potential legacy → board_ rename)
 (function () {
     $db = getDB();
-    $db->exec("CREATE TABLE IF NOT EXISTS `project_kanban_state` (
+    $db->exec("CREATE TABLE IF NOT EXISTS `board_project_kanban_state` (
         `project_id` INT UNSIGNED NOT NULL,
         `state_json` MEDIUMTEXT NOT NULL DEFAULT '{}',
         `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (`project_id`),
-        CONSTRAINT `fk_kanban_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE
+        CONSTRAINT `fk_board_kanban_project` FOREIGN KEY (`project_id`) REFERENCES `board_projects` (`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     // Backup table — keeps last 20 snapshots per project
-    $db->exec("CREATE TABLE IF NOT EXISTS `project_kanban_backups` (
+    $db->exec("CREATE TABLE IF NOT EXISTS `board_project_kanban_backups` (
         `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
         `project_id` INT UNSIGNED NOT NULL,
         `state_json` MEDIUMTEXT NOT NULL,
@@ -35,16 +35,31 @@ if ($action === 'load') {
     requireProjectRole($projectId, 'viewer');
 
     $db   = getDB();
-    $stmt = $db->prepare('SELECT state_json FROM project_kanban_state WHERE project_id = ?');
+    $stmt = $db->prepare('SELECT state_json, UNIX_TIMESTAMP(updated_at) AS ts FROM board_project_kanban_state WHERE project_id = ?');
     $stmt->execute([$projectId]);
     $row  = $stmt->fetch();
 
     if ($row) {
         $state = json_decode($row['state_json'], true);
-        jsonResponse(['success' => true, 'state' => $state]);
+        jsonResponse(['success' => true, 'state' => $state, 'server_ts' => (int)$row['ts']]);
     } else {
-        jsonResponse(['success' => true, 'state' => null]);
+        jsonResponse(['success' => true, 'state' => null, 'server_ts' => 0]);
     }
+})();
+} elseif ($action === 'check') {
+// Lightweight liveness probe — returns just the server-side `updated_at`
+// so the client can poll cheaply (every ~2s) and only fetch full state
+// when something actually changed.
+(function () {
+    $projectId = (int)($_GET['project_id'] ?? 0);
+    if (!$projectId) jsonResponse(['error' => 'Chybí project_id'], 422);
+    requireProjectRole($projectId, 'viewer');
+
+    $db   = getDB();
+    $stmt = $db->prepare('SELECT UNIX_TIMESTAMP(updated_at) AS ts FROM board_project_kanban_state WHERE project_id = ?');
+    $stmt->execute([$projectId]);
+    $row  = $stmt->fetch();
+    jsonResponse(['success' => true, 'ts' => $row ? (int)$row['ts'] : 0]);
 })();
 } elseif ($action === 'save') {
 (function () use ($method) {
@@ -66,7 +81,7 @@ if ($action === 'load') {
 
     // Refuse to overwrite non-empty data with empty data (safety guard)
     $db = getDB();
-    $existing = $db->prepare('SELECT state_json FROM project_kanban_state WHERE project_id = ?');
+    $existing = $db->prepare('SELECT state_json FROM board_project_kanban_state WHERE project_id = ?');
     $existing->execute([$projectId]);
     $row = $existing->fetch();
     if ($row) {
@@ -89,14 +104,14 @@ if ($action === 'load') {
     // Save backup snapshot (keep last 20 per project)
     if ($cols > 0 || $cards > 0) {
         $db->prepare(
-            'INSERT INTO project_kanban_backups (project_id, state_json, columns_count, cards_count)
+            'INSERT INTO board_project_kanban_backups (project_id, state_json, columns_count, cards_count)
              VALUES (?, ?, ?, ?)'
         )->execute([$projectId, $stateJson, $cols, $cards]);
         // Prune old backups — keep newest 20
         $db->prepare(
-            'DELETE FROM project_kanban_backups WHERE project_id = ? AND id NOT IN (
+            'DELETE FROM board_project_kanban_backups WHERE project_id = ? AND id NOT IN (
                 SELECT id FROM (
-                    SELECT id FROM project_kanban_backups WHERE project_id = ?
+                    SELECT id FROM board_project_kanban_backups WHERE project_id = ?
                     ORDER BY saved_at DESC LIMIT 20
                 ) t
             )'
@@ -104,12 +119,17 @@ if ($action === 'load') {
     }
 
     $db->prepare(
-        'INSERT INTO project_kanban_state (project_id, state_json)
+        'INSERT INTO board_project_kanban_state (project_id, state_json)
          VALUES (?, ?)
          ON DUPLICATE KEY UPDATE state_json = VALUES(state_json), updated_at = NOW()'
     )->execute([$projectId, $stateJson]);
 
-    jsonResponse(['success' => true]);
+    // Echo the new server timestamp so the caller can sync its "last seen" cursor
+    $tsStmt = $db->prepare('SELECT UNIX_TIMESTAMP(updated_at) AS ts FROM board_project_kanban_state WHERE project_id = ?');
+    $tsStmt->execute([$projectId]);
+    $ts = (int)($tsStmt->fetchColumn() ?: 0);
+
+    jsonResponse(['success' => true, 'server_ts' => $ts]);
 })();
 } elseif ($action === 'backups') {
 (function () {
@@ -119,7 +139,7 @@ if ($action === 'load') {
     $db = getDB();
     $stmt = $db->prepare(
         'SELECT id, saved_at, columns_count, cards_count
-         FROM project_kanban_backups WHERE project_id = ?
+         FROM board_project_kanban_backups WHERE project_id = ?
          ORDER BY saved_at DESC LIMIT 20'
     );
     $stmt->execute([$projectId]);
@@ -133,12 +153,12 @@ if ($action === 'load') {
     if (!$projectId || !$backupId) jsonResponse(['error' => 'Chybí parametry'], 422);
     requireProjectRole($projectId, 'admin');
     $db = getDB();
-    $stmt = $db->prepare('SELECT state_json FROM project_kanban_backups WHERE id = ? AND project_id = ?');
+    $stmt = $db->prepare('SELECT state_json FROM board_project_kanban_backups WHERE id = ? AND project_id = ?');
     $stmt->execute([$backupId, $projectId]);
     $row = $stmt->fetch();
     if (!$row) jsonResponse(['error' => 'Záloha nenalezena'], 404);
     $db->prepare(
-        'INSERT INTO project_kanban_state (project_id, state_json)
+        'INSERT INTO board_project_kanban_state (project_id, state_json)
          VALUES (?, ?)
          ON DUPLICATE KEY UPDATE state_json = VALUES(state_json), updated_at = NOW()'
     )->execute([$projectId, $row['state_json']]);

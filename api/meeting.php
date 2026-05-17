@@ -5,7 +5,7 @@ require_once __DIR__ . '/functions.php';
 // Auto-create table
 (function () {
     $db = getDB();
-    $db->exec("CREATE TABLE IF NOT EXISTS project_meeting_state (
+    $db->exec("CREATE TABLE IF NOT EXISTS board_project_meeting_state (
         project_id       INT UNSIGNED NOT NULL PRIMARY KEY,
         living_meeting   MEDIUMTEXT   NOT NULL DEFAULT '{}',
         meeting_versions MEDIUMTEXT   NOT NULL DEFAULT '[]',
@@ -13,10 +13,10 @@ require_once __DIR__ . '/functions.php';
         schedule         MEDIUMTEXT   NOT NULL DEFAULT '{}',
         vac_legend       MEDIUMTEXT   NOT NULL DEFAULT '[]',
         updated_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        CONSTRAINT fk_ms_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+        CONSTRAINT fk_board_ms_project FOREIGN KEY (project_id) REFERENCES board_projects(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     // Migrate existing tables that may lack the vac_legend column
-    try { $db->exec("ALTER TABLE project_meeting_state ADD COLUMN vac_legend MEDIUMTEXT NOT NULL DEFAULT '[]'"); } catch (\Exception $e) {}
+    try { $db->exec("ALTER TABLE board_project_meeting_state ADD COLUMN vac_legend MEDIUMTEXT NOT NULL DEFAULT '[]'"); } catch (\Exception $e) {}
 })();
 
 $action = $_GET['action'] ?? '';
@@ -29,7 +29,7 @@ if ($action === 'load') {
     requireProjectRole($projectId, 'viewer');
 
     $db   = getDB();
-    $stmt = $db->prepare('SELECT living_meeting, meeting_versions, phases, schedule, vac_legend FROM project_meeting_state WHERE project_id = ?');
+    $stmt = $db->prepare('SELECT living_meeting, meeting_versions, phases, schedule, vac_legend, UNIX_TIMESTAMP(updated_at) AS ts FROM board_project_meeting_state WHERE project_id = ?');
     $stmt->execute([$projectId]);
     $row  = $stmt->fetch();
 
@@ -40,10 +40,23 @@ if ($action === 'load') {
             'phases'          => json_decode($row['phases'],           true) ?: [],
             'schedule'        => json_decode($row['schedule'],         true) ?: (object)[],
             'vacLegend'       => json_decode($row['vac_legend'],       true) ?: [],
-        ]]);
+        ], 'server_ts' => (int)$row['ts']]);
     } else {
-        jsonResponse(['success' => true, 'data' => null]);
+        jsonResponse(['success' => true, 'data' => null, 'server_ts' => 0]);
     }
+})();
+} elseif ($action === 'check') {
+// Lightweight liveness probe — same purpose as kanban.php?action=check
+(function () {
+    $projectId = (int)($_GET['project_id'] ?? 0);
+    if (!$projectId) jsonResponse(['error' => 'Chybí project_id'], 422);
+    requireProjectRole($projectId, 'viewer');
+
+    $db   = getDB();
+    $stmt = $db->prepare('SELECT UNIX_TIMESTAMP(updated_at) AS ts FROM board_project_meeting_state WHERE project_id = ?');
+    $stmt->execute([$projectId]);
+    $row  = $stmt->fetch();
+    jsonResponse(['success' => true, 'ts' => $row ? (int)$row['ts'] : 0]);
 })();
 } elseif ($action === 'save') {
 (function () use ($method) {
@@ -61,7 +74,7 @@ if ($action === 'load') {
 
     $db = getDB();
     $db->prepare(
-        'INSERT INTO project_meeting_state (project_id, living_meeting, meeting_versions, phases, schedule, vac_legend)
+        'INSERT INTO board_project_meeting_state (project_id, living_meeting, meeting_versions, phases, schedule, vac_legend)
          VALUES (?,?,?,?,?,?)
          ON DUPLICATE KEY UPDATE
            living_meeting   = VALUES(living_meeting),
@@ -72,7 +85,11 @@ if ($action === 'load') {
            updated_at       = NOW()'
     )->execute([$projectId, $livingMeeting, $meetingVersions, $phases, $schedule, $vacLegend]);
 
-    jsonResponse(['success' => true]);
+    $tsStmt = $db->prepare('SELECT UNIX_TIMESTAMP(updated_at) AS ts FROM board_project_meeting_state WHERE project_id = ?');
+    $tsStmt->execute([$projectId]);
+    $ts = (int)($tsStmt->fetchColumn() ?: 0);
+
+    jsonResponse(['success' => true, 'server_ts' => $ts]);
 })();
 } else {
     jsonResponse(['error' => 'Neznámá akce'], 400);

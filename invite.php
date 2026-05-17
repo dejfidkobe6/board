@@ -7,6 +7,7 @@ session_name('BESIX_SESS');
 if (session_status() === PHP_SESSION_NONE) session_start();
 
 require_once __DIR__ . '/api/config.php';
+require_once __DIR__ . '/api/functions.php'; // triggers idempotent board_* table-prefix migration
 header('Content-Type: text/html; charset=UTF-8'); // override JSON header from config.php
 
 $token   = trim($_GET['token'] ?? '');
@@ -22,10 +23,10 @@ if ($token) {
         $stmt = $db->prepare(
             'SELECT i.*, p.name AS project_name, p.id AS project_id,
                     u.name AS inviter_name, a.app_name
-             FROM invitations i
-             JOIN projects p ON p.id = i.project_id
+             FROM board_invitations i
+             JOIN board_projects p ON p.id = i.project_id
              JOIN users u ON u.id = i.invited_by
-             JOIN apps a ON a.id = p.app_id
+             JOIN board_apps a ON a.id = p.app_id
              WHERE i.token = ? AND i.status = "pending" AND i.expires_at > NOW()'
         );
         $stmt->execute([$token]);

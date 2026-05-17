@@ -17,10 +17,10 @@ if ($action === 'list') {
         SELECT p.id, p.name, p.description, p.invite_code, p.bg_color, p.bg_image, p.created_at,
                pm.role,
                a.app_key, a.app_name,
-               (SELECT COUNT(*) FROM project_members pm2 WHERE pm2.project_id = p.id) AS member_count
-        FROM projects p
-        JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ?
-        JOIN apps a ON a.id = p.app_id
+               (SELECT COUNT(*) FROM board_project_members pm2 WHERE pm2.project_id = p.id) AS member_count
+        FROM board_projects p
+        JOIN board_project_members pm ON pm.project_id = p.id AND pm.user_id = ?
+        JOIN board_apps a ON a.id = p.app_id
         WHERE p.is_active = 1
     ';
     $params = [$user['id']];
@@ -50,7 +50,7 @@ if ($action === 'list') {
     if (!$name)   jsonResponse(['error' => 'Název projektu je povinný'], 422);
 
     $db = getDB();
-    $stmt = $db->prepare('SELECT id FROM apps WHERE app_key = ?');
+    $stmt = $db->prepare('SELECT id FROM board_apps WHERE app_key = ?');
     $stmt->execute([$appKey]);
     $app = $stmt->fetch();
     if (!$app) jsonResponse(['error' => 'Neznámá aplikace'], 404);
@@ -58,17 +58,17 @@ if ($action === 'list') {
     $inviteCode = bin2hex(random_bytes(16));
 
     $db->prepare(
-        'INSERT INTO projects (app_id, name, description, created_by, invite_code, bg_color)
+        'INSERT INTO board_projects (app_id, name, description, created_by, invite_code, bg_color)
          VALUES (?, ?, ?, ?, ?, ?)'
     )->execute([$app['id'], $name, $desc, $user['id'], $inviteCode, $bgColor]);
     $projectId = (int)$db->lastInsertId();
 
     // Creator becomes owner
     $db->prepare(
-        'INSERT INTO project_members (project_id, user_id, role) VALUES (?, ?, "owner")'
+        'INSERT INTO board_project_members (project_id, user_id, role) VALUES (?, ?, "owner")'
     )->execute([$projectId, $user['id']]);
 
-    $stmt = $db->prepare('SELECT * FROM projects WHERE id = ?');
+    $stmt = $db->prepare('SELECT * FROM board_projects WHERE id = ?');
     $stmt->execute([$projectId]);
     $project = $stmt->fetch();
     $project['role'] = 'owner';
@@ -83,8 +83,8 @@ if ($action === 'list') {
 
     $db   = getDB();
     $stmt = $db->prepare(
-        'SELECT p.*, a.app_key, a.app_name FROM projects p
-         JOIN apps a ON a.id = p.app_id WHERE p.id = ?'
+        'SELECT p.*, a.app_key, a.app_name FROM board_projects p
+         JOIN board_apps a ON a.id = p.app_id WHERE p.id = ?'
     );
     $stmt->execute([$projectId]);
     $project = $stmt->fetch();
@@ -102,7 +102,7 @@ if ($action === 'list') {
     $db   = getDB();
     $stmt = $db->prepare(
         'SELECT u.id, u.name, u.email, u.avatar_color, pm.role, pm.joined_at
-         FROM project_members pm JOIN users u ON u.id = pm.user_id
+         FROM board_project_members pm JOIN users u ON u.id = pm.user_id
          WHERE pm.project_id = ? ORDER BY pm.joined_at ASC'
     );
     $stmt->execute([$projectId]);
@@ -115,18 +115,18 @@ if ($action === 'list') {
     if (($roles[$actor['role']] ?? 0) >= $roles['admin']) {
         $si = $db->prepare(
             'SELECT i.id, i.invited_email, i.role, i.status, i.created_at, i.expires_at, u.name AS invited_by_name
-             FROM invitations i JOIN users u ON u.id = i.invited_by
+             FROM board_invitations i JOIN users u ON u.id = i.invited_by
              WHERE i.project_id = ? AND i.status IN ("pending","accepted")
              UNION ALL
              SELECT -(pm.user_id) AS id, u2.email AS invited_email, pm.role,
                     "accepted" AS status, pm.joined_at AS created_at, pm.joined_at AS expires_at,
                     u_inv.name AS invited_by_name
-             FROM project_members pm
+             FROM board_project_members pm
              JOIN users u2    ON u2.id    = pm.user_id
              JOIN users u_inv ON u_inv.id = pm.invited_by
              WHERE pm.project_id = ? AND pm.invited_by IS NOT NULL
                AND NOT EXISTS (
-                   SELECT 1 FROM invitations i2
+                   SELECT 1 FROM board_invitations i2
                    WHERE i2.project_id = pm.project_id AND i2.invited_email = u2.email
                      AND i2.status IN ("pending","accepted")
                )
@@ -152,13 +152,13 @@ if ($action === 'list') {
     $actor = requireProjectRole($projectId, 'admin');
 
     $db   = getDB();
-    $stmt = $db->prepare('SELECT role FROM project_members WHERE project_id=? AND user_id=?');
+    $stmt = $db->prepare('SELECT role FROM board_project_members WHERE project_id=? AND user_id=?');
     $stmt->execute([$projectId, $targetId]);
     $target = $stmt->fetch();
     if (!$target) jsonResponse(['error' => 'Člen nenalezen'], 404);
     if ($target['role'] === 'owner') jsonResponse(['error' => 'Owner nelze degradovat'], 403);
 
-    $db->prepare('UPDATE project_members SET role=? WHERE project_id=? AND user_id=?')
+    $db->prepare('UPDATE board_project_members SET role=? WHERE project_id=? AND user_id=?')
        ->execute([$newRole, $projectId, $targetId]);
     jsonResponse(['success' => true]);
 })();
@@ -171,13 +171,13 @@ if ($action === 'list') {
     $actor = requireProjectRole($projectId, 'admin');
 
     $db   = getDB();
-    $stmt = $db->prepare('SELECT role FROM project_members WHERE project_id=? AND user_id=?');
+    $stmt = $db->prepare('SELECT role FROM board_project_members WHERE project_id=? AND user_id=?');
     $stmt->execute([$projectId, $targetId]);
     $target = $stmt->fetch();
     if (!$target) jsonResponse(['error' => 'Člen nenalezen'], 404);
     if ($target['role'] === 'owner') jsonResponse(['error' => 'Owner nemůže být odebrán'], 403);
 
-    $db->prepare('DELETE FROM project_members WHERE project_id=? AND user_id=?')
+    $db->prepare('DELETE FROM board_project_members WHERE project_id=? AND user_id=?')
        ->execute([$projectId, $targetId]);
     jsonResponse(['success' => true]);
 })();
@@ -196,17 +196,17 @@ if ($action === 'list') {
 
     if ($clearImage) {
         // Delete old image file if present
-        $stmt = $db->prepare('SELECT bg_image FROM projects WHERE id = ?');
+        $stmt = $db->prepare('SELECT bg_image FROM board_projects WHERE id = ?');
         $stmt->execute([$projectId]);
         $row = $stmt->fetch();
         if ($row && $row['bg_image']) {
             $oldPath = __DIR__ . '/..' . $row['bg_image'];
             if (file_exists($oldPath)) unlink($oldPath);
         }
-        $db->prepare('UPDATE projects SET bg_color = ?, bg_image = NULL WHERE id = ?')
+        $db->prepare('UPDATE board_projects SET bg_color = ?, bg_image = NULL WHERE id = ?')
            ->execute([$bgColor, $projectId]);
     } else {
-        $db->prepare('UPDATE projects SET bg_color = ? WHERE id = ?')
+        $db->prepare('UPDATE board_projects SET bg_color = ? WHERE id = ?')
            ->execute([$bgColor, $projectId]);
     }
     jsonResponse(['success' => true]);

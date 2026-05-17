@@ -53,7 +53,7 @@ function requireAuth(): array {
 function requireProjectRole(int $projectId, string $minRole): array {
     $user = requireAuth();
     $roles = ['viewer'=>0,'member'=>1,'admin'=>2,'owner'=>3];
-    $stmt = getDB()->prepare('SELECT pm.role FROM project_members pm JOIN projects p ON p.id=pm.project_id WHERE pm.project_id=? AND pm.user_id=? AND p.is_active=1');
+    $stmt = getDB()->prepare('SELECT pm.role FROM board_project_members pm JOIN board_projects p ON p.id=pm.project_id WHERE pm.project_id=? AND pm.user_id=? AND p.is_active=1');
     $stmt->execute([$projectId, $user['id']]);
     $row = $stmt->fetch();
     if (!$row || ($roles[$row['role']]??-1) < ($roles[$minRole]??99)) jsonResponse(['error'=>'Nemáš oprávnění'],403);
