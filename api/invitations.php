@@ -24,7 +24,7 @@ if ($action === 'send') {
     $db = getDB();
 
     // Get project info
-    $stmt = $db->prepare('SELECT p.name, a.app_name FROM projects p JOIN apps a ON a.id=p.app_id WHERE p.id=?');
+    $stmt = $db->prepare('SELECT p.name, a.app_name FROM board_projects p JOIN board_apps a ON a.id=p.app_id WHERE p.id=?');
     $stmt->execute([$projectId]);
     $project = $stmt->fetch();
     if (!$project) jsonResponse(['error' => 'Projekt nenalezen'], 404);
@@ -36,18 +36,18 @@ if ($action === 'send') {
 
     if ($existingUser) {
         // Check if already member
-        $stmt = $db->prepare('SELECT id FROM project_members WHERE project_id=? AND user_id=?');
+        $stmt = $db->prepare('SELECT id FROM board_project_members WHERE project_id=? AND user_id=?');
         $stmt->execute([$projectId, $existingUser['id']]);
         if ($stmt->fetch()) jsonResponse(['error' => 'Uživatel je již členem projektu'], 409);
 
         // Add directly
         $db->prepare(
-            'INSERT INTO project_members (project_id, user_id, role, invited_by) VALUES (?,?,?,?)'
+            'INSERT INTO board_project_members (project_id, user_id, role, invited_by) VALUES (?,?,?,?)'
         )->execute([$projectId, $existingUser['id'], $role, $actor['id']]);
 
         // Record in invitations history so it appears in the panel
         $db->prepare(
-            'INSERT INTO invitations (project_id, invited_email, invited_by, token, role, status, expires_at)
+            'INSERT INTO board_invitations (project_id, invited_email, invited_by, token, role, status, expires_at)
              VALUES (?,?,?,?,?,"accepted", NOW())'
         )->execute([$projectId, $email, $actor['id'], bin2hex(random_bytes(16)), $role]);
 
@@ -77,8 +77,8 @@ if ($action === 'send') {
 
     $db   = getDB();
     $stmt = $db->prepare(
-        'SELECT i.*, p.name AS project_name FROM invitations i
-         JOIN projects p ON p.id = i.project_id
+        'SELECT i.*, p.name AS project_name FROM board_invitations i
+         JOIN board_projects p ON p.id = i.project_id
          WHERE i.token = ? AND i.status = "pending" AND i.expires_at > NOW()'
     );
     $stmt->execute([$token]);
@@ -105,9 +105,9 @@ if ($action === 'send') {
 
     // Add to project
     $db->prepare(
-        'INSERT IGNORE INTO project_members (project_id, user_id, role, invited_by) VALUES (?,?,?,?)'
+        'INSERT IGNORE INTO board_project_members (project_id, user_id, role, invited_by) VALUES (?,?,?,?)'
     )->execute([$inv['project_id'], $userId, $inv['role'], $inv['invited_by']]);
-    $db->prepare('UPDATE invitations SET status="accepted" WHERE id=?')->execute([$inv['id']]);
+    $db->prepare('UPDATE board_invitations SET status="accepted" WHERE id=?')->execute([$inv['id']]);
 
     header('Location: /dashboard.php?joined=' . $inv['project_id']);
     exit;
@@ -119,19 +119,19 @@ if ($action === 'send') {
     if (!$inviteCode) jsonResponse(['error' => 'Chybí invite_code'], 422);
 
     $db   = getDB();
-    $stmt = $db->prepare('SELECT * FROM projects WHERE invite_code=? AND is_active=1');
+    $stmt = $db->prepare('SELECT * FROM board_projects WHERE invite_code=? AND is_active=1');
     $stmt->execute([$inviteCode]);
     $project = $stmt->fetch();
     if (!$project) jsonResponse(['error' => 'Neplatný kód projektu'], 404);
 
     // Already member?
-    $stmt = $db->prepare('SELECT role FROM project_members WHERE project_id=? AND user_id=?');
+    $stmt = $db->prepare('SELECT role FROM board_project_members WHERE project_id=? AND user_id=?');
     $stmt->execute([$project['id'], $user['id']]);
     $existing = $stmt->fetch();
     if ($existing) jsonResponse(['success' => true, 'project' => $project, 'role' => $existing['role'], 'already_member' => true]);
 
     $db->prepare(
-        'INSERT INTO project_members (project_id, user_id, role) VALUES (?,?,"member")'
+        'INSERT INTO board_project_members (project_id, user_id, role) VALUES (?,?,"member")'
     )->execute([$project['id'], $user['id']]);
 
     jsonResponse(['success' => true, 'project' => $project, 'role' => 'member']);
@@ -147,7 +147,7 @@ if ($action === 'send') {
 
     $db = getDB();
     $db->prepare(
-        'DELETE FROM invitations WHERE id = ? AND project_id = ? AND status = "pending"'
+        'DELETE FROM board_invitations WHERE id = ? AND project_id = ? AND status = "pending"'
     )->execute([$inviteId, $projectId]);
 
     jsonResponse(['success' => true]);

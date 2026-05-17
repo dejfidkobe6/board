@@ -43,12 +43,12 @@ $db   = getDB();
 
 // Auto-create bg_image column if missing (safe on first use)
 try {
-    $db->exec("ALTER TABLE projects ADD COLUMN bg_image VARCHAR(500) NULL DEFAULT NULL");
+    $db->exec("ALTER TABLE board_projects ADD COLUMN bg_image VARCHAR(500) NULL DEFAULT NULL");
 } catch (PDOException $e) {
     // Column already exists – ignore
 }
 
-$stmt = $db->prepare('SELECT bg_image FROM projects WHERE id = ?');
+$stmt = $db->prepare('SELECT bg_image FROM board_projects WHERE id = ?');
 $stmt->execute([$projectId]);
 $oldProj = $stmt->fetch();
 if ($oldProj && $oldProj['bg_image']) {
@@ -66,6 +66,6 @@ if (!move_uploaded_file($file['tmp_name'], $filepath)) {
 }
 
 $url = '/assets/project_bg/' . $filename;
-$db->prepare('UPDATE projects SET bg_image = ? WHERE id = ?')->execute([$url, $projectId]);
+$db->prepare('UPDATE board_projects SET bg_image = ? WHERE id = ?')->execute([$url, $projectId]);
 
 jsonResponse(['success' => true, 'url' => $url]);

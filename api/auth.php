@@ -61,17 +61,17 @@ if ($action === 'register') {
     // Handle invite token
     if ($invite) {
         $si = $db->prepare(
-            'SELECT i.*, p.name AS project_name FROM invitations i
-             JOIN projects p ON p.id = i.project_id
+            'SELECT i.*, p.name AS project_name FROM board_invitations i
+             JOIN board_projects p ON p.id = i.project_id
              WHERE i.token = ? AND i.status = "pending" AND i.expires_at > NOW()'
         );
         $si->execute([$invite]);
         $inv = $si->fetch();
         if ($inv && strtolower($inv['invited_email']) === $email) {
             $db->prepare(
-                'INSERT IGNORE INTO project_members (project_id, user_id, role, invited_by) VALUES (?, ?, ?, ?)'
+                'INSERT IGNORE INTO board_project_members (project_id, user_id, role, invited_by) VALUES (?, ?, ?, ?)'
             )->execute([$inv['project_id'], $userId, $inv['role'], $inv['invited_by']]);
-            $db->prepare('UPDATE invitations SET status="accepted" WHERE id=?')->execute([$inv['id']]);
+            $db->prepare('UPDATE board_invitations SET status="accepted" WHERE id=?')->execute([$inv['id']]);
         }
     }
 

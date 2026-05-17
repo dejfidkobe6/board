@@ -1567,6 +1567,11 @@ let _syncInFlight = false;
 let _syncQueued   = false;
 let _pollTimer    = null;
 let _syncRetrying = false; // true while exponential-backoff timer is running
+// DB-side updated_at cursor for the cheap /check probe (seconds since epoch).
+// Bumped on every successful load AND every successful save so we never
+// re-fetch our own writes.
+let _lastKanbanServerTs  = 0;
+let _lastMeetingServerTs = 0;
 
 async function _syncToServer(projectId, _attempt) {
   _attempt = _attempt || 1;
@@ -1611,6 +1616,12 @@ async function _syncToServer(projectId, _attempt) {
     if (res.ok) {
       _syncRetrying = false;
       setSyncDot('ok');
+      // Capture server's new updated_at so the /check probe doesn't trigger
+      // a redundant reload of our own write on the next poll tick.
+      try {
+        const saveData = await res.clone().json();
+        if (saveData && saveData.server_ts) _lastKanbanServerTs = saveData.server_ts;
+      } catch(e) {}
       if (_syncQueued) _syncToServer(projectId);
     } else {
       const errText = await res.text().catch(() => '');
@@ -1629,6 +1640,7 @@ async function syncKanbanFromServer(projectId) {
     const res = await fetch(`/api/kanban.php?action=load&project_id=${projectId}`, { credentials: 'include' });
     const data = await res.json();
     if (_syncInFlight) return;
+    if (data && data.server_ts) _lastKanbanServerTs = data.server_ts;
     if (!data.success || !data.state) return;
 
     const serverTs = data.state._ts || 0;
@@ -1682,11 +1694,35 @@ function setSyncDot(s, detail, errText) { // 'ok' | 'pending' | 'error'
   dot.onclick = () => alert('Sync error ' + (errLabel || detail) + (snippet ? '\n\n' + snippet : ''));
 }
 
-// Polling — picks up changes from other devices every 5 s.
-// Safe because syncKanbanFromServer only applies data when serverTs > localTs.
+// Polling — picks up changes from other devices.
+// Strategy: every 2s hit the cheap /check probe (returns only updated_at).
+// Only do the full /load when the server-side timestamp actually advanced
+// past the last value we saw. This stays near-realtime for concurrent
+// editors while keeping the per-tick payload tiny.
+async function _kanbanPollTick(projectId) {
+  if (_syncInFlight) return;
+  try {
+    const r = await fetch(`/api/kanban.php?action=check&project_id=${projectId}`, { credentials: 'include' });
+    if (!r.ok) return;
+    const d = await r.json();
+    const ts = (d && d.ts) || 0;
+    // First tick after page load: don't have a baseline yet → take this one
+    // and fetch full state once to align.
+    if (_lastKanbanServerTs === 0 && ts > 0) {
+      _lastKanbanServerTs = ts;
+      syncKanbanFromServer(projectId);
+      return;
+    }
+    if (ts > _lastKanbanServerTs) {
+      _lastKanbanServerTs = ts;
+      syncKanbanFromServer(projectId);
+    }
+  } catch(e) {}
+}
+
 function startKanbanPolling(projectId) {
   stopKanbanPolling();
-  _pollTimer = setInterval(() => syncKanbanFromServer(projectId), 5000);
+  _pollTimer = setInterval(() => _kanbanPollTick(projectId), 2000);
 }
 function stopKanbanPolling() {
   if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }

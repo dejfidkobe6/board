@@ -1,6 +1,18 @@
 <?php
 // Helper functions – committed to repo, included by all API files
 
+// ── Early bootstrap: rename legacy tables to `board_*` BEFORE any other DB
+//    work happens (kanban.php / meeting.php create tables at include time).
+//    Defined later in this file; the IIFE below kicks it off once getDB() is
+//    available. Safe to fail silently — fresh installs have no legacy tables.
+(function () {
+    try {
+        if (function_exists('getDB')) {
+            boardApplyTablePrefix(getDB());
+        }
+    } catch (\Throwable $e) {}
+})();
+
 // ── DB-backed session handler (works on any shared hosting) ─────────────────
 (function () {
     if (session_status() !== PHP_SESSION_NONE) return; // already started (e.g. session.auto_start)
@@ -108,15 +120,55 @@
     }
 })();
 
-// Idempotent DB migrations – runs once per request after getDB() is available
+// Idempotent DB migrations – runs once per request after getDB() is available.
+// IMPORTANT: also rebadges legacy table names with the `board_` prefix
+// (data-preserving RENAME TABLE — keeps rows, indexes and foreign keys).
 function runMigrations(): void {
     static $done = false;
     if ($done) return;
     $done = true;
     try {
         $db = getDB();
-        $db->exec("ALTER TABLE projects ADD COLUMN IF NOT EXISTS bg_image VARCHAR(500) NULL DEFAULT NULL");
+        boardApplyTablePrefix($db);
+        // Auto-add bg_image column on the (possibly renamed) projects table
+        $db->exec("ALTER TABLE board_projects ADD COLUMN IF NOT EXISTS bg_image VARCHAR(500) NULL DEFAULT NULL");
     } catch (\Throwable $e) {}
+}
+
+// Renames legacy board-specific tables to `board_*`. Idempotent and safe to
+// re-run on every request — exits quickly when nothing to do.
+// Shared auth tables (users, php_sessions, remember_tokens) are NOT touched.
+function boardApplyTablePrefix(PDO $db): void {
+    static $checked = false;
+    if ($checked) return;
+    $checked = true;
+
+    $renames = [
+        'apps'                    => 'board_apps',
+        'projects'                => 'board_projects',
+        'project_members'         => 'board_project_members',
+        'invitations'             => 'board_invitations',
+        'project_kanban_state'    => 'board_project_kanban_state',
+        'project_kanban_backups'  => 'board_project_kanban_backups',
+        'project_meeting_state'   => 'board_project_meeting_state',
+    ];
+
+    try {
+        $rows = $db->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+        $existing = array_flip(array_map('strval', $rows));
+        $parts = [];
+        foreach ($renames as $old => $new) {
+            if (isset($existing[$old]) && !isset($existing[$new])) {
+                $parts[] = "`{$old}` TO `{$new}`";
+            }
+        }
+        if ($parts) {
+            // Atomic — all tables get renamed in one statement, preserving FKs
+            $db->exec('RENAME TABLE ' . implode(', ', $parts));
+        }
+    } catch (\Throwable $e) {
+        error_log('[board migration] ' . $e->getMessage());
+    }
 }
 
 function jsonResponse(array $data, int $code = 200): void {
@@ -147,8 +199,8 @@ function requireProjectRole(int $projectId, string $minRole): array {
 
     $db   = getDB();
     $stmt = $db->prepare(
-        'SELECT pm.role FROM project_members pm
-         JOIN projects p ON p.id = pm.project_id
+        'SELECT pm.role FROM board_project_members pm
+         JOIN board_projects p ON p.id = pm.project_id
          WHERE pm.project_id = ? AND pm.user_id = ? AND p.is_active = 1'
     );
     $stmt->execute([$projectId, $user['id']]);

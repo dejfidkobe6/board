@@ -1,13 +1,17 @@
 -- BeSix Multi-App Database Schema
 -- Encoding: UTF-8mb4
 -- Run this script once on your MySQL/MariaDB server
+--
+-- Naming convention:
+--   `board_*`  – tables specific to the BeSix Board (kanban) application
+--   `users`, `php_sessions`, `remember_tokens` – shared between BeSix apps (auth/SSO)
 
 SET NAMES utf8mb4;
 SET time_zone = '+00:00';
 SET foreign_key_checks = 0;
 
 -- ─────────────────────────────────────────
--- 1. USERS
+-- 1. USERS (shared between apps)
 -- ─────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `users` (
   `id`                  INT UNSIGNED     NOT NULL AUTO_INCREMENT,
@@ -29,9 +33,9 @@ CREATE TABLE IF NOT EXISTS `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────
--- 2. APPS
+-- 2. BOARD_APPS
 -- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS `apps` (
+CREATE TABLE IF NOT EXISTS `board_apps` (
   `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `app_key`     VARCHAR(50)  NOT NULL,
   `app_name`    VARCHAR(120) NOT NULL,
@@ -41,14 +45,14 @@ CREATE TABLE IF NOT EXISTS `apps` (
   UNIQUE KEY `uq_app_key` (`app_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT IGNORE INTO `apps` (`app_key`, `app_name`, `description`) VALUES
+INSERT IGNORE INTO `board_apps` (`app_key`, `app_name`, `description`) VALUES
   ('stavbaboard', 'StavbaBoard',  'Kanban pro stavební tým'),
   ('plans',       'BeSix Plans',  'Správa půdorysů');
 
 -- ─────────────────────────────────────────
--- 3. PROJECTS
+-- 3. BOARD_PROJECTS
 -- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS `projects` (
+CREATE TABLE IF NOT EXISTS `board_projects` (
   `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `app_id`      INT UNSIGNED NOT NULL,
   `name`        VARCHAR(200) NOT NULL,
@@ -56,20 +60,21 @@ CREATE TABLE IF NOT EXISTS `projects` (
   `created_by`  INT UNSIGNED NOT NULL,
   `invite_code` VARCHAR(32)  NOT NULL,
   `bg_color`    VARCHAR(10)      NULL DEFAULT '#4a5240',
+  `bg_image`    VARCHAR(500)     NULL DEFAULT NULL,
   `is_active`   TINYINT(1)   NOT NULL DEFAULT 1,
   `created_at`  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_invite_code` (`invite_code`),
   KEY `idx_app_id` (`app_id`),
   KEY `idx_created_by` (`created_by`),
-  CONSTRAINT `fk_projects_app`  FOREIGN KEY (`app_id`)     REFERENCES `apps`  (`id`) ON DELETE RESTRICT,
-  CONSTRAINT `fk_projects_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT
+  CONSTRAINT `fk_board_projects_app`  FOREIGN KEY (`app_id`)     REFERENCES `board_apps` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_board_projects_user` FOREIGN KEY (`created_by`) REFERENCES `users`      (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────
--- 4. PROJECT_MEMBERS
+-- 4. BOARD_PROJECT_MEMBERS
 -- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS `project_members` (
+CREATE TABLE IF NOT EXISTS `board_project_members` (
   `id`         INT UNSIGNED                              NOT NULL AUTO_INCREMENT,
   `project_id` INT UNSIGNED                             NOT NULL,
   `user_id`    INT UNSIGNED                             NOT NULL,
@@ -79,15 +84,15 @@ CREATE TABLE IF NOT EXISTS `project_members` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_project_user` (`project_id`, `user_id`),
   KEY `idx_user_id` (`user_id`),
-  CONSTRAINT `fk_pm_project`  FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_pm_user`     FOREIGN KEY (`user_id`)    REFERENCES `users`    (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_pm_inviter`  FOREIGN KEY (`invited_by`) REFERENCES `users`    (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_board_pm_project`  FOREIGN KEY (`project_id`) REFERENCES `board_projects` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_board_pm_user`     FOREIGN KEY (`user_id`)    REFERENCES `users`          (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_board_pm_inviter`  FOREIGN KEY (`invited_by`) REFERENCES `users`          (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────
--- 5. INVITATIONS
+-- 5. BOARD_INVITATIONS
 -- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS `invitations` (
+CREATE TABLE IF NOT EXISTS `board_invitations` (
   `id`             INT UNSIGNED                         NOT NULL AUTO_INCREMENT,
   `project_id`     INT UNSIGNED                         NOT NULL,
   `invited_email`  VARCHAR(180)                         NOT NULL,
@@ -101,8 +106,8 @@ CREATE TABLE IF NOT EXISTS `invitations` (
   UNIQUE KEY `uq_token` (`token`),
   KEY `idx_project_id` (`project_id`),
   KEY `idx_invited_email` (`invited_email`),
-  CONSTRAINT `fk_inv_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_inv_inviter` FOREIGN KEY (`invited_by`) REFERENCES `users`    (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_board_inv_project` FOREIGN KEY (`project_id`) REFERENCES `board_projects` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_board_inv_inviter` FOREIGN KEY (`invited_by`) REFERENCES `users`          (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET foreign_key_checks = 1;
