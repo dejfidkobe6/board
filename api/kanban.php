@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/normalized_dual_write.php';
 
 // Auto-create tables on first use (after potential legacy → board_ rename)
 (function () {
@@ -124,6 +125,10 @@ if ($action === 'load') {
          ON DUPLICATE KEY UPDATE state_json = VALUES(state_json), updated_at = NOW()'
     )->execute([$projectId, $stateJson]);
 
+    // Phase 1 dual-write: materialize JSON state into normalized tables.
+    // Failures are logged inside the function — never propagate to the user.
+    dualWriteKanban($db, $projectId, $newState);
+
     // Echo the new server timestamp so the caller can sync its "last seen" cursor
     $tsStmt = $db->prepare('SELECT UNIX_TIMESTAMP(updated_at) AS ts FROM board_project_kanban_state WHERE project_id = ?');
     $tsStmt->execute([$projectId]);
@@ -163,6 +168,7 @@ if ($action === 'load') {
          ON DUPLICATE KEY UPDATE state_json = VALUES(state_json), updated_at = NOW()'
     )->execute([$projectId, $row['state_json']]);
     $state = json_decode($row['state_json'], true);
+    if (is_array($state)) dualWriteKanban($db, $projectId, $state);
     jsonResponse(['success' => true, 'state' => $state]);
 })();
 } else {

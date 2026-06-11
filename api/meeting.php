@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/normalized_dual_write.php';
 
 // Auto-create table
 (function () {
@@ -84,6 +85,9 @@ if ($action === 'load') {
            vac_legend       = VALUES(vac_legend),
            updated_at       = NOW()'
     )->execute([$projectId, $livingMeeting, $meetingVersions, $phases, $schedule, $vacLegend]);
+
+    // Phase 1 dual-write into normalized tables (safe: failures logged, never propagate)
+    dualWriteMeeting($db, $projectId, $body);
 
     $tsStmt = $db->prepare('SELECT UNIX_TIMESTAMP(updated_at) AS ts FROM board_project_meeting_state WHERE project_id = ?');
     $tsStmt->execute([$projectId]);
