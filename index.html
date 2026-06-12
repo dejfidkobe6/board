@@ -2,8 +2,17 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>BesixBoard – Správa úkolů</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#1e2710">
+<meta name="application-name" content="BeSix Board">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Board">
+<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16.png">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -6210,6 +6219,41 @@ function addVacLegendItem() {
 
 // ── INIT ───────────────────────────────────────────────────────────────────
 bootAuth();
+
+// ── PWA: service worker + install prompt ───────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW reg failed:', err));
+  });
+}
+
+let _deferredInstall = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _deferredInstall = e;
+  const btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  _deferredInstall = null;
+  const btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'none';
+});
+function pwaInstall() {
+  if (!_deferredInstall) return;
+  _deferredInstall.prompt();
+  _deferredInstall.userChoice.finally(() => { _deferredInstall = null; });
+  const btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'none';
+}
 </script>
+
+<button id="pwaInstallBtn" onclick="pwaInstall()"
+        style="display:none;position:fixed;right:16px;bottom:16px;z-index:9999;
+               background:#c9922a;color:#1e2710;border:none;border-radius:24px;
+               padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer;
+               box-shadow:0 4px 16px rgba(0,0,0,.4);align-items:center;gap:8px">
+  ⬇ Nainstalovat
+</button>
 </body>
 </html>
