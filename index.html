@@ -298,28 +298,28 @@
     /* App body: full height (pill button is position:fixed, not in flow) */
     .app-body { height: calc(100dvh - 84px) !important; height: calc(100vh - 84px) !important; overflow: hidden; }
 
-    /* Board: full-bleed snap-scroll, one column per viewport */
+    /* Board: snap-scroll s drobným gutterem okolo, šířka sloupců se přepíná
+       níže podle orientace (portrait = 1 sloupec, landscape = 2 sloupce). */
     #board {
       height: 100% !important;
-      padding: 10px 0 !important;
-      gap: 0 !important;
+      padding: 10px 8px !important;
+      gap: 8px !important;
       overflow-x: auto !important;
       overflow-y: hidden !important;
       scroll-snap-type: x mandatory;
-      scroll-padding-left: 0 !important;
+      scroll-padding-left: 8px !important;
       -webkit-overflow-scrolling: touch;
       display: flex !important;
       align-items: flex-start !important;
     }
 
-    /* Columns: take full viewport width, scroll vertically inside */
+    /* Columns: výška natural, šířka řešená orientačními pravidly níže */
     .column {
       flex-shrink: 0 !important;
-      width: 100vw !important;
       height: auto !important;
       max-height: calc(100dvh - 108px) !important;
       max-height: calc(100vh - 108px) !important;
-      border-radius: 0 !important;
+      border-radius: 12px !important;
       scroll-snap-align: start;
     }
 
@@ -369,7 +369,8 @@
     .task-panel-body { overflow-x: hidden !important; }
     .task-panel-body-inner { overflow-x: hidden !important; width: 100%; box-sizing: border-box; }
 
-    /* Modals: full-width bottom sheet, tighter padding so text doesn't truncate */
+    /* Modals: bottom sheet with comfortable inner padding so content
+       (especially right-side icons) breathes from the edges */
     .modal-overlay {
       padding: 0 !important;
       align-items: flex-end !important;
@@ -382,7 +383,7 @@
       margin: 0 !important;
     }
     .modal-scroll {
-      padding: 18px 14px !important;
+      padding: 18px 16px !important;
       overflow-x: hidden !important;
     }
     .modal h2, .detail-title { padding-right: 40px; }
@@ -391,6 +392,17 @@
     .ps-body { padding: 16px 12px; }
     .ps-grid { grid-template-columns: 1fr; gap: 10px; }
     .project-card-new { min-height: 100px; padding: 24px 16px; }
+  }
+
+  /* Portrait phone — jeden sloupec na obrazovku, gutter 8px po stranách */
+  @media (max-width: 640px) and (orientation: portrait) {
+    .column { width: calc(100vw - 16px) !important; }
+  }
+
+  /* Landscape phone — dva sloupce vedle sebe s mezerou */
+  @media (max-width: 640px) and (orientation: landscape),
+         (orientation: landscape) and (max-height: 540px) {
+    .column { width: calc(50vw - 12px) !important; }
   }
   @media (min-width: 641px) and (max-width: 1024px) and (orientation: portrait) {
     .board { padding: 14px 16px; }
