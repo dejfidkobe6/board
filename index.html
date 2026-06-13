@@ -23,8 +23,8 @@
     --surface3: rgba(255,255,255,0.11);
     --border: rgba(255,255,255,0.1);
     --border2: rgba(255,255,255,0.16);
-    --accent: #c9922a;
-    --accent2: #d4a035;
+    --accent: #C9A84C;
+    --accent2: #D4B85C;
     --text: rgba(255,255,255,0.88);
     --text2: rgba(255,255,255,0.5);
     --muted: rgba(255,255,255,0.3);
@@ -32,12 +32,12 @@
     --green: #34c759;
     --blue: #007aff;
     --purple: #af52de;
-    --gold: #d4a830;
-    --glow: 0 0 0 4px rgba(200,165,60,0.18);
+    --gold: #C9A84C;
+    --glow: 0 0 0 4px rgba(201,168,76,0.18);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
-  ::selection { background: rgba(200,165,60,0.25); color: var(--text); }
+  ::selection { background: rgba(201,168,76,0.25); color: var(--text); }
 
   /* ─── AUTH / LOGIN ─── */
   #loginScreen {
@@ -87,19 +87,19 @@
     color: rgba(255,255,255,0.92); line-height: 1.1; letter-spacing: -1.2px;
     margin-bottom: 16px;
   }
-  .auth-brand-tagline span { color: rgba(200,160,50,0.85); }
+  .auth-brand-tagline span { color: rgba(201,168,76,0.85); }
   .auth-brand-desc {
     font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 400;
-    color: rgba(210,175,80,0.45); line-height: 1.65; max-width: 320px;
+    color: rgba(212,184,92,0.45); line-height: 1.65; max-width: 320px;
   }
   .auth-brand-dots {
     display: flex; gap: 6px; margin-top: 32px;
   }
   .auth-brand-dots span {
     width: 6px; height: 6px; border-radius: 50%;
-    background: rgba(200,165,60,0.3);
+    background: rgba(201,168,76,0.3);
   }
-  .auth-brand-dots span:first-child { background: rgba(200,165,60,0.75); width: 22px; border-radius: 3px; }
+  .auth-brand-dots span:first-child { background: rgba(201,168,76,0.75); width: 22px; border-radius: 3px; }
 
   /* RIGHT FORM PANEL */
   .auth-side {
@@ -113,13 +113,13 @@
   .auth-side::before {
     content: '';
     position: absolute; top: 0; left: 0; bottom: 0; width: 1px;
-    background: linear-gradient(to bottom, transparent, rgba(200,165,60,0.18) 30%, rgba(200,165,60,0.18) 70%, transparent);
+    background: linear-gradient(to bottom, transparent, rgba(201,168,76,0.18) 30%, rgba(201,168,76,0.18) 70%, transparent);
   }
   .auth-logo-wrap { display: none; }
   .auth-form-header { width: 100%; margin-bottom: 36px; }
   .auth-form-eyebrow {
     font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 700;
-    color: rgba(200,165,60,0.55); letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(201,168,76,0.55); letter-spacing: 0.18em; text-transform: uppercase;
     margin-bottom: 10px;
   }
   .auth-box {
@@ -139,7 +139,7 @@
   }
   .auth-field { margin-bottom: 18px; }
   .auth-field label {
-    display: block; font-size: 10px; color: rgba(200,165,60,0.55); font-weight: 700;
+    display: block; font-size: 10px; color: rgba(201,168,76,0.55); font-weight: 700;
     margin-bottom: 9px; letter-spacing: 0.14em; text-transform: uppercase;
     font-family: 'Montserrat', sans-serif;
   }
@@ -160,7 +160,7 @@
   .auth-field input::placeholder { color: rgba(255,255,255,0.18); }
   .auth-btn {
     width: 100%; padding: 15px; margin-top: 6px;
-    background: linear-gradient(180deg, #c9922a 0%, #a87420 100%);
+    background: linear-gradient(180deg, #C9A84C 0%, #A88A42 100%);
     color: #fff; border: none; border-radius: 12px;
     font-family: 'Montserrat', sans-serif;
     font-size: 14px; font-weight: 700; cursor: pointer;
@@ -175,14 +175,14 @@
     pointer-events: none;
   }
   .auth-btn:hover {
-    background: linear-gradient(180deg, #d9a23a 0%, #b88430 100%);
+    background: linear-gradient(180deg, #D4B85C 0%, #A88A42 100%);
     box-shadow: 0 1px 0 rgba(255,255,255,0.15) inset, 0 8px 28px rgba(160,100,10,0.55);
     transform: translateY(-1px);
   }
   .auth-btn:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(80,100,20,0.3); }
   .auth-switch {
     text-align: center; margin-top: 26px; font-size: 13px;
-    color: rgba(200,165,60,0.35); font-family: 'Montserrat', sans-serif;
+    color: rgba(201,168,76,0.35); font-family: 'Montserrat', sans-serif;
   }
   .auth-switch a {
     color: rgba(155,190,70,0.75); cursor: pointer; font-weight: 600;
@@ -204,7 +204,7 @@
   .auth-divider { display: flex; align-items: center; gap: 14px; margin: 24px 0; }
   .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
   .auth-divider span {
-    font-size: 10px; color: rgba(200,165,60,0.3); white-space: nowrap;
+    font-size: 10px; color: rgba(201,168,76,0.3); white-space: nowrap;
     letter-spacing: 0.1em; text-transform: uppercase; font-family: 'Montserrat', sans-serif;
   }
   .auth-members { display: flex; flex-direction: column; gap: 7px; max-height: 200px; overflow-y: auto; }
@@ -219,9 +219,9 @@
   }
   .auth-member .av { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
   .auth-member .info strong { display: block; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.88); font-family: 'Montserrat', sans-serif; }
-  .auth-member .info span { font-size: 11px; color: rgba(200,165,60,0.45); font-family: 'Montserrat', sans-serif; }
+  .auth-member .info span { font-size: 11px; color: rgba(201,168,76,0.45); font-family: 'Montserrat', sans-serif; }
   .auth-promo { display: none !important; }
-  .login-add { color: rgba(200,165,60,0.4); font-size: 13px; cursor: pointer; transition: color 0.15s; font-family: 'Montserrat', sans-serif; }
+  .login-add { color: rgba(201,168,76,0.4); font-size: 13px; cursor: pointer; transition: color 0.15s; font-family: 'Montserrat', sans-serif; }
   .login-add:hover { color: rgba(190,225,100,0.8); }
   .member-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
 
@@ -231,7 +231,7 @@
   /* ─── PROJECT SCREEN ─── */
   #projectScreen { display: none; min-height: 100vh; background: var(--bg); position: relative; }
   .ps-logout { position: fixed; top: 18px; right: 24px; z-index: 50; display: flex; align-items: center; gap: 9px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 50px; padding: 5px 14px 5px 5px; font-size: 13px; cursor: pointer; transition: all 0.15s; color: rgba(168,192,148,0.8); backdrop-filter: blur(12px); }
-  .ps-logout:hover { border-color: rgba(210,185,70,0.5); color: #fff; background: rgba(255,255,255,0.12); }
+  .ps-logout:hover { border-color: rgba(212,184,92,0.5); color: #fff; background: rgba(255,255,255,0.12); }
   .ps-logout .av { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; }
   .ps-body { padding: 60px 40px 48px; max-width: 1100px; margin: 0 auto; }
   .ps-logo-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 40px; }
@@ -263,11 +263,11 @@
     transition: all 0.2s; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 10px; min-height: 180px;
   }
-  .project-card-new:hover { border-color: rgba(210,185,70,0.5); background: rgba(255,255,255,0.08); }
+  .project-card-new:hover { border-color: rgba(212,184,92,0.5); background: rgba(255,255,255,0.08); }
   .project-card-new-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: rgba(168,192,148,0.65); transition: all 0.2s; }
-  .project-card-new:hover .project-card-new-icon { color: rgba(210,185,70,0.9); }
+  .project-card-new:hover .project-card-new-icon { color: rgba(212,184,92,0.9); }
   .project-card-new-label { font-size: 13px; color: rgba(168,192,148,0.65); font-weight: 500; }
-  .project-card-new:hover .project-card-new-label { color: rgba(210,185,70,0.9); }
+  .project-card-new:hover .project-card-new-label { color: rgba(212,184,92,0.9); }
 
   /* ─── APP ─── */
   #app { display: none; }
@@ -497,15 +497,15 @@
     color: rgba(255,255,255,0.8); border-radius: 5px;
   }
   .panel-pin-btn:hover { opacity: 1; background: rgba(255,255,255,0.1); }
-  .task-panel.pinned .panel-pin-btn { opacity: 1; color: rgba(200,165,60,0.95); }
+  .task-panel.pinned .panel-pin-btn { opacity: 1; color: rgba(201,168,76,0.95); }
   .task-panel.collapsed .panel-pin-btn { display: none; }
   .header-right { display: flex; gap: 6px; align-items: center; }
   .current-user { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 50px; padding: 4px 12px 4px 4px; font-size: 13px; cursor: pointer; transition: all 0.15s; color: rgba(255,255,255,0.75); }
-  .current-user:hover { border-color: rgba(200,165,60,0.4); color: #fff; background: rgba(255,255,255,0.13); }
+  .current-user:hover { border-color: rgba(201,168,76,0.4); color: #fff; background: rgba(255,255,255,0.13); }
   .current-user .av { width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: flex-start; font-size: 10px; font-weight: 700; color: #fff; }
   .btn { padding: 7px 14px; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; transition: all 0.15s; letter-spacing: -0.1px; }
-  .btn-primary { background: linear-gradient(180deg,#c9922a 0%,#a87420 100%); color: #fff; box-shadow: 0 2px 8px rgba(160,100,10,0.3); }
-  .btn-primary:hover { background: linear-gradient(180deg,#d9a23a 0%,#b88430 100%); }
+  .btn-primary { background: linear-gradient(180deg,#C9A84C 0%,#A88A42 100%); color: #fff; box-shadow: 0 2px 8px rgba(160,100,10,0.3); }
+  .btn-primary:hover { background: linear-gradient(180deg,#D4B85C 0%,#A88A42 100%); }
   .btn-ghost { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); border: 1px solid rgba(255,255,255,0.12); }
   .btn-ghost:hover { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.2); }
   .btn-danger { background: rgba(255,59,48,0.08); color: var(--danger); border: 1px solid rgba(255,59,48,0.2); }
@@ -548,7 +548,7 @@
   .col-rename-btn { background: transparent; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 12px; padding: 2px 5px; border-radius: 5px; transition: all 0.15s; line-height: 1; }
   .col-rename-btn:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.12); }
   .col-body { padding: 4px 8px; display: flex; flex-direction: column; gap: 7px; overflow-y: auto; flex: 1; }
-  .col-body.drag-over { background: rgba(200,165,60,0.06); border-radius: 8px; }
+  .col-body.drag-over { background: rgba(201,168,76,0.06); border-radius: 8px; }
 
   /* ─── CARD ─── */
   .card {
@@ -561,8 +561,8 @@
   .card:hover { background: rgba(255,255,255,0.12); box-shadow: 0 6px 20px rgba(0,0,0,0.25); transform: translateY(-2px); border-color: rgba(255,255,255,0.22); }
   .card.dragging { opacity: 0.5; transform: rotate(1deg) scale(1.02); box-shadow: 0 12px 32px rgba(0,0,0,0.15); }
   .column.col-dragging { opacity: 0.35; }
-  .column.col-drop-left  { box-shadow: -3px 0 0 2px rgba(200,165,60,0.8); }
-  .column.col-drop-right { box-shadow:  3px 0 0 2px rgba(200,165,60,0.8); }
+  .column.col-drop-left  { box-shadow: -3px 0 0 2px rgba(201,168,76,0.8); }
+  .column.col-drop-right { box-shadow:  3px 0 0 2px rgba(201,168,76,0.8); }
   .col-header { cursor: grab; }
   .col-header:active { cursor: grabbing; }
   .card-cover { width: 100%; height: 120px; object-fit: cover; display: block; border-radius: 12px 12px 0 0; }
@@ -645,7 +645,7 @@
   .assignee-select { display: flex; flex-wrap: wrap; gap: 7px; }
   .assignee-option { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 50px; cursor: pointer; font-size: 13px; transition: all 0.15s; color: var(--text2); background: var(--surface2); }
   .assignee-option:hover { border-color: var(--border2); background: var(--surface3); }
-  .assignee-option.selected { border-color: var(--accent); background: rgba(200,165,60,0.12); color: var(--text); }
+  .assignee-option.selected { border-color: var(--accent); background: rgba(201,168,76,0.12); color: var(--text); }
   .priority-select { display: flex; gap: 8px; }
   .priority-opt { padding: 7px 16px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; font-size: 12px; font-weight: 600; letter-spacing: 0.2px; opacity: 0.55; transition: all 0.15s; background: var(--surface2); }
   .priority-opt.selected { opacity: 1; border-width: 1.5px; }
@@ -729,7 +729,7 @@
   .cl-item-drag { cursor: grab; color: var(--muted); font-size: 14px; padding: 0 3px; flex-shrink: 0; user-select: none; line-height: 1; }
   .cl-item-drag:hover { color: var(--text2); }
   .cl-done-undo { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 2px 6px; border-radius: 4px; transition: color 0.12s, background 0.12s; flex-shrink: 0; margin-left: auto; }
-  .cl-done-undo:hover { color: var(--accent); background: rgba(200,165,60,0.1); }
+  .cl-done-undo:hover { color: var(--accent); background: rgba(201,168,76,0.1); }
   /* Multi-checklist — flex-wrap, min 440px per block so text never gets crushed */
   #clLists { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
   .cl-block { flex: 1 0 440px; min-width: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 0; transition: opacity 0.15s, box-shadow 0.15s; }
@@ -750,7 +750,7 @@
   .cl-block-stats { font-size: 11px; color: var(--muted); margin-left: 4px; font-weight: 400; }
   .cl-add-list-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); font-size: 12px; font-family: inherit; padding: 4px 12px; border-radius: 8px; cursor: pointer; transition: background 0.12s; white-space: nowrap; }
   .cl-add-list-btn:hover { background: var(--surface3); color: var(--text); }
-  #clSearch:focus { border-color: rgba(200,165,60,0.5) !important; background: rgba(255,255,255,0.1) !important; }
+  #clSearch:focus { border-color: rgba(201,168,76,0.5) !important; background: rgba(255,255,255,0.1) !important; }
   #clSearch::placeholder { color: rgba(255,255,255,0.3); }
   /* Done section */
   .cl-done-header { display: flex; align-items: center; gap: 8px; padding: 6px 4px; cursor: pointer; color: var(--text2); font-size: 12px; font-weight: 600; border-radius: 8px; user-select: none; transition: background 0.15s; margin-top: 4px; }
@@ -802,7 +802,7 @@
   .bg-swatch.active { border-color: #fff; }
   .bg-picker-sep { height: 1px; background: rgba(255,255,255,0.1); margin: 10px 0; }
   .bg-upload-label { display: flex; align-items: center; gap: 7px; padding: 7px 10px; border-radius: 7px; cursor: pointer; font-size: 12px; color: rgba(255,255,255,0.65); background: rgba(255,255,255,0.06); border: 1.5px dashed rgba(255,255,255,0.18); transition: all 0.15s; }
-  .bg-upload-label:hover { background: rgba(255,255,255,0.11); color: #fff; border-color: rgba(200,165,60,0.4); }
+  .bg-upload-label:hover { background: rgba(255,255,255,0.11); color: #fff; border-color: rgba(201,168,76,0.4); }
   .bg-img-preview { margin-top: 8px; border-radius: 7px; overflow: hidden; position: relative; }
   .bg-img-preview img { width: 100%; height: 54px; object-fit: cover; display: block; }
   .bg-img-remove { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.65); border: none; color: #fff; border-radius: 5px; font-size: 11px; padding: 2px 7px; cursor: pointer; }
@@ -829,7 +829,7 @@
   .task-panel { position: fixed; right: var(--panel-gap); top: calc(105px + var(--panel-gap)); height: calc(100vh - 105px - var(--panel-gap) * 2); z-index: 250; background: rgba(255,255,255,0.06); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; box-shadow: -4px 0 24px rgba(0,0,0,0.35); display: flex; flex-direction: column; overflow: hidden; padding-bottom: 14px; }
   .task-panel.collapsed { width: 36px !important; padding-bottom: 0; }
   .task-panel-resize { position: absolute; left: 0; top: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 251; background: transparent; transition: background 0.15s; }
-  .task-panel-resize:hover, .task-panel-resize.dragging { background: rgba(200,165,60,0.35); }
+  .task-panel-resize:hover, .task-panel-resize.dragging { background: rgba(201,168,76,0.35); }
   .task-panel.collapsed .task-panel-resize { display: none; }
   .task-panel-toggle { display: flex; align-items: center; justify-content: center; height: 42px; cursor: pointer; color: rgba(255,255,255,0.35); font-size: 13px; flex-shrink: 0; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.07); gap: 6px; transition: color 0.15s; user-select: none; }
   .task-panel-toggle:hover { color: rgba(255,255,255,0.8); }
@@ -841,11 +841,11 @@
   .task-panel-body-inner::-webkit-scrollbar-track { background: transparent; margin-bottom: 6px; }
   .task-panel-body-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 2px; }
   .task-panel.collapsed .task-panel-body { display: none; }
-  .task-panel-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(200,165,60,0.5); padding: 6px 5px 3px; }
+  .task-panel-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(201,168,76,0.5); padding: 6px 5px 3px; }
   .task-item { padding: 7px 9px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; cursor: pointer; transition: background 0.13s; }
   .task-item:hover { background: rgba(255,255,255,0.09); }
   .task-item.overdue { border-color: rgba(255,80,60,0.3); background: rgba(255,50,30,0.07); }
-  .task-item.today { border-color: rgba(200,165,60,0.3); background: rgba(200,165,60,0.06); }
+  .task-item.today { border-color: rgba(201,168,76,0.3); background: rgba(201,168,76,0.06); }
   .task-item-row { display: flex; align-items: flex-start; gap: 6px; }
   .task-item-row input[type=checkbox] { margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); cursor: pointer; }
   .task-item-text { font-size: 12px; color: rgba(255,255,255,0.82); line-height: 1.4; word-break: break-word; }
@@ -853,7 +853,7 @@
   .task-item-actions { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
   .task-item-dl { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; margin-top: 4px; margin-left: 18px; display: inline-block; }
   .task-item-dl.overdue { background: rgba(255,60,40,0.18); color: #ff7060; }
-  .task-item-dl.today { background: rgba(200,165,60,0.18); color: rgba(200,165,60,0.9); }
+  .task-item-dl.today { background: rgba(201,168,76,0.18); color: rgba(201,168,76,0.9); }
   .task-item-dl.future { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.38); }
   .task-panel-empty { font-size: 12px; color: rgba(255,255,255,0.22); text-align: center; padding: 28px 10px; line-height: 1.7; }
 
@@ -861,45 +861,45 @@
   .cl-item-meta { display: flex; align-items: center; gap: 5px; padding-left: 24px; flex-wrap: wrap; }
   .cl-meta-btn { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; font-size: 11px; color: rgba(255,255,255,0.45); cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit; }
   .cl-meta-btn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9); border-color: rgba(255,255,255,0.25); }
-  .cl-meta-btn.assigned { background: rgba(200,165,60,0.12); border-color: rgba(200,165,60,0.3); color: rgba(200,165,60,0.9); }
+  .cl-meta-btn.assigned { background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.3); color: rgba(201,168,76,0.9); }
   .cl-meta-btn.has-date { background: rgba(80,180,100,0.1); border-color: rgba(80,180,100,0.25); color: rgba(120,210,130,0.85); }
   .cl-meta-btn.date-overdue { background: rgba(255,60,40,0.12); border-color: rgba(255,60,40,0.3); color: #ff7060; }
-  .cl-meta-btn.date-today { background: rgba(200,165,60,0.12); border-color: rgba(200,165,60,0.3); color: rgba(200,165,60,0.9); }
+  .cl-meta-btn.date-today { background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.3); color: rgba(201,168,76,0.9); }
   .cl-meta-author { font-size: 11px; color: rgba(255,255,255,0.32); padding: 2px 4px; white-space: nowrap; flex-shrink: 0; }
 
   /* ─── @MENTION DROPDOWN ─── */
-  .at-suggest { position: fixed; z-index: 9999; background: #1e2d10; border: 1px solid rgba(200,165,60,0.35); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); min-width: 170px; overflow-y: auto; overflow-x: hidden; max-height: 52vh; }
+  .at-suggest { position: fixed; z-index: 9999; background: #1e2d10; border: 1px solid rgba(201,168,76,0.35); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); min-width: 170px; overflow-y: auto; overflow-x: hidden; max-height: 52vh; }
   .at-suggest-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; font-size: 13px; color: rgba(255,255,255,0.82); transition: background 0.1s; }
-  .at-suggest-item:hover, .at-suggest-item.at-active { background: rgba(200,165,60,0.15); }
+  .at-suggest-item:hover, .at-suggest-item.at-active { background: rgba(201,168,76,0.15); }
   .at-suggest-item .avatar { width: 22px; height: 22px; font-size: 9px; border-radius: 5px; display:flex;align-items:center;justify-content:center; flex-shrink: 0; }
 
   /* ─── MINI CALENDAR ─── */
-  .mini-cal-wrap { position: fixed; z-index: 9999; background: #1e2a10; border: 1px solid rgba(200,165,60,0.35); border-radius: 13px; box-shadow: 0 12px 36px rgba(0,0,0,0.55); padding: 14px; width: 228px; }
+  .mini-cal-wrap { position: fixed; z-index: 9999; background: #1e2a10; border: 1px solid rgba(201,168,76,0.35); border-radius: 13px; box-shadow: 0 12px 36px rgba(0,0,0,0.55); padding: 14px; width: 228px; }
   .mini-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
   .mini-cal-month { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.88); }
   .mini-cal-nav { background: none; border: none; color: rgba(255,255,255,0.45); cursor: pointer; font-size: 17px; padding: 1px 7px; border-radius: 6px; transition: all 0.13s; font-family: inherit; }
   .mini-cal-nav:hover { color: #fff; background: rgba(255,255,255,0.1); }
   .mini-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-  .mini-cal-dow { text-align: center; font-size: 10px; font-weight: 700; color: rgba(200,165,60,0.5); padding: 2px 0 4px; }
+  .mini-cal-dow { text-align: center; font-size: 10px; font-weight: 700; color: rgba(201,168,76,0.5); padding: 2px 0 4px; }
   .mini-cal-day { text-align: center; font-size: 12px; padding: 5px 0; border-radius: 5px; cursor: pointer; color: rgba(255,255,255,0.65); transition: all 0.1s; }
-  .mini-cal-day:not(.other-month):hover { background: rgba(200,165,60,0.22); color: #fff; }
-  .mini-cal-day.cal-today { background: rgba(200,165,60,0.15); color: rgba(200,165,60,0.95); font-weight: 700; }
-  .mini-cal-day.cal-selected { background: rgba(200,165,60,0.75); color: #fff; font-weight: 700; }
+  .mini-cal-day:not(.other-month):hover { background: rgba(201,168,76,0.22); color: #fff; }
+  .mini-cal-day.cal-today { background: rgba(201,168,76,0.15); color: rgba(201,168,76,0.95); font-weight: 700; }
+  .mini-cal-day.cal-selected { background: rgba(201,168,76,0.75); color: #fff; font-weight: 700; }
   .mini-cal-day.other-month { color: rgba(255,255,255,0.18); cursor: default; }
   .mini-cal-clear { width: 100%; margin-top: 8px; background: none; border: 1px solid rgba(255,80,60,0.28); color: rgba(255,100,80,0.65); border-radius: 6px; padding: 5px; cursor: pointer; font-size: 11px; transition: all 0.13s; font-family: inherit; }
   .mini-cal-clear:hover { background: rgba(255,60,40,0.1); color: #ff7060; }
 
   /* ─── TASK NOTIFICATION POPUP ─── */
   .task-notif-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10100; display: flex; align-items: center; justify-content: center; }
-  .task-notif { background: #1a2610; border: 1px solid rgba(200,165,60,0.3); border-radius: 16px; box-shadow: 0 20px 56px rgba(0,0,0,0.65); padding: 28px; max-width: 420px; width: 92%; max-height: 72vh; overflow-y: auto; }
+  .task-notif { background: #1a2610; border: 1px solid rgba(201,168,76,0.3); border-radius: 16px; box-shadow: 0 20px 56px rgba(0,0,0,0.65); padding: 28px; max-width: 420px; width: 92%; max-height: 72vh; overflow-y: auto; }
   .task-notif-title { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 18px; letter-spacing: -0.3px; }
   .task-notif-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 7px; margin-top: 4px; }
   .task-notif-label.overdue { color: #ff7060; }
-  .task-notif-label.today { color: rgba(200,165,60,0.9); }
+  .task-notif-label.today { color: rgba(201,168,76,0.9); }
   .task-notif-row { display: flex; gap: 8px; padding: 7px 10px; background: rgba(255,255,255,0.04); border-radius: 8px; margin-bottom: 4px; font-size: 12px; color: rgba(255,255,255,0.8); line-height: 1.4; }
   .task-notif-row-card { font-size: 10px; color: rgba(255,255,255,0.32); margin-top: 2px; }
-  .task-notif-close { width: 100%; margin-top: 16px; padding: 10px; background: rgba(200,165,60,0.14); border: 1px solid rgba(200,165,60,0.3); border-radius: 9px; color: rgba(200,165,60,0.9); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.14s; }
-  .task-notif-close:hover { background: rgba(200,165,60,0.24); }
+  .task-notif-close { width: 100%; margin-top: 16px; padding: 10px; background: rgba(201,168,76,0.14); border: 1px solid rgba(201,168,76,0.3); border-radius: 9px; color: rgba(201,168,76,0.9); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.14s; }
+  .task-notif-close:hover { background: rgba(201,168,76,0.24); }
 
   /* ─── LIGHTBOX ─── */
   #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(10px); z-index: 500; align-items: center; justify-content: flex-start; cursor: zoom-out; flex-direction: column; gap: 12px; }
@@ -940,7 +940,7 @@
     margin-bottom: 3px; border: 1px solid transparent; transition: all 0.15s;
   }
   .porady-item:hover { background: var(--surface2); }
-  .porady-item.active { background: rgba(200,165,60,0.12); border-color: rgba(200,165,60,0.3); }
+  .porady-item.active { background: rgba(201,168,76,0.12); border-color: rgba(201,168,76,0.3); }
   .porady-item-date { font-size: 10px; color: var(--text2); margin-bottom: 2px; }
   .porady-item-title { font-size: 13px; font-weight: 600; color: var(--text); }
   .porady-item-cnt { font-size: 11px; color: var(--text2); margin-top: 2px; }
@@ -958,7 +958,7 @@
   .gantt-label { width: 160px; flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .gantt-bar-wrap { flex: 1; background: rgba(255,255,255,0.07); border-radius: 6px; height: 22px; position: relative; overflow: hidden; cursor: pointer; }
   .gantt-bar { height: 100%; border-radius: 6px; transition: width 0.4s; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.9); white-space: nowrap; overflow: hidden; }
-  .gantt-bar-active { box-shadow: 0 0 10px rgba(200,165,60,0.4); }
+  .gantt-bar-active { box-shadow: 0 0 10px rgba(201,168,76,0.4); }
   .gantt-pct { font-size: 11px; color: var(--text2); width: 38px; text-align: right; flex-shrink: 0; }
   .gantt-add-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 
@@ -969,7 +969,7 @@
     padding: 12px 14px;
   }
   .agenda-item-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-  .agenda-item-num { width: 22px; height: 22px; border-radius: 50%; background: rgba(200,165,60,0.15); color: var(--gold); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .agenda-item-num { width: 22px; height: 22px; border-radius: 50%; background: rgba(201,168,76,0.15); color: var(--gold); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .agenda-item-text { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; background: none; border: none; outline: none; font-family: inherit; cursor: text; padding: 0; }
   .agenda-item-text:focus { color: var(--text); }
   .agenda-tasks { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
@@ -980,7 +980,7 @@
   .agenda-task input[type=checkbox] { accent-color: var(--accent); flex-shrink: 0; }
   .agenda-task-text { flex: 1; font-size: 12px; color: var(--text); }
   .agenda-task-text.done { text-decoration: line-through; color: var(--text2); }
-  .agenda-task-assignee { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: rgba(200,165,60,0.12); color: var(--gold); white-space: nowrap; }
+  .agenda-task-assignee { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: rgba(201,168,76,0.12); color: var(--gold); white-space: nowrap; }
   .agenda-task-dl { font-size: 10px; color: var(--text2); }
   .agenda-add-task { font-size: 12px; color: var(--text2); background: none; border: none; cursor: pointer; padding: 3px 0; text-align: left; transition: color 0.15s; }
   .agenda-add-task:hover { color: var(--accent); }
@@ -988,11 +988,11 @@
     width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 6px;
     padding: 5px 10px; color: var(--text); font-size: 12px; font-family: inherit; outline: none; margin-top: 4px;
   }
-  .agenda-task-input:focus { border-color: rgba(200,165,60,0.4); }
+  .agenda-task-input:focus { border-color: rgba(201,168,76,0.4); }
 
   /* ─── MTG SUBGROUPS ─── */
   .mtg-section { min-height: 10px; border-radius: 6px; transition: background 0.12s, outline 0.12s; }
-  .mtg-section.drag-over { background: rgba(200,165,60,0.07); outline: 2px dashed rgba(200,165,60,0.35); outline-offset: -1px; }
+  .mtg-section.drag-over { background: rgba(201,168,76,0.07); outline: 2px dashed rgba(201,168,76,0.35); outline-offset: -1px; }
   .mtg-group-wrap { margin: 8px 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
   .mtg-group-hdr { display: flex; align-items: center; gap: 6px; padding: 7px 12px; background: rgba(255,255,255,0.04); border-bottom: 1px solid transparent; }
   .mtg-group-hdr.open { border-bottom-color: var(--border); }
@@ -1015,8 +1015,8 @@
   .mtg-style-btn { background:none;border:none;cursor:pointer;font-size:13px;padding:0 3px;opacity:0;transition:opacity 0.15s;line-height:1;flex-shrink:0; }
   .agenda-item-header:hover .mtg-style-btn, .mtg-group-hdr:hover .mtg-style-btn { opacity:0.5; }
   .mtg-style-btn:hover { opacity:1 !important; }
-  .mtg-style-pop { position:fixed;z-index:3100;background:#1c2a0d;border:1px solid rgba(200,165,60,0.35);border-radius:14px;padding:14px 14px 12px;box-shadow:0 12px 40px rgba(0,0,0,0.6);min-width:210px; }
-  .mtg-style-pop-title { font-size:10px;font-weight:700;color:rgba(200,165,60,0.6);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:9px; }
+  .mtg-style-pop { position:fixed;z-index:3100;background:#1c2a0d;border:1px solid rgba(201,168,76,0.35);border-radius:14px;padding:14px 14px 12px;box-shadow:0 12px 40px rgba(0,0,0,0.6);min-width:210px; }
+  .mtg-style-pop-title { font-size:10px;font-weight:700;color:rgba(201,168,76,0.6);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:9px; }
   .mtg-style-swatches { display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:4px; }
   .mtg-style-swatch { width:24px;height:24px;border-radius:7px;cursor:pointer;border:2px solid transparent;transition:all 0.12s;position:relative; }
   .mtg-style-swatch:hover { transform:scale(1.18);border-color:rgba(255,255,255,0.5); }
@@ -1100,7 +1100,7 @@
   .vac-table .vac-name-col { width: 140px; text-align: left; padding: 4px 8px; font-size: 12px; font-weight: 600; color: var(--text); }
   .vac-cell { width: 28px; height: 28px; border-radius: 3px; cursor: pointer; position: relative; }
   .vac-cell:hover { background: rgba(255,255,255,0.08) !important; }
-  .vac-cell.vac-day { background: rgba(200,165,60,0.35) !important; border-radius: 0; }
+  .vac-cell.vac-day { background: rgba(201,168,76,0.35) !important; border-radius: 0; }
   .vac-cell.vac-start { border-radius: 6px 0 0 6px !important; }
   .vac-cell.vac-end { border-radius: 0 6px 6px 0 !important; }
   .vac-cell.vac-single { border-radius: 6px !important; }
@@ -1112,11 +1112,11 @@
     background: var(--surface2); border: 1px solid var(--border); border-radius: 7px;
     padding: 6px 10px; color: var(--text); font-size: 12px; font-family: inherit; outline: none;
   }
-  .vac-add-form input:focus, .vac-add-form select:focus { border-color: rgba(200,165,60,0.4); }
+  .vac-add-form input:focus, .vac-add-form select:focus { border-color: rgba(201,168,76,0.4); }
   .vac-entry-list { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
   .vac-entry-chip {
     display: flex; align-items: center; gap: 7px; padding: 5px 10px;
-    background: rgba(200,165,60,0.1); border: 1px solid rgba(200,165,60,0.25); border-radius: 8px;
+    background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.25); border-radius: 8px;
     font-size: 12px; color: var(--text);
   }
   .vac-entry-chip .av { width: 20px; height: 20px; font-size: 8px; flex-shrink: 0; }
@@ -1347,7 +1347,7 @@
       <button class="btn btn-ghost" onclick="closeVacView()" style="margin-left:auto">✕ Zavřít</button>
     </div>
     <!-- Upcoming duties banner -->
-    <div id="upcomingDuties" style="padding:8px 16px;background:rgba(200,165,60,0.06);border-bottom:1px solid var(--border);flex-shrink:0;min-height:36px;display:flex;align-items:center"></div>
+    <div id="upcomingDuties" style="padding:8px 16px;background:rgba(201,168,76,0.06);border-bottom:1px solid var(--border);flex-shrink:0;min-height:36px;display:flex;align-items:center"></div>
     <!-- Calendar -->
     <div style="flex:1;overflow:auto;padding:12px 16px">
       <div id="vacCalWrap" style="min-width:max-content"></div>
@@ -1935,7 +1935,7 @@ if (!state.meetingVersions) state.meetingVersions = [];
 if (!state.autoVersionConfig) state.autoVersionConfig = { dayOfWeek: 1, hour: 23, minute: 59 }; // Monday 23:59
 if (!state.vacLegend || !state.vacLegend.length) state.vacLegend = [
   { key:'S', label:'Služba',   color:'#c0392b', textColor:'#fff'    },
-  { key:'D', label:'Dovolená', color:'#e6a817', textColor:'#1a1a00' },
+  { key:'D', label:'Dovolená', color:'#C9A84C', textColor:'#1a1a00' },
 ];
 
 // Migrate old state without projects
@@ -2171,8 +2171,8 @@ async function renderTeamBar() {
       ? `<button onclick="removeTeamMember(${m.id})" style="background:none;border:none;color:rgba(255,100,80,0.5);font-size:14px;cursor:pointer;padding:0 3px;margin-left:4px;line-height:1;transition:color 0.15s" onmouseover="this.style.color='#ff6b60'" onmouseout="this.style.color='rgba(255,100,80,0.5)'">✕</button>`
       : '';
     const roleEl = canEdit
-      ? `<select onchange="changeTeamMemberRole(${m.id},this.value)" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:rgba(200,165,60,0.8);font-size:11px;padding:2px 5px;margin-left:4px;cursor:pointer;outline:none"><option value="admin" ${m.role==='admin'?'selected':''}>admin</option><option value="member" ${m.role==='member'?'selected':''}>member</option><option value="viewer" ${m.role==='viewer'?'selected':''}>viewer</option></select>`
-      : `<span style="font-size:11px;color:rgba(200,165,60,0.5);margin-left:4px">${m.role ? '· '+m.role : ''}</span>`;
+      ? `<select onchange="changeTeamMemberRole(${m.id},this.value)" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:rgba(201,168,76,0.8);font-size:11px;padding:2px 5px;margin-left:4px;cursor:pointer;outline:none"><option value="admin" ${m.role==='admin'?'selected':''}>admin</option><option value="member" ${m.role==='member'?'selected':''}>member</option><option value="viewer" ${m.role==='viewer'?'selected':''}>viewer</option></select>`
+      : `<span style="font-size:11px;color:rgba(201,168,76,0.5);margin-left:4px">${m.role ? '· '+m.role : ''}</span>`;
     ch.innerHTML = `<div class="avatar" style="background:${c}">${ini(m.name)}</div>${escHtml(m.name)}${roleEl}${delBtn}`;
     drop.appendChild(ch);
   });
@@ -2183,7 +2183,7 @@ async function renderTeamBar() {
     invSep.style = 'width:100%;height:1px;background:rgba(255,255,255,0.08);margin:8px 0 4px';
     drop.appendChild(invSep);
     const invLabel = document.createElement('div');
-    invLabel.style = 'font-size:10px;font-weight:700;color:rgba(200,165,60,0.45);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;width:100%';
+    invLabel.style = 'font-size:10px;font-weight:700;color:rgba(201,168,76,0.45);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;width:100%';
     invLabel.textContent = 'Historie pozvánek';
     drop.appendChild(invLabel);
     apiInvitations.forEach(inv => {
@@ -2193,7 +2193,7 @@ async function renderTeamBar() {
       ch.style = `opacity:${isPending ? '0.7' : '0.9'};width:100%`;
       const sentDate = new Date(inv.created_at).toLocaleDateString('cs-CZ');
       const iconStyle = isPending
-        ? 'border:1.5px dashed rgba(200,165,60,0.4)'
+        ? 'border:1.5px dashed rgba(201,168,76,0.4)'
         : 'border:1.5px solid rgba(90,180,100,0.5);color:rgba(90,180,100,0.9)';
       const icon = isPending ? '✉' : '✓';
       const statusHtml = isPending
@@ -2202,7 +2202,7 @@ async function renderTeamBar() {
       const cancelBtn = isPending
         ? `<button onclick="cancelTeamInvite(${inv.id})" style="background:none;border:none;color:rgba(255,100,80,0.45);font-size:14px;cursor:pointer;padding:0 3px;margin-left:4px;line-height:1" onmouseover="this.style.color='#ff6b60'" onmouseout="this.style.color='rgba(255,100,80,0.45)'" title="Zrušit pozvánku">✕</button>`
         : '';
-      ch.innerHTML = `<div style="width:22px;height:22px;border-radius:5px;${iconStyle};display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">${icon}</div><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(inv.invited_email)}</span><span style="font-size:10px;color:rgba(200,165,60,0.45);white-space:nowrap;margin-left:4px">· ${inv.role}</span>${statusHtml}<span style="font-size:10px;color:rgba(255,255,255,0.25);white-space:nowrap;margin-left:4px">${sentDate}</span>${cancelBtn}`;
+      ch.innerHTML = `<div style="width:22px;height:22px;border-radius:5px;${iconStyle};display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">${icon}</div><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(inv.invited_email)}</span><span style="font-size:10px;color:rgba(201,168,76,0.45);white-space:nowrap;margin-left:4px">· ${inv.role}</span>${statusHtml}<span style="font-size:10px;color:rgba(255,255,255,0.25);white-space:nowrap;margin-left:4px">${sentDate}</span>${cancelBtn}`;
       drop.appendChild(ch);
     });
   }
@@ -2221,7 +2221,7 @@ async function renderTeamBar() {
         <option value="admin">Admin</option>
         <option value="viewer">Zobrazit</option>
       </select>
-      <button onclick="sendTeamInvite()" style="padding:5px 12px;background:linear-gradient(180deg,#c9922a 0%,#a87420 100%);border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Pozvat</button>`;
+      <button onclick="sendTeamInvite()" style="padding:5px 12px;background:linear-gradient(180deg,#C9A84C 0%,#A88A42 100%);border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Pozvat</button>`;
     drop.appendChild(inviteWrap);
     const msgDiv = document.createElement('div');
     msgDiv.id = 'teamInviteMsg';
@@ -2279,7 +2279,7 @@ async function sendTeamInvite() {
     const besixUrl = 'https://besix.cz';
     if (msgEl) msgEl.innerHTML = `<span style="color:#ff9800">Uživatel <strong>${escHtml(data.email||email)}</strong> není registrován do platformy BESIX. Pozvěte ho nejprve na platformu besix.cz <a href="${besixUrl}" target="_blank" rel="noopener" style="color:#2196f3;text-decoration:underline">Přejít na besix.cz →</a></span>`;
   } else if (data.success) {
-    if (msgEl) msgEl.innerHTML = `<span style="color:rgba(210,185,70,0.9)">✓ ${escHtml(data.message || 'Odesláno')}</span>`;
+    if (msgEl) msgEl.innerHTML = `<span style="color:rgba(212,184,92,0.9)">✓ ${escHtml(data.message || 'Odesláno')}</span>`;
     if (emailEl) emailEl.value = '';
     setTimeout(() => renderTeamBar(), 1500);
   } else {
@@ -2396,7 +2396,7 @@ function renderBoard() {
             <div style="width:7px;height:7px;border-radius:50%;background:${col.color};flex-shrink:0"></div>
             <span style="flex:1;font-size:12px;color:rgba(255,255,255,0.45);font-weight:600">${col.title}</span>
             <span style="font-size:11px;color:rgba(255,255,255,0.25)">${cnt} karet</span>
-            <button onclick="restoreColumn('${col.id}')" style="background:rgba(200,165,60,0.15);border:1px solid rgba(200,165,60,0.3);border-radius:6px;color:rgba(200,165,60,0.8);font-size:11px;font-weight:600;padding:3px 9px;cursor:pointer;white-space:nowrap">Obnovit</button>
+            <button onclick="restoreColumn('${col.id}')" style="background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);border-radius:6px;color:rgba(201,168,76,0.8);font-size:11px;font-weight:600;padding:3px 9px;cursor:pointer;white-space:nowrap">Obnovit</button>
           </div>`;
         }).join('')}
       </div>`;
@@ -3307,7 +3307,7 @@ async function openBackupModal() {
           <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px;font-size:12px">
             <span style="flex:1;color:var(--text)">${new Date(b.saved_at).toLocaleString('cs-CZ')}</span>
             <span style="color:var(--muted)">${b.columns_count} sl. / ${b.cards_count} karet</span>
-            <button onclick="restoreServerBackup(${b.id})" style="padding:3px 10px;background:rgba(200,165,60,0.15);border:1px solid rgba(200,165,60,0.35);border-radius:6px;color:rgba(200,165,60,0.9);font-size:11px;font-weight:700;cursor:pointer">Obnovit</button>
+            <button onclick="restoreServerBackup(${b.id})" style="padding:3px 10px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.35);border-radius:6px;color:rgba(201,168,76,0.9);font-size:11px;font-weight:700;cursor:pointer">Obnovit</button>
           </div>`).join('');
     } else {
       serverEl.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Žádné serverové zálohy.</div>';
@@ -3324,7 +3324,7 @@ async function openBackupModal() {
       <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px;font-size:12px">
         <span style="flex:1;color:var(--text)">${new Date(b.ts).toLocaleString('cs-CZ')}</span>
         <span style="color:var(--muted)">${b.columns.length} sl. / ${b.cards.length} karet</span>
-        <button onclick="restoreLocalBackup('${projectId}',${i});closeModal('backupModal')" style="padding:3px 10px;background:rgba(200,165,60,0.15);border:1px solid rgba(200,165,60,0.35);border-radius:6px;color:rgba(200,165,60,0.9);font-size:11px;font-weight:700;cursor:pointer">Obnovit</button>
+        <button onclick="restoreLocalBackup('${projectId}',${i});closeModal('backupModal')" style="padding:3px 10px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.35);border-radius:6px;color:rgba(201,168,76,0.9);font-size:11px;font-weight:700;cursor:pointer">Obnovit</button>
       </div>`).join('');
   } else {
     localEl.innerHTML = '<div style="font-size:12px;color:var(--muted)">Žádné lokální zálohy (vytvoří se automaticky při příštím uložení).</div>';
@@ -4394,7 +4394,7 @@ async function bootAuth() {
 }
 
 // ── Board background picker ────────────────────────────────────────────────
-const BOARD_BG_COLORS = ['#4a5240','#2e3a2a','#1e2d3a','#2a1e3a','#3a1e1e','#1e3a2e','#2a2e1e','#1a2232','#2d2010','#3a2e1a','#1e2820','#2a2010'];
+const BOARD_BG_COLORS = ['#4A5340','#2e3a2a','#1e2d3a','#2a1e3a','#3a1e1e','#1e3a2e','#2a2e1e','#1a2232','#2d2010','#3a2e1a','#1e2820','#2a2010'];
 
 function applyBgImage(url) {
   const appEl = document.getElementById('app');
@@ -4690,7 +4690,7 @@ function showToast(msg) {
   if (!t) {
     t = document.createElement('div');
     t.id = 'poradyToast';
-    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2a3d10;border:1px solid rgba(200,165,60,0.4);color:var(--gold);font-size:13px;font-weight:600;padding:9px 18px;border-radius:8px;z-index:2000;transition:opacity 0.3s;pointer-events:none';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2a3d10;border:1px solid rgba(201,168,76,0.4);color:var(--gold);font-size:13px;font-weight:600;padding:9px 18px;border-radius:8px;z-index:2000;transition:opacity 0.3s;pointer-events:none';
     document.body.appendChild(t);
   }
   t.textContent = msg; t.style.opacity = '1';
@@ -4960,7 +4960,7 @@ function renderMeetingDetail() {
     </div>`;
   }
 
-  const _MTG_PALETTE = [null,'#c8a53c','#2196f3','#4caf50','#f44336','#9c27b0','#ff9800','#00bcd4','#e91e63','#009688','#607d8b','#795548'];
+  const _MTG_PALETTE = [null,'#C9A84C','#2196f3','#4caf50','#f44336','#9c27b0','#ff9800','#00bcd4','#e91e63','#009688','#607d8b','#795548'];
 
   (src.agenda||[]).forEach((ag, idx) => {
     const ungrouped = (ag.tasks||[]).filter(t => !t.groupId);
@@ -5109,7 +5109,7 @@ function renameMtgGroup(agIdx, grpId, spanEl) {
 }
 
 // ── Style picker ──────────────────────────────────────────────────────────────
-const _MTG_PALETTE_GLOBAL = [null,'#c8a53c','#2196f3','#4caf50','#f44336','#9c27b0','#ff9800','#00bcd4','#e91e63','#009688','#607d8b','#795548'];
+const _MTG_PALETTE_GLOBAL = [null,'#C9A84C','#2196f3','#4caf50','#f44336','#9c27b0','#ff9800','#00bcd4','#e91e63','#009688','#607d8b','#795548'];
 
 function openMtgStylePicker(event, type, agIdx, grpId) {
   event.stopPropagation();
@@ -5149,7 +5149,7 @@ function openMtgStylePicker(event, type, agIdx, grpId) {
     <div class="mtg-style-swatches">${swatches}</div>
     <div class="mtg-style-custom">
       <label>Vlastní:</label>
-      <input type="color" value="${cur||'#c8a53c'}"
+      <input type="color" value="${cur||'#C9A84C'}"
         onchange="_mtgPickColor(event,'${type}',${agIdx},'${grpId||''}',this.value)">
     </div>
     ${fsSection}`;
@@ -5378,7 +5378,7 @@ function startRenameMtgTask(spanEl, agIdx, taskId) {
   const inp = document.createElement('input');
   inp.className = 'cl-text';
   inp.value = cur;
-  inp.style.cssText = 'background:rgba(255,255,255,0.08);border:1px solid rgba(200,165,60,0.5);border-radius:4px;padding:2px 6px;min-width:80px;font-family:inherit;font-size:inherit;color:var(--text)';
+  inp.style.cssText = 'background:rgba(255,255,255,0.08);border:1px solid rgba(201,168,76,0.5);border-radius:4px;padding:2px 6px;min-width:80px;font-family:inherit;font-size:inherit;color:var(--text)';
   const commit = () => {
     const v = inp.value.trim();
     if (v && v !== cur) { task.text = v; saveMeetingState(); }
@@ -5566,7 +5566,7 @@ function editPhaseLabel(el, phaseId) {
   if (!ph) return;
   const inp = document.createElement('input');
   inp.value = ph.name;
-  inp.style.cssText = 'width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(200,165,60,0.5);border-radius:4px;padding:2px 6px;color:var(--text);font-size:12px;font-weight:600;font-family:inherit;outline:none';
+  inp.style.cssText = 'width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(201,168,76,0.5);border-radius:4px;padding:2px 6px;color:var(--text);font-size:12px;font-weight:600;font-family:inherit;outline:none';
   const save = () => {
     const v = inp.value.trim();
     if (v) { ph.name = v; saveMeetingState(); }
@@ -6033,7 +6033,7 @@ function renderVacCalendar() {
     html += `<th style="position:sticky;left:0;z-index:3;background:#1a2a0e;width:${NAME_W}px;min-width:${NAME_W}px;border:1px solid rgba(255,255,255,0.08)"></th>`;
     for (const m of pairMonths) {
       const days = daysInMonth(yr, m);
-      html += `<th colspan="${days}" style="background:rgba(200,165,60,0.1);border:1px solid rgba(255,255,255,0.12);padding:4px 8px;text-align:center;font-weight:700;color:var(--gold);letter-spacing:0.04em;font-size:12px">${_MONTHS_CS[m]} ${yr}</th>`;
+      html += `<th colspan="${days}" style="background:rgba(201,168,76,0.1);border:1px solid rgba(255,255,255,0.12);padding:4px 8px;text-align:center;font-weight:700;color:var(--gold);letter-spacing:0.04em;font-size:12px">${_MONTHS_CS[m]} ${yr}</th>`;
     }
     html += '</tr>';
 
@@ -6137,7 +6137,7 @@ function getVacLegend() {
   if (!state.vacLegend || !state.vacLegend.length) {
     state.vacLegend = [
       { key:'S', label:'Služba',   color:'#c0392b', textColor:'#fff'    },
-      { key:'D', label:'Dovolená', color:'#e6a817', textColor:'#1a1a00' },
+      { key:'D', label:'Dovolená', color:'#C9A84C', textColor:'#1a1a00' },
     ];
   }
   return state.vacLegend;
@@ -6170,7 +6170,7 @@ function openVacLegendEdit(idx) {
 
   const pop = document.createElement('div');
   pop.id = '_vacLegPop';
-  pop.style.cssText = 'position:fixed;z-index:9999;background:#1e2a10;border:1px solid rgba(200,165,60,0.35);border-radius:13px;box-shadow:0 10px 36px rgba(0,0,0,0.65);padding:16px 18px;min-width:250px';
+  pop.style.cssText = 'position:fixed;z-index:9999;background:#1e2a10;border:1px solid rgba(201,168,76,0.35);border-radius:13px;box-shadow:0 10px 36px rgba(0,0,0,0.65);padding:16px 18px;min-width:250px';
 
   pop.innerHTML = `
     <div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:12px">Upravit položku legendy</div>
@@ -6207,7 +6207,7 @@ function openVacLegendEdit(idx) {
         <button onclick="document.getElementById('_vacLegPop')?.remove()"
           style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;padding:5px 12px;cursor:pointer;font-family:inherit">Zrušit</button>
         <button onclick="saveVacLegendEdit(${idx})"
-          style="background:rgba(200,165,60,0.15);border:1px solid rgba(200,165,60,0.4);border-radius:6px;color:var(--gold);font-size:11px;padding:5px 12px;cursor:pointer;font-family:inherit;font-weight:600">Uložit</button>
+          style="background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);border-radius:6px;color:var(--gold);font-size:11px;padding:5px 12px;cursor:pointer;font-family:inherit;font-weight:600">Uložit</button>
       </div>
     </div>`;
 
@@ -6369,7 +6369,7 @@ function pwaInstall() {
 
 <button id="pwaInstallBtn" onclick="pwaInstall()"
         style="display:none;position:fixed;right:16px;bottom:16px;z-index:9999;
-               background:#c9922a;color:#1e2710;border:none;border-radius:24px;
+               background:#C9A84C;color:#1e2710;border:none;border-radius:24px;
                padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer;
                box-shadow:0 4px 16px rgba(0,0,0,.4);align-items:center;gap:8px">
   ⬇ Nainstalovat

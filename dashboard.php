@@ -24,13 +24,13 @@
   /* ── ACTIONS BAR ── */
   .actions{display:flex;gap:10px;margin-bottom:36px;flex-wrap:wrap}
   .btn-action{display:flex;align-items:center;gap:7px;padding:10px 18px;border-radius:9px;font-size:14px;font-family:'Montserrat',sans-serif;font-weight:600;cursor:pointer;border:none;transition:all 0.15s}
-  .btn-action.primary{background:linear-gradient(180deg,#c9922a 0%,#a87420 100%);color:#fff;box-shadow:0 2px 10px rgba(160,100,10,0.3)}
+  .btn-action.primary{background:linear-gradient(180deg,#C9A84C 0%,#A88A42 100%);color:#fff;box-shadow:0 2px 10px rgba(168,138,66,0.3)}
   .btn-action.secondary{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.1)}
   .btn-action:hover{opacity:0.88;transform:translateY(-1px)}
   /* ── APP SECTION ── */
   .app-section{margin-bottom:40px}
   .app-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-  .app-badge{background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.25);color:rgba(200,160,50,0.9);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:0.06em}
+  .app-badge{background:rgba(107,128,60,0.15);border:1px solid rgba(107,128,60,0.25);color:rgba(201,168,76,0.9);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:0.06em}
   .app-name{font-family:'Montserrat',sans-serif;font-size:18px;font-weight:700;color:rgba(255,255,255,0.85)}
   /* ── GRID ── */
   .projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
@@ -47,7 +47,7 @@
   .role-pill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;text-transform:capitalize}
   .role-owner{background:rgba(255,159,10,0.15);color:rgba(255,195,80,0.9);border:1px solid rgba(255,159,10,0.25)}
   .role-admin{background:rgba(10,132,255,0.12);color:rgba(80,170,255,0.9);border:1px solid rgba(10,132,255,0.25)}
-  .role-member{background:rgba(107,128,60,0.12);color:rgba(200,160,50,0.9);border:1px solid rgba(107,128,60,0.25)}
+  .role-member{background:rgba(107,128,60,0.12);color:rgba(201,168,76,0.9);border:1px solid rgba(107,128,60,0.25)}
   .role-viewer{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1)}
   .member-count{font-size:12px;color:rgba(255,255,255,0.35)}
   /* ── NEW PROJECT CARD ── */
@@ -71,7 +71,7 @@
   .color-swatch.sel{border-color:#fff}
   .modal-btns{display:flex;gap:10px;margin-top:20px}
   .btn-cancel{flex:1;padding:11px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.7);font-size:14px;cursor:pointer}
-  .btn-create{flex:2;padding:11px;background:linear-gradient(180deg,#c9922a 0%,#a87420 100%);border:none;border-radius:8px;color:#fff;font-size:14px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer}
+  .btn-create{flex:2;padding:11px;background:linear-gradient(180deg,#C9A84C 0%,#A88A42 100%);border:none;border-radius:8px;color:#fff;font-size:14px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer}
   /* ── JOIN MODAL ── */
   .notice{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px}
   .notice.error{background:rgba(255,59,48,0.12);border:1px solid rgba(255,59,48,0.25);color:#ff6b60}
@@ -95,7 +95,7 @@
   .invite-row input:focus{border-color:rgba(107,128,60,0.6)}
   .invite-role-sel{padding:9px 10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:13px;font-family:'Montserrat',sans-serif;outline:none}
   .invite-role-sel option{background:#1e2d10}
-  .btn-invite{padding:9px 16px;background:linear-gradient(180deg,#c9922a 0%,#a87420 100%);border:none;border-radius:8px;color:#fff;font-size:13px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;white-space:nowrap}
+  .btn-invite{padding:9px 16px;background:linear-gradient(180deg,#C9A84C 0%,#A88A42 100%);border:none;border-radius:8px;color:#fff;font-size:13px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;white-space:nowrap}
   .members-list{max-height:240px;overflow-y:auto;margin-bottom:4px}
   @media(max-width:640px){
     nav{padding:0 14px}
@@ -200,7 +200,7 @@
 </div>
 
 <script>
-const BG_COLORS = ['#4a5240','#2e3a2a','#1e2d3a','#2a1e3a','#3a1e1e','#1e3a2e','#2a2e1e','#1a2232','#2d2010','#3a2e1a'];
+const BG_COLORS = ['#4A5340','#2e3a2a','#1e2d3a','#2a1e3a','#3a1e1e','#1e3a2e','#2a2e1e','#1a2232','#2d2010','#3a2e1a'];
 let selColor = BG_COLORS[0];
 let currentUser = null;
 
@@ -288,14 +288,14 @@ function projectCard(p, appKey) {
   const hasBgImg  = !!p.bg_image;
   const cardStyle = hasBgImg
     ? `background-image:url('${p.bg_image}');`
-    : `border-left:3px solid ${p.bg_color || '#4a5240'}`;
+    : `border-left:3px solid ${p.bg_color || '#4A5340'}`;
   return `
     <div style="position:relative">
       <a class="project-card${hasBgImg?' has-bg-img':''}" href="${href}" style="${cardStyle}">
         ${hasBgImg ? '<div class="card-overlay"></div>' : ''}
         <div class="${hasBgImg?'card-content':''}">
           <div class="project-card-name">
-            ${!hasBgImg ? `<span class="project-card-color" style="background:${p.bg_color || '#4a5240'}"></span>` : ''}
+            ${!hasBgImg ? `<span class="project-card-color" style="background:${p.bg_color || '#4A5340'}"></span>` : ''}
             ${escHtml(p.name)}
           </div>
           <div class="project-card-desc">${escHtml(p.description || '')}</div>
@@ -444,7 +444,7 @@ async function loadMembers() {
 
   // Invitation history (pending + accepted)
   if (canManage && data.invitations && data.invitations.length) {
-    html += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);font-size:11px;font-weight:700;color:rgba(200,165,60,0.5);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Historie pozvánek</div>`;
+    html += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);font-size:11px;font-weight:700;color:rgba(201,168,76,0.5);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Historie pozvánek</div>`;
     html += data.invitations.map(inv => {
       const sentDate = new Date(inv.created_at).toLocaleDateString('cs-CZ');
       const isPending = inv.status === 'pending';
@@ -454,7 +454,7 @@ async function loadMembers() {
         ? `<button class="btn-remove-member" onclick="cancelInvite(${inv.id})" title="Zrušit pozvánku">✕</button>`
         : '';
       return `<div class="member-row" style="opacity:${isPending ? '0.75' : '0.9'}">
-        <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.06);border:1.5px ${isPending ? 'dashed rgba(200,165,60,0.35)' : 'solid rgba(90,180,100,0.3)'};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${isPending ? '✉' : '✓'}</div>
+        <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.06);border:1.5px ${isPending ? 'dashed rgba(201,168,76,0.35)' : 'solid rgba(90,180,100,0.3)'};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${isPending ? '✉' : '✓'}</div>
         <div class="member-info">
           <strong style="color:rgba(255,255,255,0.7)">${escHtml(inv.invited_email)}</strong>
           <span style="color:${statusColor}">${statusLabel} · ${sentDate}</span>

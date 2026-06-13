@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS `board_projects` (
   `description` TEXT             NULL,
   `created_by`  INT UNSIGNED NOT NULL,
   `invite_code` VARCHAR(32)  NOT NULL,
-  `bg_color`    VARCHAR(10)      NULL DEFAULT '#4a5240',
+  `bg_color`    VARCHAR(10)      NULL DEFAULT '#4A5340',
   `bg_image`    VARCHAR(500)     NULL DEFAULT NULL,
   `is_active`   TINYINT(1)   NOT NULL DEFAULT 1,
   `created_at`  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
