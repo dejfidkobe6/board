@@ -414,6 +414,45 @@
     .column { width: 250px; }
   }
 
+  /* Hamburger menu — visible only on mobile / landscape phone */
+  .mobile-menu-btn {
+    display: none;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.85);
+    font-size: 18px; line-height: 1;
+    width: 36px; height: 36px; border-radius: 9px;
+    cursor: pointer; padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-menu-btn:hover { background: rgba(255,255,255,0.12); }
+  .mobile-menu-dropdown {
+    display: none;
+    position: fixed; top: 56px; right: 8px;
+    min-width: 220px; max-width: calc(100vw - 16px);
+    background: rgba(28,35,22,0.97);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    z-index: 600;
+    padding: 6px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .mobile-menu-dropdown.open { display: flex; flex-direction: column; gap: 2px; }
+  .mobile-menu-dropdown button {
+    background: transparent; border: none; color: rgba(255,255,255,0.88);
+    font-family: inherit; font-size: 14px; font-weight: 500;
+    text-align: left; padding: 11px 14px; border-radius: 8px;
+    cursor: pointer; width: 100%; display: flex; align-items: center; gap: 8px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-menu-dropdown button:hover,
+  .mobile-menu-dropdown button:active { background: rgba(255,255,255,0.08); }
+  @media (max-width: 640px), (orientation: landscape) and (max-height: 540px) {
+    .mobile-menu-btn { display: inline-flex; align-items: center; justify-content: center; }
+  }
+
   /* Mobile pill button — opens task panel */
   .mobile-sheet-btn {
     display: none;
@@ -1225,6 +1264,9 @@
       <button class="btn btn-ghost" id="backupRestoreBtn" onclick="openBackupModal()" title="Zálohy a obnova dat" style="display:none">🗄 Zálohy</button>
       <button class="btn btn-ghost" onclick="openExportModal()">📊 Export Excel <span class="export-badge" id="exportBadge" style="display:none">0</span></button>
       <button class="btn btn-primary" onclick="openAddCard()">+ Přidat kartu</button>
+      <!-- Hamburger menu — collects all .btn-ghost actions for mobile -->
+      <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileMenu(event)" aria-label="Menu">☰</button>
+      <div class="mobile-menu-dropdown" id="mobileMenuDropdown"></div>
       <span id="syncDot" title="Synchronizováno" style="width:8px;height:8px;border-radius:50%;background:#36d87c;display:inline-block;flex-shrink:0;margin:0 2px;transition:background 0.3s"></span>
       <div class="current-user" onclick="logout()">
         <div class="av" id="cuAv"></div>
@@ -6250,6 +6292,49 @@ function addVacLegendItem() {
   saveMeetingState(); renderVacLegend();
   openVacLegendEdit(legend.length - 1);
 }
+
+// ── MOBILE HAMBURGER MENU ───────────────────────────────────────────────────
+// Hides under ☰ all the header actions that the mobile media query collapses
+// (Projekty, Porady, Dovolené, Pozadí, Zálohy, Export). Each menu entry
+// triggers the same handler as the original button so we don't fork logic;
+// visibility is synced from the original (display:none means hidden in menu).
+function toggleMobileMenu(ev) {
+  if (ev) ev.stopPropagation();
+  const dd = document.getElementById('mobileMenuDropdown');
+  if (!dd) return;
+  if (dd.classList.contains('open')) { dd.classList.remove('open'); return; }
+
+  // Build the menu items from the original header buttons.
+  // [labelEmoji+text, srcSelector (for visibility check), clickFn]
+  const items = [
+    ['◈ Všechny projekty',  null,                'goToProjects()'],
+    ['📋 Porady',           '#poradyNavBtn',     'openPoradyView()'],
+    ['🏖 Dovolené',         '#vacNavBtn',        'openVacView()'],
+    ['🎨 Barva pozadí',     '#bgPickerWrap',     'toggleBgPicker(event)'],
+    ['🗄 Zálohy',           '#backupRestoreBtn', 'openBackupModal()'],
+    ['📊 Export Excel',     null,                'openExportModal()'],
+  ];
+  dd.innerHTML = items.map(([label, sel, fn]) => {
+    if (sel) {
+      const el = document.querySelector(sel);
+      if (!el || el.style.display === 'none') return '';
+    }
+    return `<button type="button" onclick="closeMobileMenu();${fn}">${label}</button>`;
+  }).join('');
+  dd.classList.add('open');
+}
+function closeMobileMenu() {
+  const dd = document.getElementById('mobileMenuDropdown');
+  if (dd) dd.classList.remove('open');
+}
+// Click outside closes
+document.addEventListener('click', (e) => {
+  const dd = document.getElementById('mobileMenuDropdown');
+  const btn = document.getElementById('mobileMenuBtn');
+  if (!dd || !dd.classList.contains('open')) return;
+  if (dd.contains(e.target) || (btn && btn.contains(e.target))) return;
+  dd.classList.remove('open');
+});
 
 // ── INIT ───────────────────────────────────────────────────────────────────
 bootAuth();
