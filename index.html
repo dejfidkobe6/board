@@ -285,7 +285,8 @@
   .besix-logo-nav    { height: 26px; width: auto; display: block; }
   .besix-logo-header { height: 30px; width: auto; }
   /* ── MOBILE ── */
-  @media (max-width: 640px) {
+  /* Platí i pro landscape s nízkou výškou — mobil v ležaté poloze. */
+  @media (max-width: 640px), (orientation: landscape) and (max-height: 540px) {
     /* Header */
     header { height: 48px; padding: 0 12px; }
     .header-right { gap: 4px; }
@@ -297,28 +298,28 @@
     /* App body: full height (pill button is position:fixed, not in flow) */
     .app-body { height: calc(100dvh - 84px) !important; height: calc(100vh - 84px) !important; overflow: hidden; }
 
-    /* Board: horizontal snap-scroll, columns at natural height */
+    /* Board: full-bleed snap-scroll, one column per viewport */
     #board {
       height: 100% !important;
-      padding: 10px 0 10px 10px !important;
-      gap: 8px !important;
+      padding: 10px 0 !important;
+      gap: 0 !important;
       overflow-x: auto !important;
       overflow-y: hidden !important;
       scroll-snap-type: x mandatory;
-      scroll-padding-left: 10px;
+      scroll-padding-left: 0 !important;
       -webkit-overflow-scrolling: touch;
       display: flex !important;
       align-items: flex-start !important;
     }
 
-    /* Columns: natural height, capped */
+    /* Columns: take full viewport width, scroll vertically inside */
     .column {
       flex-shrink: 0 !important;
-      width: calc(100vw - 65px) !important;
+      width: 100vw !important;
       height: auto !important;
       max-height: calc(100dvh - 108px) !important;
       max-height: calc(100vh - 108px) !important;
-      border-radius: 12px !important;
+      border-radius: 0 !important;
       scroll-snap-align: start;
     }
 
@@ -368,7 +369,7 @@
     .task-panel-body { overflow-x: hidden !important; }
     .task-panel-body-inner { overflow-x: hidden !important; width: 100%; box-sizing: border-box; }
 
-    /* Modals: full-width bottom sheet */
+    /* Modals: full-width bottom sheet, tighter padding so text doesn't truncate */
     .modal-overlay {
       padding: 0 !important;
       align-items: flex-end !important;
@@ -380,13 +381,18 @@
       border-radius: 18px 18px 0 0 !important;
       margin: 0 !important;
     }
+    .modal-scroll {
+      padding: 18px 14px !important;
+      overflow-x: hidden !important;
+    }
+    .modal h2, .detail-title { padding-right: 40px; }
 
     /* Project screen */
     .ps-body { padding: 16px 12px; }
     .ps-grid { grid-template-columns: 1fr; gap: 10px; }
     .project-card-new { min-height: 100px; padding: 24px 16px; }
   }
-  @media (min-width: 641px) and (max-width: 1024px) {
+  @media (min-width: 641px) and (max-width: 1024px) and (orientation: portrait) {
     .board { padding: 14px 16px; }
     .column { width: 250px; }
   }
@@ -404,9 +410,20 @@
     cursor: pointer; z-index: 501; gap: 7px; white-space: nowrap;
     box-shadow: 0 4px 24px rgba(0,0,0,0.55);
     -webkit-tap-highlight-color: transparent;
+    opacity: 1;
+    transition: opacity 0.3s cubic-bezier(0.4,0,0.2,1),
+                transform 0.3s cubic-bezier(0.4,0,0.2,1);
   }
   .mobile-sheet-btn:active { transform: translateX(-50%) scale(0.96); }
-  @media (max-width: 640px) { .mobile-sheet-btn { display: flex; align-items: center; justify-content: center; } }
+  /* When the bottom sheet is open, button morphs down into it instead of popping away */
+  .mobile-sheet-btn.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(20px) scale(0.85);
+  }
+  @media (max-width: 640px), (orientation: landscape) and (max-height: 540px) {
+    .mobile-sheet-btn { display: flex; align-items: center; justify-content: center; }
+  }
   .mob-sheet-badge {
     min-width: 16px; height: 16px; border-radius: 8px;
     background: #e04040; color: #fff;
@@ -3522,7 +3539,7 @@ function closeMobilePanel() {
   const panel = document.getElementById('taskPanel');
   const btn   = document.getElementById('mobileTasksBtn');
   if (panel) { panel.classList.remove('mobile-open'); panel.classList.add('collapsed'); }
-  if (btn) btn.style.display = '';
+  if (btn) btn.classList.remove('is-hidden');
   setPanelWidthVar();
 }
 
@@ -3539,7 +3556,7 @@ function toggleTaskPanel() {
       const btn = document.getElementById('mobileTasksBtn');
       panel.classList.remove('collapsed');
       panel.classList.add('mobile-open');
-      if (btn) btn.style.display = 'none';
+      if (btn) btn.classList.add('is-hidden');
       renderTaskPanel();
     }
     setPanelWidthVar();
