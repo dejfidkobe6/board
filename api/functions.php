@@ -283,8 +283,8 @@ function emailTemplate(string $title, string $content): string {
         function($m) {
             $href  = htmlspecialchars($m[1], ENT_QUOTES);
             $label = htmlspecialchars_decode($m[2]);
-            return '<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="' . $href . '" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="18%" stroke="f" fillcolor="#c9922a"><w:anchorlock/><center><font color="#ffffff" face="Arial" size="3"><b>' . $label . '</b></font></center></v:roundrect><![endif]-->'
-                 . '<!--[if !mso]><!--><a href="' . $href . '" style="background-color:#c9922a;border-radius:8px;color:#ffffff !important;display:inline-block;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;padding:13px 30px;text-decoration:none;mso-hide:all;"><span style="color:#ffffff !important;">'. $label .'</span></a><!--<![endif]-->';
+            return '<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="' . $href . '" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="18%" stroke="f" fillcolor="#C9A84C"><w:anchorlock/><center><font color="#ffffff" face="Arial" size="3"><b>' . $label . '</b></font></center></v:roundrect><![endif]-->'
+                 . '<!--[if !mso]><!--><a href="' . $href . '" style="background-color:#C9A84C;border-radius:8px;color:#ffffff !important;display:inline-block;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;padding:13px 30px;text-decoration:none;mso-hide:all;"><span style="color:#ffffff !important;">'. $label .'</span></a><!--<![endif]-->';
         },
         $content
     );
@@ -297,7 +297,7 @@ function emailTemplate(string $title, string $content): string {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
-<style>body,table,td{font-family:Arial,sans-serif}a{color:#c9922a}.btn-link{color:#ffffff !important;text-decoration:none !important}</style>
+<style>body,table,td{font-family:Arial,sans-serif}a{color:#C9A84C}.btn-link{color:#ffffff !important;text-decoration:none !important}</style>
 </head>
 <body style="margin:0;padding:0;background-color:#1e2710;">
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#1e2710;">
@@ -306,7 +306,7 @@ function emailTemplate(string $title, string $content): string {
       <!-- Header -->
       <tr><td style="background-color:#2a3d10;padding:20px 32px;border-radius:10px 10px 0 0;border-bottom:1px solid #3a4a20;">
         <img src="https://board.besix.cz/assets/besix-logo.png" alt="BeSix" width="48" height="48" style="display:block;margin-bottom:10px;border:0;">
-        <span style="color:#d4a830;font-size:20px;font-weight:700;font-family:Arial,sans-serif;">BeSix Board</span>
+        <span style="color:#C9A84C;font-size:20px;font-weight:700;font-family:Arial,sans-serif;">BeSix Board</span>
       </td></tr>
       <!-- Body -->
       <tr><td style="padding:32px;">
@@ -331,5 +331,5 @@ function emailP(string $text): string {
 
 function emailBtn(string $href, string $label): string {
     $href = htmlspecialchars($href, ENT_QUOTES);
-    return '<p style="margin:20px 0;"><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="' . $href . '" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="18%" stroke="f" fillcolor="#c9922a"><w:anchorlock/><center><font color="#ffffff" face="Arial" size="3"><b>' . $label . '</b></font></center></v:roundrect><![endif]--><!--[if !mso]><!--><a href="' . $href . '" style="background-color:#c9922a;border-radius:8px;color:#ffffff !important;display:inline-block;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;padding:13px 30px;text-decoration:none;"><span style="color:#ffffff !important;">'. $label .'</span></a><!--<![endif]--></p>';
+    return '<p style="margin:20px 0;"><!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="' . $href . '" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="18%" stroke="f" fillcolor="#C9A84C"><w:anchorlock/><center><font color="#ffffff" face="Arial" size="3"><b>' . $label . '</b></font></center></v:roundrect><![endif]--><!--[if !mso]><!--><a href="' . $href . '" style="background-color:#C9A84C;border-radius:8px;color:#ffffff !important;display:inline-block;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;padding:13px 30px;text-decoration:none;"><span style="color:#ffffff !important;">'. $label .'</span></a><!--<![endif]--></p>';
 }

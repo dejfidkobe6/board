@@ -12,7 +12,7 @@
   .logo-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
   .besix-logo{width:160px;height:auto;display:block}
   .app-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px}
-  .app-title span{color:rgba(200,160,50,0.9)}
+  .app-title span{color:rgba(201,168,76,0.9)}
   .card{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:36px}
   h1{font-size:20px;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:-0.4px}
   .sub{font-size:13px;color:rgba(210,175,80,0.5);margin-bottom:24px}
@@ -25,17 +25,17 @@
   .field input{width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:#fff;font-size:15px;font-family:'Montserrat',sans-serif;transition:border-color 0.15s,background 0.15s;outline:none}
   .field input::placeholder{color:rgba(255,255,255,0.25)}
   .field input:focus{border-color:rgba(160,120,20,0.6);background:rgba(255,255,255,0.09)}
-  .btn-main{width:100%;padding:13px;background:linear-gradient(180deg,#c9922a 0%,#a87420 100%);border:none;border-radius:9px;color:#fff;font-size:15px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity 0.15s,transform 0.1s;box-shadow:0 2px 12px rgba(160,100,10,0.35)}
+  .btn-main{width:100%;padding:13px;background:linear-gradient(180deg,#C9A84C 0%,#A88A42 100%);border:none;border-radius:9px;color:#fff;font-size:15px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity 0.15s,transform 0.1s;box-shadow:0 2px 12px rgba(168,138,66,0.35)}
   .btn-main:hover{opacity:0.92;transform:translateY(-1px)}
   .btn-main:active{transform:translateY(0)}
   .divider{display:flex;align-items:center;gap:12px;margin:18px 0 0}
   .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.08)}
-  .divider span{font-size:11px;color:rgba(200,165,60,0.4);text-transform:uppercase;letter-spacing:0.1em}
+  .divider span{font-size:11px;color:rgba(201,168,76,0.4);text-transform:uppercase;letter-spacing:0.1em}
   .btn-google{width:100%;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:9px;color:rgba(255,255,255,0.8);font-size:14px;font-family:'Montserrat',sans-serif;font-weight:600;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;transition:all 0.15s}
   .btn-google:hover{background:rgba(255,255,255,0.11);border-color:rgba(255,255,255,0.24)}
   .links{margin-top:20px;text-align:center;font-size:13px;color:rgba(210,175,80,0.45)}
   .links a{color:rgba(200,155,40,0.95);text-decoration:none;font-weight:600}
-  .links a:hover{color:#d4a830}
+  .links a:hover{color:#C9A84C}
 </style>
 </head>
 <body>

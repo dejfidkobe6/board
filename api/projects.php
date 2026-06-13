@@ -44,7 +44,7 @@ if ($action === 'list') {
     $appKey = sanitize($body['app_key']     ?? '');
     $name   = sanitize($body['name']        ?? '');
     $desc   = sanitize($body['description'] ?? '');
-    $bgColor= sanitize($body['bg_color']    ?? '#4a5240');
+    $bgColor= sanitize($body['bg_color']    ?? '#4A5340');
 
     if (!$appKey) jsonResponse(['error' => 'app_key je povinný'], 422);
     if (!$name)   jsonResponse(['error' => 'Název projektu je povinný'], 422);
