@@ -388,6 +388,11 @@
     }
     .modal h2, .detail-title { padding-right: 40px; }
 
+    /* Checklist bloky: desktop má flex-basis 440px (žádný shrink), aby
+       seděly dva vedle sebe — na mobilu by ten 440px ale přesahoval
+       displej. Donutíme je smrštit se až na šířku rodiče. */
+    .cl-block { flex: 1 1 100% !important; min-width: 0 !important; }
+
     /* Project screen */
     .ps-body { padding: 16px 12px; }
     .ps-grid { grid-template-columns: 1fr; gap: 10px; }
