@@ -415,6 +415,32 @@
     .ps-body { padding: 16px 12px; }
     .ps-grid { grid-template-columns: 1fr; gap: 10px; }
     .project-card-new { min-height: 100px; padding: 24px 16px; }
+
+    /* Fullview overlay (Porady / Dovolené) — stack vertically on mobile,
+       compact header buttons so they don't overflow */
+    .fullview-header {
+      padding: 10px 12px !important;
+      gap: 6px !important;
+      flex-wrap: wrap !important;
+    }
+    .fullview-title { font-size: 14px !important; }
+    .fullview-header .btn-ghost {
+      padding: 6px 10px !important;
+      font-size: 12px !important;
+      white-space: nowrap;
+    }
+    .fullview-body { flex-direction: column !important; }
+    .porady-sidebar {
+      width: 100% !important;
+      max-height: 30vh !important;
+      border-right: none !important;
+      border-bottom: 1px solid var(--border) !important;
+    }
+    .porady-main { padding: 14px !important; gap: 16px !important; }
+    /* Gantt: shrink label column, allow bars to take available room */
+    .gantt-label { width: 90px !important; font-size: 11px !important; }
+    .gantt-add-row { gap: 6px !important; }
+    .gantt-add-row input { min-width: 0; flex: 1 1 120px; }
   }
 
   /* Portrait phone — jeden sloupec na obrazovku, gutter 8px po stranách */
