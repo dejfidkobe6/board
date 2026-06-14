@@ -112,7 +112,7 @@
 </head>
 <body>
 <nav>
-  <img src="/assets/besix-logo.png" class="besix-logo-nav">
+  <a href="https://besix.cz/" target="_blank" rel="noopener" title="besix.cz" style="display:flex;align-items:center"><img src="/assets/besix-logo.png" class="besix-logo-nav"></a>
   <div class="nav-right">
     <div class="user-chip">
       <div class="avatar" id="navAvatar"></div>
