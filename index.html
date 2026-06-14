@@ -288,13 +288,30 @@
   /* ── MOBILE ── */
   /* Platí i pro landscape s nízkou výškou — mobil v ležaté poloze. */
   @media (max-width: 640px), (orientation: landscape) and (max-height: 540px) {
-    /* Header */
+    /* Header — minimalistic on mobile: logo on the left, hamburger on the
+       right. Everything else (add card, logout, sync dot, team) moves into
+       the dropdown menu. */
     header { height: 48px; padding: 0 12px; }
     .header-right { gap: 4px; }
-    .header-right .btn-ghost { display: none; }
-    .header-right .btn-primary { padding: 7px 13px; font-size: 13px; }
+    .header-right .btn-ghost,
+    .header-right .btn-primary,
+    .header-right .current-user,
+    .header-right #syncDot,
+    .team-bar:not(.mobile-show) { display: none !important; }
     #activeProjectName { display: none; }
-    .current-user { padding: 3px 8px 3px 3px; font-size: 12px; }
+    /* When hamburger opens the team panel, anchor it as a floating sheet */
+    .team-bar.mobile-show {
+      display: block !important;
+      position: fixed; top: 56px; right: 8px;
+      left: 8px; z-index: 600;
+      background: rgba(28,35,22,0.97);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
 
     /* App body: full height (pill button is position:fixed, not in flow) */
     .app-body { height: calc(100dvh - 84px) !important; height: calc(100vh - 84px) !important; overflow: hidden; }
@@ -6308,12 +6325,15 @@ function toggleMobileMenu(ev) {
   // Build the menu items from the original header buttons.
   // [labelEmoji+text, srcSelector (for visibility check), clickFn]
   const items = [
+    ['+ Přidat kartu',      null,                'openAddCard()'],
     ['◈ Všechny projekty',  null,                'goToProjects()'],
     ['📋 Porady',           '#poradyNavBtn',     'openPoradyView()'],
     ['🏖 Dovolené',         '#vacNavBtn',        'openVacView()'],
     ['🎨 Barva pozadí',     '#bgPickerWrap',     'toggleBgPicker(event)'],
     ['🗄 Zálohy',           '#backupRestoreBtn', 'openBackupModal()'],
     ['📊 Export Excel',     null,                'openExportModal()'],
+    ['👥 Tým',              null,                'openMobileTeam()'],
+    ['↩ Odhlásit',          null,                'logout()'],
   ];
   dd.innerHTML = items.map(([label, sel, fn]) => {
     if (sel) {
@@ -6327,6 +6347,22 @@ function toggleMobileMenu(ev) {
 function closeMobileMenu() {
   const dd = document.getElementById('mobileMenuDropdown');
   if (dd) dd.classList.remove('open');
+}
+function openMobileTeam() {
+  const bar = document.getElementById('teamBar');
+  if (!bar) return;
+  bar.classList.add('mobile-show');
+  bar.classList.add('open'); // expand the dropdown of members inside
+  // Tap outside closes it
+  setTimeout(() => {
+    const off = (e) => {
+      if (bar.contains(e.target)) return;
+      bar.classList.remove('mobile-show');
+      bar.classList.remove('open');
+      document.removeEventListener('click', off, true);
+    };
+    document.addEventListener('click', off, true);
+  }, 0);
 }
 // Click outside closes
 document.addEventListener('click', (e) => {
