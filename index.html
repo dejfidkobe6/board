@@ -459,14 +459,15 @@
   }
   .mobile-menu-dropdown.open { display: flex; flex-direction: column; gap: 2px; }
   .mobile-menu-dropdown button {
-    background: transparent; border: none; color: rgba(255,255,255,0.88);
-    font-family: inherit; font-size: 14px; font-weight: 500;
-    text-align: left; padding: 11px 14px; border-radius: 8px;
-    cursor: pointer; width: 100%; display: flex; align-items: center; gap: 8px;
+    background: transparent; border: none; color: #C9A84C;
+    font-family: 'Montserrat', sans-serif; font-size: 15px; font-weight: 700;
+    letter-spacing: -0.2px;
+    text-align: left; padding: 12px 14px; border-radius: 8px;
+    cursor: pointer; width: 100%; display: block;
     -webkit-tap-highlight-color: transparent;
   }
   .mobile-menu-dropdown button:hover,
-  .mobile-menu-dropdown button:active { background: rgba(255,255,255,0.08); }
+  .mobile-menu-dropdown button:active { background: rgba(201,168,76,0.12); }
   @media (max-width: 640px), (orientation: landscape) and (max-height: 540px) {
     .mobile-menu-btn { display: inline-flex; align-items: center; justify-content: center; }
   }
@@ -6323,17 +6324,17 @@ function toggleMobileMenu(ev) {
   if (dd.classList.contains('open')) { dd.classList.remove('open'); return; }
 
   // Build the menu items from the original header buttons.
-  // [labelEmoji+text, srcSelector (for visibility check), clickFn]
+  // [label, srcSelector (for visibility check), clickFn]
   const items = [
-    ['+ Přidat kartu',      null,                'openAddCard()'],
-    ['◈ Všechny projekty',  null,                'goToProjects()'],
-    ['📋 Porady',           '#poradyNavBtn',     'openPoradyView()'],
-    ['🏖 Dovolené',         '#vacNavBtn',        'openVacView()'],
-    ['🎨 Barva pozadí',     '#bgPickerWrap',     'toggleBgPicker(event)'],
-    ['🗄 Zálohy',           '#backupRestoreBtn', 'openBackupModal()'],
-    ['📊 Export Excel',     null,                'openExportModal()'],
-    ['👥 Tým',              null,                'openMobileTeam()'],
-    ['↩ Odhlásit',          null,                'logout()'],
+    ['Přidat kartu',     null,                'openAddCard()'],
+    ['Všechny projekty', null,                'goToProjects()'],
+    ['Porady',           '#poradyNavBtn',     'openPoradyView()'],
+    ['Dovolené',         '#vacNavBtn',        'openVacView()'],
+    ['Barva pozadí',     '#bgPickerWrap',     'toggleBgPicker(event)'],
+    ['Zálohy',           '#backupRestoreBtn', 'openBackupModal()'],
+    ['Export Excel',     null,                'openExportModal()'],
+    ['Tým',              null,                'openMobileTeam()'],
+    ['Odhlásit',         null,                'logout()'],
   ];
   dd.innerHTML = items.map(([label, sel, fn]) => {
     if (sel) {
