@@ -9,8 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Montserrat',sans-serif;background:#1e2710;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-  .card{width:100%;max-width:420px;background:#16200a;border-radius:16px;padding:44px 40px;border:1px solid rgba(255,255,255,0.07)}
+  body{font-family:'Montserrat',sans-serif;background:#4A5340;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{width:100%;max-width:420px;background:#4A5340;border-radius:16px;padding:44px 40px;border:1px solid rgba(255,255,255,0.07)}
   .logo{margin-bottom:32px}.besix-logo-sm{height:34px;width:auto;display:block;margin-bottom:32px}
   .logo span{color:rgba(201,168,76,0.9)}
   h1{font-family:'Montserrat',sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:6px}

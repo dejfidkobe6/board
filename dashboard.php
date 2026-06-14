@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Montserrat',sans-serif;background:#1e2710;color:#fff;min-height:100vh}
+  body{font-family:'Montserrat',sans-serif;background:#4A5340;color:#fff;min-height:100vh}
   /* ── NAV ── */
   nav{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.07);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100}
   .nav-logo{display:flex;align-items:center}.besix-logo-nav{height:26px;width:auto;display:block}
@@ -60,13 +60,13 @@
   /* ── MODAL ── */
   .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center}
   .overlay.open{display:flex}
-  .modal{background:#1e2d10;border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:36px;width:100%;max-width:440px}
+  .modal{background:#4A5340;border:1px solid rgba(255,255,255,0.1);border-radius:18px;padding:36px;width:100%;max-width:440px}
   .modal h2{font-family:'Montserrat',sans-serif;font-size:20px;font-weight:800;margin-bottom:20px;color:#fff}
   .mfield{margin-bottom:14px}
   .mfield label{display:block;font-size:12px;font-weight:600;color:rgba(210,175,80,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
   .mfield input,.mfield select,.mfield textarea{width:100%;padding:10px 13px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:14px;font-family:'Montserrat',sans-serif;outline:none;transition:border-color 0.15s}
   .mfield input:focus,.mfield select:focus,.mfield textarea:focus{border-color:rgba(107,128,60,0.6)}
-  .mfield select option{background:#1e2d10}
+  .mfield select option{background:#4A5340}
   .mfield textarea{resize:vertical;min-height:70px}
   .color-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
   .color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color 0.15s}
@@ -96,7 +96,7 @@
   .invite-row input{flex:1;padding:9px 12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:13px;font-family:'Montserrat',sans-serif;outline:none}
   .invite-row input:focus{border-color:rgba(107,128,60,0.6)}
   .invite-role-sel{padding:9px 10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:13px;font-family:'Montserrat',sans-serif;outline:none}
-  .invite-role-sel option{background:#1e2d10}
+  .invite-role-sel option{background:#4A5340}
   .btn-invite{padding:9px 16px;background:linear-gradient(180deg,#C9A84C 0%,#A88A42 100%);border:none;border-radius:8px;color:#fff;font-size:13px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;white-space:nowrap}
   .members-list{max-height:240px;overflow-y:auto;margin-bottom:4px}
   @media(max-width:640px){
