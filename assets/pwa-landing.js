@@ -1,0 +1,107 @@
+// BeSix Board — landing overlay shown when the user opens the site in a
+// regular mobile browser tab while the PWA is (probably) installed.
+// Mirrors the Plans pattern: brand icon + "Otevřít aplikaci" + "Pokračovat
+// v prohlížeči". Dismissal is per-session (sessionStorage).
+//
+// Renders nothing if:
+//   - The page is already running as a PWA (display-mode: standalone)
+//   - The viewport doesn't match a phone
+//   - The user already tapped "Pokračovat v prohlížeči" this session
+(function () {
+  var isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+  var dismissed = sessionStorage.getItem('pwaLandingDismissed') === '1';
+  var isMobile = window.matchMedia(
+    '(max-width: 640px), (orientation: landscape) and (max-height: 540px)'
+  ).matches;
+
+  if (!isMobile || isStandalone || dismissed) return;
+
+  // Hide the underlying page immediately so users don't see a flash of login
+  // form before the overlay paints. Removed once they tap "Pokračovat".
+  var earlyStyle = document.createElement('style');
+  earlyStyle.id = 'pwa-landing-early';
+  earlyStyle.textContent =
+    'body > *:not(#pwaLanding){visibility:hidden!important}';
+  function attachEarly() {
+    if (document.head) document.head.appendChild(earlyStyle);
+    else setTimeout(attachEarly, 0);
+  }
+  attachEarly();
+
+  // Capture install prompt — if the PWA hasn't been installed yet, the
+  // primary button can trigger the native install dialog instead of just
+  // showing instructions.
+  var deferredInstall = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredInstall = e;
+  });
+
+  function build() {
+    var style = document.createElement('style');
+    style.textContent = [
+      '#pwaLanding{position:fixed;inset:0;background:#1e2710;display:flex;',
+      'flex-direction:column;align-items:center;justify-content:center;',
+      'padding:40px 24px;z-index:99999;font-family:"Montserrat",sans-serif;',
+      'gap:18px;overflow-y:auto;visibility:visible!important}',
+      '#pwaLanding .pwa-icon{width:128px;height:128px;border-radius:28px;',
+      'box-shadow:0 8px 32px rgba(0,0,0,0.5);object-fit:cover;display:block}',
+      '#pwaLanding h1{color:#fff;font-size:26px;font-weight:800;',
+      'letter-spacing:-0.4px;margin-top:6px;text-align:center}',
+      '#pwaLanding p{color:rgba(255,255,255,0.7);font-size:15px;',
+      'line-height:1.5;text-align:center;margin-bottom:14px;max-width:320px}',
+      '#pwaLanding .pwa-btn{width:100%;max-width:360px;padding:16px 24px;',
+      'border-radius:14px;font-size:16px;font-weight:700;font-family:inherit;',
+      'cursor:pointer;transition:opacity 0.15s,transform 0.1s;',
+      '-webkit-tap-highlight-color:transparent}',
+      '#pwaLanding .pwa-btn-primary{background:linear-gradient(180deg,',
+      '#C9A84C 0%,#A88A42 100%);color:#1e2710;border:none;',
+      'box-shadow:0 4px 16px rgba(168,138,66,0.4)}',
+      '#pwaLanding .pwa-btn-primary:active{transform:translateY(1px);',
+      'opacity:0.92}',
+      '#pwaLanding .pwa-btn-secondary{background:transparent;',
+      'color:rgba(255,255,255,0.85);border:1.5px solid rgba(255,255,255,0.22)}',
+      '#pwaLanding .pwa-btn-secondary:active{background:rgba(255,255,255,0.06)}'
+    ].join('');
+    document.head.appendChild(style);
+
+    var div = document.createElement('div');
+    div.id = 'pwaLanding';
+    div.innerHTML =
+      '<img class="pwa-icon" src="/assets/icons/icon-512.png" alt="BeSix Board">' +
+      '<h1>BeSix Board</h1>' +
+      '<p>Aplikace je nainstalovaná na tvém telefonu.<br>' +
+      'Otevři ji z plochy pro nejlepší zážitek.</p>' +
+      '<button class="pwa-btn pwa-btn-primary" id="pwaLandingOpen">Otevřít aplikaci</button>' +
+      '<button class="pwa-btn pwa-btn-secondary" id="pwaLandingContinue">Pokračovat v prohlížeči</button>';
+    document.body.appendChild(div);
+
+    document.getElementById('pwaLandingOpen').addEventListener('click', function () {
+      if (deferredInstall) {
+        deferredInstall.prompt();
+        deferredInstall.userChoice.finally(function () { deferredInstall = null; });
+        return;
+      }
+      // PWA is already installed (or browser can't install). Browsers don't
+      // let us launch an installed PWA from a tab — show instructions.
+      this.textContent = '✓ Najdi ji na ploše telefonu';
+      this.style.background = 'rgba(255,255,255,0.15)';
+      this.style.color = '#fff';
+      this.style.boxShadow = 'none';
+    });
+    document.getElementById('pwaLandingContinue').addEventListener('click', function () {
+      sessionStorage.setItem('pwaLandingDismissed', '1');
+      div.remove();
+      var early = document.getElementById('pwa-landing-early');
+      if (early) early.remove();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', build);
+  } else {
+    build();
+  }
+})();
