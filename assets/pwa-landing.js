@@ -1,17 +1,26 @@
 // BeSix Board — landing overlay shown when the user opens the site in a
 // regular mobile browser tab while the PWA is (probably) installed.
-// Mirrors the Plans pattern: brand icon + "Otevřít aplikaci" + "Pokračovat
-// v prohlížeči". Dismissal is per-session (sessionStorage).
+// Plans-style: brand icon + "Otevřít aplikaci" + "Pokračovat v prohlížeči".
+//
+// Dismissal is persistent (localStorage, 30 days). Once the user picks
+// "Pokračovat v prohlížeči" we stay out of their way — no re-show, no
+// further nudges in this device.
 //
 // Renders nothing if:
 //   - The page is already running as a PWA (display-mode: standalone)
 //   - The viewport doesn't match a phone
-//   - The user already tapped "Pokračovat v prohlížeči" this session
+//   - The user dismissed within the last 30 days
 (function () {
+  var DISMISS_KEY  = 'pwaLandingDismissedAt';
+  var DISMISS_DAYS = 30;
+
   var isStandalone =
     window.matchMedia('(display-mode: standalone)').matches ||
     window.navigator.standalone === true;
-  var dismissed = sessionStorage.getItem('pwaLandingDismissed') === '1';
+
+  var dismissedAt = parseInt(localStorage.getItem(DISMISS_KEY) || '0', 10);
+  var dismissed   = dismissedAt > Date.now() - DISMISS_DAYS * 86400 * 1000;
+
   var isMobile = window.matchMedia(
     '(max-width: 640px), (orientation: landscape) and (max-height: 540px)'
   ).matches;
@@ -31,13 +40,34 @@
   attachEarly();
 
   // Capture install prompt — if the PWA hasn't been installed yet, the
-  // primary button can trigger the native install dialog instead of just
-  // showing instructions.
+  // primary button can trigger the native install dialog instead of trying
+  // to deep-link to a non-existent app.
   var deferredInstall = null;
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferredInstall = e;
   });
+
+  function isAndroid() {
+    return /android/i.test(navigator.userAgent);
+  }
+
+  function launchInstalledPwa() {
+    // Best-effort: on Android Chrome a WebAPK registers itself as a URL
+    // handler. Navigating via intent:// with action=VIEW asks Android to
+    // route the URL through the WebAPK if one is installed; otherwise the
+    // browser falls back to its own handling.
+    if (isAndroid()) {
+      var host = location.host;
+      var path = location.pathname || '/';
+      window.location.href =
+        'intent://' + host + path +
+        '#Intent;scheme=https;action=android.intent.action.VIEW;' +
+        'S.browser_fallback_url=' + encodeURIComponent(location.href) + ';end';
+      return true;
+    }
+    return false;
+  }
 
   function build() {
     var style = document.createElement('style');
@@ -79,20 +109,25 @@
     document.body.appendChild(div);
 
     document.getElementById('pwaLandingOpen').addEventListener('click', function () {
+      // 1) Not installed yet → trigger native install dialog
       if (deferredInstall) {
         deferredInstall.prompt();
         deferredInstall.userChoice.finally(function () { deferredInstall = null; });
         return;
       }
-      // PWA is already installed (or browser can't install). Browsers don't
-      // let us launch an installed PWA from a tab — show instructions.
+      // 2) Installed → try Android intent to hand off to the WebAPK
+      if (launchInstalledPwa()) return;
+      // 3) Fallback (iOS, desktop) — instructions
       this.textContent = '✓ Najdi ji na ploše telefonu';
       this.style.background = 'rgba(255,255,255,0.15)';
       this.style.color = '#fff';
       this.style.boxShadow = 'none';
     });
+
     document.getElementById('pwaLandingContinue').addEventListener('click', function () {
-      sessionStorage.setItem('pwaLandingDismissed', '1');
+      // Persistent dismissal — user explicitly chose the browser, don't
+      // pester them again for 30 days on this device.
+      localStorage.setItem(DISMISS_KEY, String(Date.now()));
       div.remove();
       var early = document.getElementById('pwa-landing-early');
       if (early) early.remove();
