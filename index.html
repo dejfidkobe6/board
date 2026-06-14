@@ -597,13 +597,13 @@
 
   /* ─── CARD ─── */
   .card {
-    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+    background: rgba(74,83,64,0.55); border: 1px solid rgba(201,168,76,0.18); border-radius: 12px;
     cursor: grab; transition: box-shadow 0.18s, transform 0.15s, background 0.18s;
     position: relative; overflow: hidden; user-select: none;
     box-shadow: 0 1px 4px rgba(0,0,0,0.2);
     backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   }
-  .card:hover { background: rgba(255,255,255,0.12); box-shadow: 0 6px 20px rgba(0,0,0,0.25); transform: translateY(-2px); border-color: rgba(255,255,255,0.22); }
+  .card:hover { background: rgba(74,83,64,0.75); box-shadow: 0 6px 20px rgba(0,0,0,0.25); transform: translateY(-2px); border-color: rgba(201,168,76,0.35); }
   .card.dragging { opacity: 0.5; transform: rotate(1deg) scale(1.02); box-shadow: 0 12px 32px rgba(0,0,0,0.15); }
   .column.col-dragging { opacity: 0.35; }
   .column.col-drop-left  { box-shadow: -3px 0 0 2px rgba(201,168,76,0.8); }
@@ -616,7 +616,7 @@
   .card-labels { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
   .card-label { height: 6px; border-radius: 3px; min-width: 30px; display: inline-block; opacity: 0.75; }
   .card-label-pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: 700; color: #fff; letter-spacing: 0.3px; text-transform: uppercase; opacity: 0.88; }
-  .card-title { font-size: 13px; font-weight: 500; line-height: 1.45; color: var(--text); margin-bottom: 5px; word-break: break-word; }
+  .card-title { font-size: 13px; font-weight: 500; line-height: 1.45; color: rgba(201,168,76,0.95); margin-bottom: 5px; word-break: break-word; }
   .card-badges { display: flex; gap: 4px; flex-wrap: wrap; margin: 5px 0; }
   .card-badge { display: flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text2); border-radius: 5px; padding: 2px 6px; background: var(--surface2); font-weight: 500; }
   .card-badge.overdue { background: rgba(255,59,48,0.15); color: #ff6b6b; }
@@ -707,13 +707,13 @@
   /* ─── CHECKLIST ─── */
   .cl-total-bar { height: 3px; background: var(--surface3); border-radius: 2px; margin-bottom: 14px; overflow: hidden; }
   .cl-total-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
-  .cl-item { display: flex; flex-direction: column; gap: 5px; padding: 8px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; user-select: none; }
+  .cl-item { display: flex; flex-direction: column; gap: 5px; padding: 8px 12px; background: rgba(74,83,64,0.45); border: 1px solid rgba(201,168,76,0.15); border-radius: 10px; user-select: none; }
   .cl-item.completing { animation: fadeOut 0.5s forwards; }
   @keyframes fadeOut { to { opacity: 0; transform: translateX(20px) scale(0.97); } }
   .cl-item-main { display: flex; align-items: flex-start; gap: 8px; }
   .cl-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; margin-top: 2px; }
-  .cl-text { flex: 1; min-width: 0; font-size: 13px; color: var(--text); cursor: text; border-radius: 5px; padding: 1px 4px; line-height: 1.45; word-break: break-word; transition: background 0.15s; }
-  .cl-text:hover { background: rgba(255,255,255,0.04); }
+  .cl-text { flex: 1; min-width: 0; font-size: 13px; color: rgba(201,168,76,0.95); cursor: text; border-radius: 5px; padding: 1px 4px; line-height: 1.45; word-break: break-word; transition: background 0.15s; }
+  .cl-text:hover { background: rgba(201,168,76,0.08); }
   .cl-rename-input { flex: 1; font-size: 13px; color: var(--text); font-family: inherit; background: rgba(255,255,255,0.09); border: 1.5px solid var(--accent); border-radius: 6px; padding: 2px 8px; outline: none; box-shadow: var(--glow); }
   .cl-author { font-size: 11px; color: var(--muted); white-space: nowrap; margin-top: 2px; }
   .cl-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 2px; transition: color 0.15s; flex-shrink: 0; }
@@ -887,14 +887,14 @@
   .task-panel-body-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 2px; }
   .task-panel.collapsed .task-panel-body { display: none; }
   .task-panel-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(201,168,76,0.5); padding: 6px 5px 3px; }
-  .task-item { padding: 7px 9px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; cursor: pointer; transition: background 0.13s; }
-  .task-item:hover { background: rgba(255,255,255,0.09); }
+  .task-item { padding: 7px 9px; background: rgba(74,83,64,0.45); border: 1px solid rgba(201,168,76,0.15); border-radius: 8px; cursor: pointer; transition: background 0.13s; }
+  .task-item:hover { background: rgba(74,83,64,0.65); }
   .task-item.overdue { border-color: rgba(255,80,60,0.3); background: rgba(255,50,30,0.07); }
   .task-item.today { border-color: rgba(201,168,76,0.3); background: rgba(201,168,76,0.06); }
   .task-item-row { display: flex; align-items: flex-start; gap: 6px; }
   .task-item-row input[type=checkbox] { margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); cursor: pointer; }
-  .task-item-text { font-size: 12px; color: rgba(255,255,255,0.82); line-height: 1.4; word-break: break-word; }
-  .task-item-card { font-size: 10px; color: rgba(255,255,255,0.28); margin-top: 3px; padding-left: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .task-item-text { font-size: 12px; color: rgba(201,168,76,0.95); line-height: 1.4; word-break: break-word; }
+  .task-item-card { font-size: 10px; color: rgba(201,168,76,0.55); margin-top: 3px; padding-left: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .task-item-actions { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
   .task-item-dl { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; margin-top: 4px; margin-left: 18px; display: inline-block; }
   .task-item-dl.overdue { background: rgba(255,60,40,0.18); color: #ff7060; }
@@ -936,13 +936,13 @@
 
   /* ─── TASK NOTIFICATION POPUP ─── */
   .task-notif-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10100; display: flex; align-items: center; justify-content: center; }
-  .task-notif { background: #4A5340; border: 1px solid rgba(201,168,76,0.3); border-radius: 16px; box-shadow: 0 20px 56px rgba(0,0,0,0.65); padding: 28px; max-width: 420px; width: 92%; max-height: 72vh; overflow-y: auto; }
+  .task-notif { background: rgba(74,83,64,0.88); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(201,168,76,0.3); border-radius: 16px; box-shadow: 0 20px 56px rgba(0,0,0,0.65); padding: 28px; max-width: 420px; width: 92%; max-height: 72vh; overflow-y: auto; }
   .task-notif-title { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 18px; letter-spacing: -0.3px; }
   .task-notif-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 7px; margin-top: 4px; }
   .task-notif-label.overdue { color: #ff7060; }
   .task-notif-label.today { color: rgba(201,168,76,0.9); }
-  .task-notif-row { display: flex; gap: 8px; padding: 7px 10px; background: rgba(255,255,255,0.04); border-radius: 8px; margin-bottom: 4px; font-size: 12px; color: rgba(255,255,255,0.8); line-height: 1.4; }
-  .task-notif-row-card { font-size: 10px; color: rgba(255,255,255,0.32); margin-top: 2px; }
+  .task-notif-row { display: flex; gap: 8px; padding: 7px 10px; background: rgba(74,83,64,0.45); border: 1px solid rgba(201,168,76,0.15); border-radius: 8px; margin-bottom: 4px; font-size: 12px; color: rgba(201,168,76,0.95); line-height: 1.4; }
+  .task-notif-row-card { font-size: 10px; color: rgba(201,168,76,0.55); margin-top: 2px; }
   .task-notif-close { width: 100%; margin-top: 16px; padding: 10px; background: rgba(201,168,76,0.14); border: 1px solid rgba(201,168,76,0.3); border-radius: 9px; color: rgba(201,168,76,0.9); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.14s; }
   .task-notif-close:hover { background: rgba(201,168,76,0.24); }
 
