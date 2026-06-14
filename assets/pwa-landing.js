@@ -72,7 +72,7 @@
   function build() {
     var style = document.createElement('style');
     style.textContent = [
-      '#pwaLanding{position:fixed;inset:0;background:#1e2710;display:flex;',
+      '#pwaLanding{position:fixed;inset:0;background:#4A5340;display:flex;',
       'flex-direction:column;align-items:center;justify-content:center;',
       'padding:40px 24px;z-index:99999;font-family:"Montserrat",sans-serif;',
       'gap:18px;overflow-y:auto;visibility:visible!important}',
@@ -87,7 +87,7 @@
       'cursor:pointer;transition:opacity 0.15s,transform 0.1s;',
       '-webkit-tap-highlight-color:transparent}',
       '#pwaLanding .pwa-btn-primary{background:linear-gradient(180deg,',
-      '#C9A84C 0%,#A88A42 100%);color:#1e2710;border:none;',
+      '#C9A84C 0%,#A88A42 100%);color:#4A5340;border:none;',
       'box-shadow:0 4px 16px rgba(168,138,66,0.4)}',
       '#pwaLanding .pwa-btn-primary:active{transform:translateY(1px);',
       'opacity:0.92}',

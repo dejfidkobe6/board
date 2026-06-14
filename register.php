@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Montserrat',sans-serif;background:#1e2710;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  body{font-family:'Montserrat',sans-serif;background:#4A5340;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
   .wrap{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:24px}
   .logo-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
   .besix-logo{width:160px;height:auto;display:block}
