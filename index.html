@@ -15,7 +15,7 @@
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16.png">
 <script src="/assets/pwa-landing.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
   :root {
     --bg: #4A5340;
@@ -3304,6 +3304,7 @@ function checkItem(itemId) {
       cardTitle: card.title,
       colName: colTitle(card.colId),
       tag: card.tag||'',
+      checklistName: found.cl.name || '',
       text: item.text,
       createdBy: gm(item.author) ? gm(item.author).name : '?',
       createdAt: fmtDT(item.created),
@@ -3400,11 +3401,27 @@ async function restoreServerBackup(backupId) {
 }
 
 function openExportModal() {
-  if (!state.completed.length) { alert('Žádné splněné položky k exportu.'); return; }
-  const cols = [...new Set(state.completed.map(r => r.colName))].sort();
+  // Collect all task occurrences per column: open (from active cards) + closed (from completed log)
+  const perCol = {};
+  (state.cards || []).forEach(card => {
+    const colName = colTitle(card.colId);
+    if (!colName) return;
+    (card.checklists || []).forEach(cl => {
+      (cl.items || []).filter(it => !it.done).forEach(() => {
+        perCol[colName] = (perCol[colName] || 0) + 1;
+      });
+    });
+  });
+  (state.completed || []).forEach(r => {
+    if (!r.colName) return;
+    perCol[r.colName] = (perCol[r.colName] || 0) + 1;
+  });
+
+  const cols = Object.keys(perCol).sort();
+  if (!cols.length) { alert('Žádné úkoly k exportu.'); return; }
   const list = document.getElementById('exportCardList');
   list.innerHTML = cols.map(name => {
-    const count = state.completed.filter(r => r.colName === name).length;
+    const count = perCol[name];
     const safe = name.replace(/"/g, '&quot;');
     return `<label style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;">
       <input type="checkbox" class="export-card-cb" data-col="${safe}" checked style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
@@ -3424,26 +3441,107 @@ function doExport() {
   if (!selected.length) { alert('Vyber alespoň jeden sloupec.'); return; }
   const wb = XLSX.utils.book_new();
   const usedNames = {};
+  // Styles — green fill for completed rows, white (default) for open
+  const headerStyle = {
+    font: { bold: true, color: { rgb: 'FFFFFFFF' } },
+    fill: { patternType: 'solid', fgColor: { rgb: 'FF4A5340' } },
+    alignment: { vertical: 'center', wrapText: true },
+  };
+  const doneStyle = {
+    fill: { patternType: 'solid', fgColor: { rgb: 'FFC6EFCE' } },
+    alignment: { vertical: 'center', wrapText: true },
+  };
+  const openStyle = {
+    fill: { patternType: 'solid', fgColor: { rgb: 'FFFFFFFF' } },
+    alignment: { vertical: 'center', wrapText: true },
+  };
+
   selected.forEach(colName => {
-    const rows = state.completed
-      .filter(r => r.colName === colName)
-      .map(r => ({
-        'Úkol': r.cardTitle,
-        'Sloupec': r.colName,
-        'Štítek': r.tag,
-        'Položka checklistu': r.text,
-        'Zapsal/a': r.createdBy,
-        'Datum zápisu': r.createdAt,
-        'Splnil/a': r.completedBy,
-        'Datum splnění': r.completedAt,
-      }));
+    const rows = [];
+
+    // 1) Open items — from active cards
+    (state.cards || []).forEach(card => {
+      if (colTitle(card.colId) !== colName) return;
+      (card.checklists || []).forEach(cl => {
+        (cl.items || []).filter(it => !it.done).forEach(item => {
+          const auth = item.author ? gm(item.author) : null;
+          rows.push({
+            data: {
+              'Stav':              'Otevřený',
+              'Úkol':              card.title,
+              'Sloupec':           colName,
+              'Štítek':            card.tag || '',
+              'Checklist':         cl.name || '',
+              'Položka checklistu': item.text || '',
+              'Zapsal/a':          auth ? auth.name : '?',
+              'Datum zápisu':      fmtDT(item.created) || '',
+              'Splnil/a':          '',
+              'Datum splnění':     '',
+            },
+            done: false,
+          });
+        });
+      });
+    });
+
+    // 2) Completed items — from completion log
+    (state.completed || []).filter(r => r.colName === colName).forEach(r => {
+      // Fallback: najdi aktivní checklist se stejným textem, pokud log neobsahuje jméno
+      let checklistName = r.checklistName || '';
+      if (!checklistName && state.cards) {
+        const card = state.cards.find(c => c.title === r.cardTitle);
+        if (card) {
+          for (const cl of (card.checklists || [])) {
+            if ((cl.items || []).some(it => it.text === r.text)) { checklistName = cl.name || ''; break; }
+          }
+        }
+      }
+      rows.push({
+        data: {
+          'Stav':              'Splněný',
+          'Úkol':              r.cardTitle || '',
+          'Sloupec':           r.colName || '',
+          'Štítek':            r.tag || '',
+          'Checklist':         checklistName,
+          'Položka checklistu': r.text || '',
+          'Zapsal/a':          r.createdBy || '',
+          'Datum zápisu':      r.createdAt || '',
+          'Splnil/a':          r.completedBy || '',
+          'Datum splnění':     r.completedAt || '',
+        },
+        done: true,
+      });
+    });
+
+    if (!rows.length) return;
+
+    const ws = XLSX.utils.json_to_sheet(rows.map(r => r.data));
+    ws['!cols'] = [12, 28, 16, 14, 20, 44, 20, 22, 20, 22].map(w => ({ wch: w }));
+
+    // Apply header style (row 0)
+    const headers = Object.keys(rows[0].data);
+    headers.forEach((_, c) => {
+      const addr = XLSX.utils.encode_cell({ r: 0, c });
+      if (ws[addr]) ws[addr].s = headerStyle;
+    });
+
+    // Apply row styles — green for completed, white for open
+    rows.forEach((row, i) => {
+      const style = row.done ? doneStyle : openStyle;
+      headers.forEach((_, c) => {
+        const addr = XLSX.utils.encode_cell({ r: i + 1, c });
+        if (ws[addr]) ws[addr].s = style;
+      });
+    });
+
     let sheetName = colName.substring(0, 31);
     if (usedNames[sheetName]) { usedNames[sheetName]++; sheetName = sheetName.substring(0, 28) + '_' + usedNames[sheetName]; }
     else usedNames[sheetName] = 1;
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [32,18,14,44,20,22,20,22].map(w=>({wch:w}));
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
   });
+
+  if (!wb.SheetNames.length) { alert('Žádné položky v zvolených sloupcích.'); return; }
+
   const date = new Date().toLocaleDateString('cs-CZ').replace(/\s/g,'').replace(/\./g,'_');
   XLSX.writeFile(wb, `BesixBoard_${date}.xlsx`);
   closeModal('exportModal');
