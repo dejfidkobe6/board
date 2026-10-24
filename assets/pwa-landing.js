@@ -14,6 +14,18 @@
   var DISMISS_KEY  = 'pwaLandingDismissedAt';
   var DISMISS_DAYS = 30;
 
+  // Register the service worker on every entry page — Chrome refuses to
+  // offer "Install" (shows "This app cannot be installed — Create shortcut"
+  // instead) unless the page has an active SW with a fetch handler. The
+  // SPA (index.html) registers its own copy; this one covers the auth
+  // pages (login/register/forgot/reset/dashboard/invite) where the user
+  // first lands before being logged in.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(function (err) {
+      console.warn('[pwa] sw register failed:', err);
+    });
+  }
+
   var isStandalone =
     window.matchMedia('(display-mode: standalone)').matches ||
     window.navigator.standalone === true;
