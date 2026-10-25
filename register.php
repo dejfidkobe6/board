@@ -43,8 +43,8 @@
 <body>
 <div class="wrap">
   <div class="logo-wrap">
-    <img src="/assets/besix-logo.png" class="besix-logo" alt="BeSix">
-    <div class="app-title">BeSix <span>Board</span></div>
+    <img src="/assets/icons/icon-512.png" class="besix-logo" alt="BeSix Board" style="border-radius:14%">
+    <div class="app-title" style="display:none">BeSix <span>Board</span></div>
   </div>
   <div class="card">
     <h1>Vytvořit účet</h1>

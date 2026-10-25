@@ -318,35 +318,35 @@
 
     /* Board: snap-scroll s drobným gutterem okolo, šířka sloupců se přepíná
        níže podle orientace (portrait = 1 sloupec, landscape = 2 sloupce). */
+    /* Board: VERTIKÁLNÍ stackování sloupců — žádný horizontální scroll.
+       Scrolluje se celou obrazovkou nahoru/dolů. */
     #board {
       height: 100% !important;
       padding: 10px 8px !important;
-      gap: 8px !important;
-      overflow-x: auto !important;
-      overflow-y: hidden !important;
-      scroll-snap-type: x mandatory;
-      scroll-padding-left: 8px !important;
+      gap: 10px !important;
+      overflow-x: hidden !important;
+      overflow-y: auto !important;
       -webkit-overflow-scrolling: touch;
       display: flex !important;
-      align-items: flex-start !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
     }
 
-    /* Columns: výška natural, šířka řešená orientačními pravidly níže */
+    /* Columns: celá šířka, přirozená výška, žádný interní vertikální cap */
     .column {
       flex-shrink: 0 !important;
+      width: auto !important;
       height: auto !important;
-      max-height: calc(100dvh - 108px) !important;
-      max-height: calc(100vh - 108px) !important;
+      max-height: none !important;
       border-radius: 12px !important;
-      scroll-snap-align: start;
     }
 
-    /* Column body scrolls vertically */
+    /* Column body: nerolujeme uvnitř, roluje se celý board */
     .col-body {
-      flex: 1 !important;
-      overflow-y: auto !important;
-      max-height: calc(100dvh - 208px) !important;
-      max-height: calc(100vh - 208px) !important;
+      flex: 0 1 auto !important;
+      overflow-y: visible !important;
+      max-height: none !important;
+    }
       -webkit-overflow-scrolling: touch;
     }
     .col-header { padding: 12px 14px 10px; }
@@ -444,14 +444,10 @@
   }
 
   /* Portrait phone — jeden sloupec na obrazovku, gutter 8px po stranách */
-  @media (max-width: 640px) and (orientation: portrait) {
-    .column { width: calc(100vw - 16px) !important; }
-  }
-
-  /* Landscape phone — dva sloupce vedle sebe s mezerou */
-  @media (max-width: 640px) and (orientation: landscape),
+  /* Mobil (portrait i landscape) — sloupce stackují vertikálně na celou šířku */
+  @media (max-width: 640px),
          (orientation: landscape) and (max-height: 540px) {
-    .column { width: calc(50vw - 12px) !important; }
+    .column { width: auto !important; }
   }
   @media (min-width: 641px) and (max-width: 1024px) and (orientation: portrait) {
     .board { padding: 14px 16px; }
@@ -1177,7 +1173,7 @@
   <div class="auth-brand-panel">
     <div class="auth-brand-top">
       <div class="auth-brand-logo">
-        <img src="/assets/besix-logo.png" class="besix-logo">
+        <img src="/assets/icons/icon-512.png" class="besix-logo" alt="BeSix Board" style="border-radius:14%">
         <div class="auth-brand-wordmark">Kanban Board</div>
       </div>
     </div>
@@ -1284,7 +1280,7 @@
 <!-- APP -->
 <div id="app">
   <header>
-    <div class="logo" style="display:flex;align-items:center;gap:9px"><a href="https://besix.cz/" target="_blank" rel="noopener" title="besix.cz" style="display:flex;align-items:center;gap:9px;color:inherit;text-decoration:none"><img src="/assets/besix-logo.png" class="besix-logo-header" width="28" height="28" style="object-fit:cover;border-radius:3px;flex-shrink:0;display:block;" alt="BeSix"><span style="font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:15px;letter-spacing:-0.3px;color:inherit">BeSix<span style="font-weight:400;opacity:0.55;margin-left:3px">Board</span></span></a> <span id="activeProjectName" style="font-size:12px;color:rgba(255,255,255,0.4);font-weight:500;margin-left:4px"></span></div>
+    <div class="logo" style="display:flex;align-items:center;gap:9px"><a href="https://besix.cz/" target="_blank" rel="noopener" title="besix.cz" style="display:flex;align-items:center;color:inherit;text-decoration:none"><img src="/assets/icons/icon-512.png" class="besix-logo-header" width="32" height="32" style="object-fit:cover;border-radius:7px;flex-shrink:0;display:block;" alt="BeSix Board"></a> <span id="activeProjectName" style="font-size:12px;color:rgba(255,255,255,0.4);font-weight:500;margin-left:4px"></span></div>
     <div class="header-right">
       <button class="btn btn-ghost" onclick="goToProjects()" title="Všechny projekty">◈ Projekty</button>
       <button class="btn btn-ghost" id="poradyNavBtn" onclick="openPoradyView()" title="Porady – harmonogram a úkoly" style="display:none">📋 Porady</button>

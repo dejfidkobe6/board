@@ -85,7 +85,7 @@ if ($inv && !empty($_SESSION['user_id'])) {
 </head>
 <body>
 <div class="card">
-  <img src="/assets/besix-logo.png" class="besix-logo-sm">
+  <img src="/assets/icons/icon-512.png" class="besix-logo-sm">
 
   <?php if ($error): ?>
     <div class="invite-icon">✉</div>
@@ -105,7 +105,7 @@ if ($inv && !empty($_SESSION['user_id'])) {
       <a href="/login.php?redirect=<?= urlencode('/api/invitations.php?action=accept&token=' . $token) ?>" class="btn btn-primary">Přihlásit se a přijmout</a>
       <a href="/register.php?invite=<?= urlencode($token) ?>" class="btn btn-secondary">Zaregistrovat se</a>
     </div>
-    <div class="app-label">BeSix Board</div>
+    <div class="app-label" style="display:none">BeSix Board</div>
   <?php endif; ?>
 </div>
 </body>
