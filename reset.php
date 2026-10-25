@@ -31,7 +31,7 @@
 </head>
 <body>
 <div class="card">
-  <img src="/assets/besix-logo.png" class="besix-logo-sm">
+  <img src="/assets/icons/icon-512.png" class="besix-logo-sm">
   <h1>Nové heslo</h1>
   <div class="sub">Zadej nové heslo pro svůj účet.</div>
 
