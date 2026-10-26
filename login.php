@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#C9A84C">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png?v=5">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16.png?v=5">
+<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png?v=5">
+<link rel="shortcut icon" href="/favicon.ico?v=5">
 <title>Přihlášení – BeSix Board</title>
 <script src="/assets/pwa-landing.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
