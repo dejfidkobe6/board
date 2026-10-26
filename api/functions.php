@@ -305,7 +305,7 @@ function emailTemplate(string $title, string $content): string {
     <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;width:100%;background-color:#1a2a0e;border-radius:10px;border:1px solid #3a4a20;">
       <!-- Header -->
       <tr><td style="background-color:#2a3d10;padding:20px 32px;border-radius:10px 10px 0 0;border-bottom:1px solid #3a4a20;">
-        <img src="https://board.besix.cz/assets/besix-logo.png" alt="BeSix" width="48" height="48" style="display:block;margin-bottom:10px;border:0;">
+        <img src="https://board.besix.cz/assets/icons/icon-512.png" alt="BeSix Board" width="48" height="48" style="display:block;margin-bottom:10px;border:0;border-radius:8px;">
         <span style="color:#C9A84C;font-size:20px;font-weight:700;font-family:Arial,sans-serif;">BeSix Board</span>
       </td></tr>
       <!-- Body -->

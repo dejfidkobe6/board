@@ -58,7 +58,18 @@ if ($inv && !empty($_SESSION['user_id'])) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/manifest.webmanifest?v=5">
 <meta name="theme-color" content="#C9A84C">
+<meta name="msapplication-TileColor" content="#4A5340">
+<meta name="msapplication-TileImage" content="/assets/icons/icon-192.png?v=5">
+<meta name="msapplication-config" content="/browserconfig.xml?v=5">
+<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png?v=5">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=5">
+<link rel="icon" type="image/png" sizes="512x512" href="/assets/icons/icon-512.png?v=5">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png?v=5">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16.png?v=5">
+<link rel="shortcut icon" href="/favicon.ico?v=5">
 <title>Pozvánka – BeSix Board</title>
 <script src="/assets/pwa-landing.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
